@@ -11,12 +11,14 @@ const testimonials = [
   {
     text: "I never understood why my dog was behaving the way she did until our consultation. The insights were invaluable.",
     name: "James O.",
-    location: "Mombasa"
+    location: "Mombasa",
+    imageSrc: "/images/testimonial-james.jpg"
   },
   {
     text: "The classes were excellent and well-structured. My puppy and I both learned so much in just a few weeks.",
     name: "Sarah M.",
-    location: "Nakuru"
+    location: "Nakuru",
+    imageSrc: "/images/testimonial-sarah.jpg"
   }
 ];
 
