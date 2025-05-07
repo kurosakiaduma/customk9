@@ -141,9 +141,6 @@ export default function ServicesPage() {
               <a href="#services" className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md">
                 View All Services
               </a>
-              <a href="/client-area" className="px-6 py-3 bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold rounded-full transition-colors shadow-md">
-                Book a Session
-              </a>
               <a 
                 href="/client-area" 
                 className="px-6 py-3 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center"
