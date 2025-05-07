@@ -5,15 +5,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 // Import Swiper and required modules
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
+import { Autoplay, EffectCube, EffectFade, EffectCoverflow, EffectFlip, Navigation, Pagination } from 'swiper/modules';
 
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/effect-fade';
+import 'swiper/css/effect-cube';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-flip';
+import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeEffect, setActiveEffect] = useState<'fade' | 'cube' | 'coverflow' | 'flip'>('fade');
   
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +34,27 @@ export default function Home() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  // Toggle effect every 20 seconds in a rotation
+  useEffect(() => {
+    const effects: ('fade' | 'cube' | 'coverflow' | 'flip')[] = ['fade', 'cube', 'coverflow', 'flip'];
+    let currentIndex = 0;
+    
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % effects.length;
+      setActiveEffect(effects[currentIndex]);
+    }, 20000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Function to manually change effect
+  const changeEffect = () => {
+    const effects: ('fade' | 'cube' | 'coverflow' | 'flip')[] = ['fade', 'cube', 'coverflow', 'flip'];
+    const currentIndex = effects.indexOf(activeEffect);
+    const nextIndex = (currentIndex + 1) % effects.length;
+    setActiveEffect(effects[nextIndex]);
+  };
 
   // Array of dog images for the carousel
   const dogImages = [
@@ -87,16 +113,35 @@ export default function Home() {
             <Swiper
               spaceBetween={0}
               centeredSlides={true}
-              effect={'fade'}
+              effect={activeEffect}
               autoplay={{
                 delay: 5000,
                 disableOnInteraction: false,
               }}
               speed={1500}
+              navigation={true}
               pagination={{
                 clickable: true,
+                dynamicBullets: true,
               }}
-              modules={[Autoplay, EffectFade, Pagination]}
+              cubeEffect={{
+                shadow: true,
+                slideShadows: true,
+                shadowOffset: 20,
+                shadowScale: 0.94,
+              }}
+              coverflowEffect={{
+                rotate: 50,
+                stretch: 0,
+                depth: 100,
+                modifier: 1,
+                slideShadows: true,
+              }}
+              flipEffect={{
+                slideShadows: true,
+                limitRotation: true,
+              }}
+              modules={[Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip, Pagination, Navigation]}
               className="h-full w-full"
             >
               {dogImages.map((image, index) => (
@@ -114,6 +159,19 @@ export default function Home() {
                 </SwiperSlide>
               ))}
             </Swiper>
+            
+            {/* Effect indicator */}
+            <div className="absolute top-4 right-4 z-30 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm font-medium">
+              Effect: <span className="text-sky-200 capitalize">{activeEffect}</span>
+            </div>
+            
+            {/* Effect change button */}
+            <button 
+              onClick={changeEffect}
+              className="absolute top-16 right-4 z-30 bg-sky-600/70 hover:bg-sky-700/80 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm font-medium transition-all"
+            >
+              Change Effect
+            </button>
           </div>
         </div>
         

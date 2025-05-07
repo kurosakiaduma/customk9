@@ -71,6 +71,41 @@ body {
   bottom: 30px !important;
 }
 
+/* Swiper Navigation Buttons */
+.swiper-button-next,
+.swiper-button-prev {
+  color: rgba(255, 255, 255, 0.8) !important;
+  background-color: rgba(14, 165, 233, 0.4) !important; /* Sky-500 with opacity */
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.3s ease !important;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background-color: rgba(14, 165, 233, 0.7) !important;
+  color: white !important;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  font-size: 20px !important;
+  font-weight: bold !important;
+}
+
+/* Swiper Cube Effect */
+.swiper-cube-shadow {
+  background: rgba(14, 165, 233, 0.2) !important; /* Sky-500 with opacity */
+}
+
+.swiper-pagination-bullets.swiper-pagination-horizontal {
+  bottom: 20px !important;
+}
+
 /* Animation Keyframes */
 @keyframes fadeIn {
   from {
