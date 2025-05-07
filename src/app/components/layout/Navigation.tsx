@@ -8,6 +8,7 @@ type NavLink = {
   href: string;
   label: string;
   isExternal?: boolean;
+  dropdown?: NavLink[];
 };
 
 type NavSection = {
@@ -19,7 +20,26 @@ type NavSection = {
 const mainNavLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
-  { href: "/services", label: "Services" },
+  { 
+    href: "/services", 
+    label: "Services",
+    dropdown: [
+      { href: "/services/puppy-manners", label: "PUPPY MANNERS AND SOCIALIZATION" },
+      { href: "/services/basic-obedience", label: "BASIC OBEDIENCE" },
+      { href: "/services/refresher-obedience", label: "REFRESHER OBEDIENCE" },
+      { href: "/services/intro-to-agility", label: "INTRO TO AGILITY" },
+      { href: "/services/show-handling", label: "SHOW HANDLING / RING CRAFT" },
+      { href: "/services/loose-leash-walking", label: "LOOSE LEASH WALKING" },
+      { href: "/services/beginning-tracking", label: "BEGINNING TRACKING FOR FUN" },
+      { href: "/services/clicker-training", label: "CLICKER TRAINING" },
+      { href: "/services/supervised-playtime", label: "SUPERVISED PLAYTIME" },
+      { href: "/services/dog-and-family-training", label: "DOG AND FAMILY TRAINING" },
+      { href: "/services/welfare", label: "WELFARE" },
+      { href: "/services/trap-neuter-release", label: "TRAP, NEUTER AND RELEASE (TNR)" },
+      { href: "/services/crate-rental", label: "CRATE RENTAL" },
+      { href: "/services/education", label: "EDUCATION" }
+    ]
+  },
   { href: "/booking", label: "Class Booking" },
   { href: "/gallery", label: "Gallery" },
   { href: "/references", label: "References" },
@@ -50,6 +70,7 @@ const navSections: NavSection[] = [
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
   useEffect(() => {
     const handleScroll = () => {
@@ -63,6 +84,27 @@ export default function Navigation() {
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // Function to handle dropdown toggle
+  const toggleDropdown = (label: string) => {
+    if (activeDropdown === label) {
+      setActiveDropdown(null);
+    } else {
+      setActiveDropdown(label);
+    }
+  };
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setActiveDropdown(null);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 
@@ -93,16 +135,60 @@ export default function Navigation() {
           {/* Nav Links */}
           <div className="flex justify-center py-3">
             {mainNavLinks.map((link, index) => (
-              <Link 
-                key={index}
-                href={link.href} 
-                className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
-                onClick={() => handleNavClick(link.label)}
-                target={link.isExternal ? "_blank" : undefined}
-                rel={link.isExternal ? "noopener noreferrer" : undefined}
-              >
-                {link.label}
-              </Link>
+              <div key={index} className="relative group">
+                {link.dropdown ? (
+                  <>
+                    <button 
+                      className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] flex items-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown(link.label);
+                      }}
+                    >
+                      {link.label}
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className={`h-4 w-4 ml-1 transition-transform ${activeDropdown === link.label ? 'rotate-180' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {activeDropdown === link.label && (
+                      <div 
+                        className="absolute left-0 mt-1 w-64 bg-[#333]/90 backdrop-blur-md rounded-md shadow-lg py-2 z-20"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {link.dropdown.map((dropdownLink, dropdownIndex) => (
+                          <Link 
+                            key={dropdownIndex}
+                            href={dropdownLink.href}
+                            className="block px-4 py-2 text-sm text-white hover:bg-sky-600 transition-colors"
+                            onClick={() => {
+                              handleNavClick(dropdownLink.label);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            {dropdownLink.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Link 
+                    href={link.href} 
+                    className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
+                    onClick={() => handleNavClick(link.label)}
+                    target={link.isExternal ? "_blank" : undefined}
+                    rel={link.isExternal ? "noopener noreferrer" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -129,16 +215,55 @@ export default function Navigation() {
           <div className="md:hidden bg-[#0099ff]/70 backdrop-blur-md border-t border-white/10 shadow-lg">
             <div className="flex flex-col py-2">
               {mainNavLinks.map((link, index) => (
-                <Link 
-                  key={index}
-                  href={link.href} 
-                  className="text-white hover:bg-white/10 transition-colors py-3 px-4 font-semibold uppercase text-sm" 
-                  onClick={() => handleNavClick(link.label)}
-                  target={link.isExternal ? "_blank" : undefined}
-                  rel={link.isExternal ? "noopener noreferrer" : undefined}
-                >
-                  {link.label}
-                </Link>
+                <div key={index}>
+                  {link.dropdown ? (
+                    <>
+                      <button 
+                        className="w-full text-left text-white hover:bg-white/10 transition-colors py-3 px-4 font-semibold uppercase text-sm flex justify-between items-center"
+                        onClick={() => toggleDropdown(link.label)}
+                      >
+                        {link.label}
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className={`h-4 w-4 transition-transform ${activeDropdown === link.label ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {activeDropdown === link.label && (
+                        <div className="bg-sky-900/50 py-2">
+                          {link.dropdown.map((dropdownLink, dropdownIndex) => (
+                            <Link 
+                              key={dropdownIndex}
+                              href={dropdownLink.href}
+                              className="block py-2 px-8 text-sm text-white hover:bg-white/10 transition-colors"
+                              onClick={() => {
+                                handleNavClick(dropdownLink.label);
+                                setActiveDropdown(null);
+                                setIsMenuOpen(false);
+                              }}
+                            >
+                              {dropdownLink.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link 
+                      href={link.href} 
+                      className="text-white hover:bg-white/10 transition-colors py-3 px-4 font-semibold uppercase text-sm" 
+                      onClick={() => handleNavClick(link.label)}
+                      target={link.isExternal ? "_blank" : undefined}
+                      rel={link.isExternal ? "noopener noreferrer" : undefined}
+                    >
+                      {link.label}
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
           </div>
