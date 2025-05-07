@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import Image from "next/image";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
-import TestimonialsSection from "../components/sections/TestimonialsSection";
 
 export default function ReferencesPage() {
   // Scroll to top on page load
@@ -74,31 +73,13 @@ export default function ReferencesPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Testimonial 1 */}
-            <div className="bg-white p-8 rounded-xl shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                  <Image 
-                    src="/images/client1.jpg" 
-                    alt="Sarah M." 
-                    width={64} 
-                    height={64}
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">Sarah M.</h3>
-                  <p className="text-gray-600">German Shepherd Owner</p>
-                </div>
-              </div>
-              <p className="text-gray-700 italic">
-                "I was struggling with my German Shepherd's leash reactivity for months. After just 4 weeks with CustomK9, the transformation was incredible. Max is now calm and confident on our walks!"
-              </p>
-              <div className="mt-4 flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                  </svg>
-                ))}
+            <div className="p-8 bg-white rounded-lg shadow-lg mb-8">
+              <div className="mb-4 relative">
+                <div className="text-sky-600 text-6xl absolute top-0 left-0 opacity-20">&ldquo;</div>
+                <p className="text-gray-700 text-lg leading-relaxed relative z-10 pl-8">
+                  &ldquo;As a dog shelter manager, I&apos;ve seen how proper training can make all the difference in adoption rates. CustomK9 has partnered with us for years, and their expertise has helped countless dogs find forever homes.&rdquo;
+                </p>
+                <div className="text-sky-600 text-6xl absolute bottom-0 right-0 opacity-20">&rdquo;</div>
               </div>
             </div>
             
@@ -132,31 +113,88 @@ export default function ReferencesPage() {
             </div>
             
             {/* Testimonial 3 */}
-            <div className="bg-white p-8 rounded-xl shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                  <Image 
-                    src="/images/client3.jpg" 
-                    alt="Maria L." 
-                    width={64} 
-                    height={64}
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+            <div className="p-8 bg-white rounded-lg shadow-lg mb-8">
+              <div className="mb-4 relative">
+                <div className="text-sky-600 text-6xl absolute top-0 left-0 opacity-20">&ldquo;</div>
+                <p className="text-gray-700 text-lg leading-relaxed relative z-10 pl-8">
+                  &ldquo;I work with service dog training and have collaborated with CustomK9 on numerous occasions. Their methodology is thorough, scientific, and effective. I don&apos;t hesitate to recommend them to anyone looking for professional dog training.&rdquo;
+                </p>
+                <div className="text-sky-600 text-6xl absolute bottom-0 right-0 opacity-20">&rdquo;</div>
+              </div>
+            </div>
+            
+            {/* Testimonial 4 */}
+            <div className="p-8 bg-white rounded-lg shadow-lg mb-8">
+              <div className="mb-4 relative">
+                <div className="text-sky-600 text-6xl absolute top-0 left-0 opacity-20">&ldquo;</div>
+                <p className="text-gray-700 text-lg leading-relaxed relative z-10 pl-8">
+                  &ldquo;In my role as a professional dog show judge, I&apos;ve seen many trainers at work. The team at CustomK9 stands out for their dedication to positive, ethical training methods that build confidence in both the dog and handler.&rdquo;
+                </p>
+                <div className="text-sky-600 text-6xl absolute bottom-0 right-0 opacity-20">&rdquo;</div>
+              </div>
+              <div className="flex items-center mt-6">
+                <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
+                  <Image
+                    src="/images/judge1.jpg"
+                    alt="Richard Chen"
+                    fill
+                    className="object-cover"
                   />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Maria L.</h3>
-                  <p className="text-gray-600">Mixed Breed Rescue Owner</p>
+                  <h4 className="font-semibold text-sky-800">Richard Chen</h4>
+                  <p className="text-sm text-gray-600">Professional Dog Show Judge</p>
                 </div>
               </div>
-              <p className="text-gray-700 italic">
-                "I adopted a rescue with severe anxiety issues. The behavior consultation was eye-opening and gave me practical tools to help my dog feel secure. Three months later, she's like a different dog!"
-              </p>
-              <div className="mt-4 flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                  </svg>
-                ))}
+            </div>
+            
+            {/* Testimonial 5 */}
+            <div className="p-8 bg-white rounded-lg shadow-lg mb-8">
+              <div className="mb-4 relative">
+                <div className="text-sky-600 text-6xl absolute top-0 left-0 opacity-20">&ldquo;</div>
+                <p className="text-gray-700 text-lg leading-relaxed relative z-10 pl-8">
+                  &ldquo;I&apos;ve incorporated CustomK9&apos;s training guidance into my canine behavioral therapy practice. Their methods align perfectly with my approach that focuses on understanding the root causes of behavioral issues.&rdquo;
+                </p>
+                <div className="text-sky-600 text-6xl absolute bottom-0 right-0 opacity-20">&rdquo;</div>
+              </div>
+              <div className="flex items-center mt-6">
+                <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
+                  <Image
+                    src="/images/therapist1.jpg"
+                    alt="Dr. Lisa Patel"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sky-800">Dr. Lisa Patel</h4>
+                  <p className="text-sm text-gray-600">Canine Behavioral Therapist</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Testimonial 6 */}
+            <div className="p-8 bg-white rounded-lg shadow-lg mb-8">
+              <div className="mb-4 relative">
+                <div className="text-sky-600 text-6xl absolute top-0 left-0 opacity-20">&ldquo;</div>
+                <p className="text-gray-700 text-lg leading-relaxed relative z-10 pl-8">
+                  &ldquo;When police departments need specialized training for K9 units, CustomK9 is among our top recommendations. Their comprehensive approach to dog training and handler education is impressive and delivers reliable results.&rdquo;
+                </p>
+                <div className="text-sky-600 text-6xl absolute bottom-0 right-0 opacity-20">&rdquo;</div>
+              </div>
+              <div className="flex items-center mt-6">
+                <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
+                  <Image
+                    src="/images/officer1.jpg"
+                    alt="Officer James Wilson"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sky-800">Officer James Wilson</h4>
+                  <p className="text-sm text-gray-600">K9 Unit Coordinator, Municipal Police Department</p>
+                </div>
               </div>
             </div>
           </div>

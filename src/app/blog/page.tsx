@@ -68,8 +68,8 @@ const blogPosts = [
 const categories = ["All", "Behavior", "Training", "Puppies", "Breeds", "Health"];
 
 export default function BlogPage() {
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   
   // Scroll to top on page load
   useEffect(() => {
@@ -78,9 +78,9 @@ export default function BlogPage() {
 
   // Filter posts based on category and search query
   const filteredPosts = blogPosts.filter(post => {
-    const matchesCategory = activeCategory === "All" || post.category === activeCategory;
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || post.category === selectedCategory;
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -162,8 +162,8 @@ export default function BlogPage() {
                 type="text"
                 placeholder="Search articles..."
                 className="w-full pl-12 pr-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
                 <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -176,49 +176,49 @@ export default function BlogPage() {
           {/* Categories */}
           <div id="categories" className="mb-12 flex flex-wrap gap-2">
             <button 
-              onClick={() => setActiveCategory("All")}
+              onClick={() => setSelectedCategory("all")}
               className={`px-4 py-2 rounded-full transition-colors ${
-                activeCategory === "All" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                selectedCategory === "all" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               All Articles
             </button>
             <button 
-              onClick={() => setActiveCategory("Behavior")}
+              onClick={() => setSelectedCategory("Behavior")}
               className={`px-4 py-2 rounded-full transition-colors ${
-                activeCategory === "Behavior" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                selectedCategory === "Behavior" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               Behavior
             </button>
             <button 
-              onClick={() => setActiveCategory("Training")}
+              onClick={() => setSelectedCategory("Training")}
               className={`px-4 py-2 rounded-full transition-colors ${
-                activeCategory === "Training" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                selectedCategory === "Training" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               Training
             </button>
             <button 
-              onClick={() => setActiveCategory("Puppies")}
+              onClick={() => setSelectedCategory("Puppies")}
               className={`px-4 py-2 rounded-full transition-colors ${
-                activeCategory === "Puppies" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                selectedCategory === "Puppies" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               Puppies
             </button>
             <button 
-              onClick={() => setActiveCategory("Breeds")}
+              onClick={() => setSelectedCategory("Breeds")}
               className={`px-4 py-2 rounded-full transition-colors ${
-                activeCategory === "Breeds" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                selectedCategory === "Breeds" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               Breeds
             </button>
             <button 
-              onClick={() => setActiveCategory("Health")}
+              onClick={() => setSelectedCategory("Health")}
               className={`px-4 py-2 rounded-full transition-colors ${
-                activeCategory === "Health" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                selectedCategory === "Health" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
               Health & Nutrition
@@ -275,7 +275,7 @@ export default function BlogPage() {
             <div className="text-center py-12 bg-white/50 backdrop-blur-sm rounded-xl">
               <p className="text-xl text-gray-500 mb-4">No articles found matching your criteria.</p>
               <button 
-                onClick={() => {setSearchQuery(""); setActiveCategory("All");}}
+                onClick={() => {setSearchTerm(""); setSelectedCategory("all");}}
                 className="px-6 py-3 bg-sky-600 text-white rounded-full hover:bg-sky-700 transition-colors"
               >
                 Reset Filters

@@ -208,18 +208,13 @@ export default function ClientAreaPage() {
                         placeholder="Confirm your password"
                       />
                     </div>
-                    <div className="flex items-center">
-                      <input 
-                        type="checkbox" 
-                        id="terms" 
-                        className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded" 
-                      />
-                      <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                        I agree to the{" "}
-                        <a href="#" className="text-sky-600 hover:text-sky-800">Terms of Service</a>
-                        {" "}and{" "}
-                        <a href="#" className="text-sky-600 hover:text-sky-800">Privacy Policy</a>
-                      </label>
+                    <div className="mt-4">
+                      <div className="flex items-center">
+                        <input type="checkbox" id="terms" className="h-4 w-4 text-sky-600" />
+                        <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
+                          I agree to the Terms of Service and Privacy Policy
+                        </label>
+                      </div>
                     </div>
                     <button 
                       type="submit" 

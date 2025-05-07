@@ -21,9 +21,6 @@ const galleryImages = [
   { src: "/images/dog-12.jpg", alt: "Dog image 12", width: 600, height: 400 },
 ];
 
-// Featured gallery images for hero section
-const featuredImages = galleryImages.slice(0, 5);
-
 export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -131,6 +128,7 @@ export default function GalleryPage() {
               <div 
                 key={image.src} 
                 className="rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105 group bg-white"
+                onClick={() => setSelectedImage(image.src)}
               >
                 <div className="relative h-64">
                   <Image
