@@ -42,6 +42,8 @@ export default function Home() {
     "/images/dog-08.jpg",
     "/images/dog-09.jpg",
     "/images/dog-10.jpg",
+    "/images/dog-11.jpg",
+    "/images/dog-12.jpg",
   ];
 
   return (
