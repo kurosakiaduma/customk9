@@ -80,7 +80,6 @@ export default function Home() {
         </nav>
 
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-black opacity-30 z-10"></div> {/* Reduced opacity to see more of the background image */}
           <div className="h-full w-full relative">
             {/* Image Carousel */}
             <Swiper
@@ -118,19 +117,19 @@ export default function Home() {
         
         <div className="container mx-auto px-6 md:px-12 relative z-20">
           <div className="max-w-3xl animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6 animate-slide-up">
+            <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6 animate-slide-up drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Educating Kenya on <span className="text-amber-300">Dog Welfare</span> and <span className="text-amber-300">Positive Training</span>
             </h1>
-            <p className="text-xl text-white/90 mb-8 animate-slide-up animation-delay-300">
+            <p className="text-xl text-white mb-8 animate-slide-up animation-delay-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Empowering owners with knowledge to build better relationships with their dogs through positive, humane methods.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-slide-up animation-delay-500">
               <Link href="#services" 
-                className="px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full transition-colors text-center">
+                className="px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full transition-colors text-center shadow-lg">
                 Explore Services
               </Link>
               <Link href="#contact" 
-                className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/30 font-semibold rounded-full transition-colors text-center">
+                className="px-8 py-4 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/50 font-semibold rounded-full transition-colors text-center shadow-lg">
                 Get in Touch
               </Link>
             </div>
