@@ -19,13 +19,6 @@ const testimonials = [
     name: "Sarah M.",
     location: "Nakuru",
     imageSrc: "/images/testimonial-sarah.jpg"
-  },
-  {
-    id: 1,
-    image: "/images/client1.jpg",
-    text: "The training from CustomK9 transformed our dog&apos;s behavior completely. Highly recommend!",
-    name: "Sarah Thompson",
-    role: "Owner of Max, Golden Retriever"
   }
 ];
 
