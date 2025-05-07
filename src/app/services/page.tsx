@@ -31,11 +31,25 @@ const detailedServices = [
     imageAlt: "Refresher obedience training"
   },
   {
-    title: "INTRO TO AGILITY",
+    title: "AGILITY & SPORTS",
     description: "A fun way to build confidence and bond with your dog through obstacle courses and agility exercises.",
-    href: "/services/intro-to-agility",
+    href: "/services/agility-sports",
     imageSrc: "/images/dog-03.jpg",
     imageAlt: "Dog agility training"
+  },
+  {
+    title: "BEHAVIOR MODIFICATION",
+    description: "Address challenging behaviors with personalized, science-based approaches that bring positive change.",
+    href: "/services/behavior-modification",
+    imageSrc: "/images/dog-07.jpg",
+    imageAlt: "Behavior modification training"
+  },
+  {
+    title: "PRIVATE TRAINING",
+    description: "Personalized one-on-one training sessions designed specifically for your dog's unique needs and learning style.",
+    href: "/services/private-training",
+    imageSrc: "/images/dog-05.jpg",
+    imageAlt: "Private dog training session"
   },
   {
     title: "SHOW HANDLING / RING CRAFT",
