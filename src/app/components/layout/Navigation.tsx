@@ -21,7 +21,7 @@ const mainNavLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
   { href: "/services", label: "Services" },
-  { href: "/booking", label: "Class Booking" },
+  { href: "/events/calendar", label: "Event Calendar" },
   { href: "/gallery", label: "Gallery" },
   { href: "/events", label: "Events" },
   { href: "/references", label: "References" },
