@@ -15,6 +15,7 @@ import 'swiper/css/pagination';
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   useEffect(() => {
     const handleScroll = () => {
@@ -49,37 +50,92 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
-      {/* Hero Section with Transparent Navigation */}
+      {/* Hero Section with Navigation */}
       <section className="relative h-[100vh] flex items-center overflow-hidden">
-        {/* Navigation - completely transparent in hero section, only becomes solid on scroll */}
-        <nav className={`fixed top-0 left-0 right-0 z-50 p-6 flex justify-between items-center transition-all duration-300 ${
-          isScrolled ? "bg-sky-600/90 backdrop-blur-sm shadow-lg" : "bg-transparent"
-        }`}>
-          <div className="text-2xl font-bold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
-            CustomK9 Kenya
+        {/* Navigation - blue background with white text */}
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0099ff] shadow-md">
+          <div className="container mx-auto">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex justify-center items-center">
+              <div className="flex justify-center py-3">
+                <Link href="/" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Home
+                </Link>
+                <Link href="#about" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  About Us
+                </Link>
+                <Link href="#services" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Services
+                </Link>
+                <Link href="#class-booking" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Class Booking
+                </Link>
+                <Link href="#gallery" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Gallery
+                </Link>
+                <Link href="#references" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  References
+                </Link>
+                <Link href="#blog" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Blog
+                </Link>
+                <Link href="#contacts" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Contacts
+                </Link>
+                <Link href="#client-area" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                  Client Area
+                </Link>
+              </div>
+            </div>
+            
+            {/* Mobile Navigation */}
+            <div className="md:hidden flex justify-between items-center py-3">
+              <div className="text-white font-bold text-xl">CustomK9 Kenya</div>
+              <button 
+                className="text-white focus:outline-none"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Mobile Menu */}
+            {mobileMenuOpen && (
+              <div className="md:hidden bg-[#0099ff] border-t border-sky-300">
+                <div className="flex flex-col py-2">
+                  <Link href="/" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Home
+                  </Link>
+                  <Link href="#about" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    About Us
+                  </Link>
+                  <Link href="#services" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Services
+                  </Link>
+                  <Link href="#class-booking" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Class Booking
+                  </Link>
+                  <Link href="#gallery" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Gallery
+                  </Link>
+                  <Link href="#references" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    References
+                  </Link>
+                  <Link href="#blog" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Blog
+                  </Link>
+                  <Link href="#contacts" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Contacts
+                  </Link>
+                  <Link href="#client-area" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Client Area
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="hidden md:flex space-x-8">
-            <Link href="#services" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
-              Services
-            </Link>
-            <Link href="#education" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
-              Education
-            </Link>
-            <Link href="#rehoming" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
-              Rehoming
-            </Link>
-            <Link href="#about" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
-              About
-            </Link>
-            <Link href="#contact" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
-              Contact
-            </Link>
-          </div>
-          <button className="md:hidden text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </nav>
 
         <div className="absolute inset-0 z-0">
