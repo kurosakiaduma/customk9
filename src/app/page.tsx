@@ -45,30 +45,30 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
       {/* Hero Section with Transparent Navigation */}
       <section className="relative h-[100vh] flex items-center overflow-hidden">
         {/* Navigation - completely transparent in hero section, only becomes solid on scroll */}
         <nav className={`fixed top-0 left-0 right-0 z-50 p-6 flex justify-between items-center transition-all duration-300 ${
-          isScrolled ? "bg-amber-800/90 backdrop-blur-sm shadow-lg" : "bg-transparent"
+          isScrolled ? "bg-sky-600/90 backdrop-blur-sm shadow-lg" : "bg-transparent"
         }`}>
           <div className="text-2xl font-bold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
             CustomK9 Kenya
           </div>
           <div className="hidden md:flex space-x-8">
-            <Link href="#services" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
+            <Link href="#services" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Services
             </Link>
-            <Link href="#education" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
+            <Link href="#education" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Education
             </Link>
-            <Link href="#rehoming" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
+            <Link href="#rehoming" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Rehoming
             </Link>
-            <Link href="#about" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
+            <Link href="#about" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               About
             </Link>
-            <Link href="#contact" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
+            <Link href="#contact" className="text-white hover:text-sky-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Contact
             </Link>
           </div>
@@ -118,14 +118,14 @@ export default function Home() {
         <div className="container mx-auto px-6 md:px-12 relative z-20">
           <div className="max-w-3xl animate-fade-in">
             <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6 animate-slide-up drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              Educating Kenya on <span className="text-amber-300">Dog Welfare</span> and <span className="text-amber-300">Positive Training</span>
+              Educating Kenya on <span className="text-sky-200">Dog Welfare</span> and <span className="text-sky-200">Positive Training</span>
             </h1>
             <p className="text-xl text-white mb-8 animate-slide-up animation-delay-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Empowering owners with knowledge to build better relationships with their dogs through positive, humane methods.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-slide-up animation-delay-500">
               <Link href="#services" 
-                className="px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full transition-colors text-center shadow-lg">
+                className="px-8 py-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-full transition-colors text-center shadow-lg">
                 Explore Services
               </Link>
               <Link href="#contact" 
@@ -140,30 +140,30 @@ export default function Home() {
       {/* Services Section */}
       <section id="services" className="py-20 bg-white">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-amber-800">Our Services</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-sky-700">Our Services</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-amber-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-sky-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
                 <span className="text-3xl">🔍</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-amber-800">Behavior Consultations</h3>
+              <h3 className="text-xl font-bold mb-3 text-sky-700">Behavior Consultations</h3>
               <p className="text-gray-600">One-on-one sessions to address specific behavior challenges and develop personalized training plans.</p>
             </div>
             
-            <div className="bg-amber-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-sky-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
                 <span className="text-3xl">👨‍🏫</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-amber-800">Training Classes</h3>
+              <h3 className="text-xl font-bold mb-3 text-sky-700">Training Classes</h3>
               <p className="text-gray-600">Group classes focusing on positive reinforcement techniques for dogs of all ages and skill levels.</p>
             </div>
             
-            <div className="bg-amber-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-sky-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
                 <span className="text-3xl">🏠</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-amber-800">Kennel Inspection</h3>
+              <h3 className="text-xl font-bold mb-3 text-sky-700">Kennel Inspection</h3>
               <p className="text-gray-600">Professional assessment of kennel facilities to ensure they meet welfare standards and provide recommendations.</p>
             </div>
           </div>
@@ -171,11 +171,11 @@ export default function Home() {
       </section>
 
       {/* Education Section */}
-      <section id="education" className="py-20 bg-amber-50">
+      <section id="education" className="py-20 bg-sky-50">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="md:w-1/2">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-amber-800">Education Makes the Difference</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-sky-700">Education Makes the Difference</h2>
               <p className="text-lg text-gray-700 mb-6">
                 Educating owners results in better communication, better training, and better behavior from their dogs.
                 By learning to read canine body language, owners can apply positive, humane methods to train their companions.
@@ -189,7 +189,7 @@ export default function Home() {
                   "Create a happier home for both of you"
                 ].map((item, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <span className="text-amber-600 mt-1">✓</span>
+                    <span className="text-sky-600 mt-1">✓</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -197,7 +197,7 @@ export default function Home() {
             </div>
             <div className="md:w-1/2 relative h-80 md:h-96 rounded-xl overflow-hidden">
               {/* Placeholder for education image */}
-              <div className="absolute inset-0 bg-amber-200 flex items-center justify-center">
+              <div className="absolute inset-0 bg-sky-200 flex items-center justify-center">
                 <span className="text-9xl opacity-20">🐕‍🦺</span>
               </div>
             </div>
@@ -208,16 +208,16 @@ export default function Home() {
       {/* Rehoming Section */}
       <section id="rehoming" className="py-20 bg-white">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-amber-800">Rehoming Services</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-sky-700">Rehoming Services</h2>
           <p className="text-lg text-gray-700 mb-12 max-w-3xl mx-auto">
             We don't breed or sell dogs. Instead, we actively encourage spay and neuter to prevent unwanted litters and offer rehoming services to keep more dogs from ending up at the KSPCA.
           </p>
           
-          <div className="bg-amber-50 p-8 rounded-xl max-w-3xl mx-auto">
+          <div className="bg-sky-50 p-8 rounded-xl max-w-3xl mx-auto">
             <h3 className="text-xl font-semibold mb-4">Looking for a New Best Friend?</h3>
             <p className="mb-6">Check out our current dogs looking for loving homes</p>
             <Link href="#rehoming-gallery" 
-              className="px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full transition-colors inline-block">
+              className="px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-full transition-colors inline-block">
               View Available Dogs
             </Link>
           </div>
@@ -225,7 +225,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-amber-800 text-white">
+      <section className="py-20 bg-sky-800 text-white">
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">What Dog Owners Say</h2>
           
@@ -247,13 +247,13 @@ export default function Home() {
                 location: "Nakuru"
               }
             ].map((testimonial, index) => (
-              <div key={index} className="bg-amber-700/50 p-8 rounded-xl">
+              <div key={index} className="bg-sky-700/50 p-8 rounded-xl">
                 <p className="italic mb-6">"{testimonial.text}"</p>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-amber-600 rounded-full"></div>
+                  <div className="w-12 h-12 bg-sky-600 rounded-full"></div>
                   <div>
                     <p className="font-bold">{testimonial.name}</p>
-                    <p className="text-amber-200">{testimonial.location}</p>
+                    <p className="text-sky-200">{testimonial.location}</p>
                   </div>
                 </div>
               </div>
@@ -265,8 +265,8 @@ export default function Home() {
       {/* Contact Section */}
       <section id="contact" className="py-20 bg-white">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto bg-amber-50 rounded-xl p-8 md:p-12 shadow-sm">
-            <h2 className="text-3xl font-bold mb-6 text-amber-800 text-center">Get in Touch</h2>
+          <div className="max-w-4xl mx-auto bg-sky-50 rounded-xl p-8 md:p-12 shadow-sm">
+            <h2 className="text-3xl font-bold mb-6 text-sky-700 text-center">Get in Touch</h2>
             <p className="text-center mb-8 text-gray-700">
               Need a service not covered here? Have questions about dog behavior or training?
               We're here to help!
@@ -276,19 +276,19 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-gray-700 mb-2" htmlFor="name">Name</label>
-                  <input type="text" id="name" className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="text" id="name" className="w-full px-4 py-3 border border-sky-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
                 </div>
                 <div>
                   <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
-                  <input type="email" id="email" className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="email" id="email" className="w-full px-4 py-3 border border-sky-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
                 </div>
               </div>
               <div>
                 <label className="block text-gray-700 mb-2" htmlFor="message">Message</label>
-                <textarea id="message" rows={4} className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                <textarea id="message" rows={4} className="w-full px-4 py-3 border border-sky-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
               </div>
               <div className="text-center">
-                <button type="submit" className="px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full transition-colors">
+                <button type="submit" className="px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-full transition-colors">
                   Send Message
                 </button>
               </div>
@@ -298,20 +298,20 @@ export default function Home() {
       </section>
 
       {/* About Section - Add this before the footer */}
-      <section id="about" className="py-20 bg-amber-50">
+      <section id="about" className="py-20 bg-sky-50">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-amber-800">About CustomK9 Kenya</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-sky-700">About CustomK9 Kenya</h2>
           
           <div className="flex flex-col md:flex-row gap-12 items-center">
             <div className="md:w-1/3 relative h-80 rounded-xl overflow-hidden shadow-lg">
               {/* Placeholder for profile image */}
-              <div className="absolute inset-0 bg-amber-700/20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-sky-700/20 flex items-center justify-center">
                 <span className="text-8xl opacity-20">👩‍🦱</span>
               </div>
             </div>
             
             <div className="md:w-2/3">
-              <h3 className="text-2xl font-bold mb-4 text-amber-800">Our Mission</h3>
+              <h3 className="text-2xl font-bold mb-4 text-sky-700">Our Mission</h3>
               <p className="text-lg text-gray-700 mb-6">
                 At CustomK9 Kenya, my mission is to provide education about dogs and their welfare to residents of Kenya through various channels including one-on-one consultations, classes, and publications.
               </p>
@@ -327,7 +327,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-amber-900 text-amber-200 py-12">
+      <footer className="bg-sky-900 text-sky-200 py-12">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -391,7 +391,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="border-t border-amber-800 mt-12 pt-8 text-center">
+          <div className="border-t border-sky-800 mt-12 pt-8 text-center">
             <p>&copy; {new Date().getFullYear()} CustomK9 Kenya. All rights reserved.</p>
           </div>
         </div>

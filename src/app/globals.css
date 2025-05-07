@@ -3,9 +3,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #d97706; /* Amber-600 */
-  --primary-light: #fef3c7; /* Amber-50 */
-  --primary-dark: #92400e; /* Amber-800 */
+  --primary: #0ea5e9; /* Sky-500 */
+  --primary-light: #f0f9ff; /* Sky-50 */
+  --primary-dark: #0369a1; /* Sky-700 */
 }
 
 @theme inline {
@@ -22,9 +22,9 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-    --primary: #f59e0b; /* Amber-500 */
-    --primary-light: #78350f; /* Amber-900 */
-    --primary-dark: #fbbf24; /* Amber-400 */
+    --primary: #38bdf8; /* Sky-400 */
+    --primary-light: #075985; /* Sky-800 */
+    --primary-dark: #7dd3fc; /* Sky-300 */
   }
 }
 
