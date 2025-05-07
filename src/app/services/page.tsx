@@ -2,9 +2,113 @@
 
 import { useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import ServicesSection from "../components/sections/ServicesSection";
+import ServiceCard from "../components/ui/ServiceCard";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
+
+// Service data for detailed cards
+const detailedServices = [
+  {
+    title: "PUPPY MANNERS AND SOCIALIZATION",
+    description: "Essential training for puppies 8-16 weeks old, focusing on socialization, basic commands, and preventing behavior problems.",
+    href: "/services/puppy-manners",
+    imageSrc: "/images/puppy-training.jpg",
+    imageAlt: "Puppy manners training session"
+  },
+  {
+    title: "BASIC OBEDIENCE",
+    description: "Learn fundamental commands and establish good behavior patterns for dogs of all ages.",
+    href: "/services/basic-obedience",
+    imageSrc: "/images/dog-01.jpg",
+    imageAlt: "Basic obedience training class"
+  },
+  {
+    title: "REFRESHER OBEDIENCE",
+    description: "For dogs who have had previous training but need a refresher to reinforce commands and behaviors.",
+    href: "/services/refresher-obedience",
+    imageSrc: "/images/dog-02.jpg", 
+    imageAlt: "Refresher obedience training"
+  },
+  {
+    title: "INTRO TO AGILITY",
+    description: "A fun way to build confidence and bond with your dog through obstacle courses and agility exercises.",
+    href: "/services/intro-to-agility",
+    imageSrc: "/images/dog-03.jpg",
+    imageAlt: "Dog agility training"
+  },
+  {
+    title: "SHOW HANDLING / RING CRAFT",
+    description: "Specialized training for show dogs and handlers to excel in the competition ring.",
+    href: "/services/show-handling",
+    imageSrc: "/images/dog-04.jpg",
+    imageAlt: "Dog show handling training"
+  },
+  {
+    title: "LOOSE LEASH WALKING",
+    description: "Focused training to eliminate pulling and make walks enjoyable for both you and your dog.",
+    href: "/services/loose-leash-walking",
+    imageSrc: "/images/dog-05.jpg",
+    imageAlt: "Loose leash walking training"
+  },
+  {
+    title: "BEGINNING TRACKING FOR FUN",
+    description: "Harness your dog's natural tracking abilities with fun scent-based exercises and games.",
+    href: "/services/beginning-tracking",
+    imageSrc: "/images/dog-06.jpg",
+    imageAlt: "Dog tracking training"
+  },
+  {
+    title: "CLICKER TRAINING",
+    description: "Precise positive reinforcement training using clickers to mark and reward desired behaviors.",
+    href: "/services/clicker-training",
+    imageSrc: "/images/dog-07.jpg",
+    imageAlt: "Clicker training with dog"
+  },
+  {
+    title: "SUPERVISED PLAYTIME",
+    description: "Structured socialization sessions where dogs can play and interact under professional supervision.",
+    href: "/services/supervised-playtime",
+    imageSrc: "/images/dog-08.jpg",
+    imageAlt: "Dogs in supervised playtime"
+  },
+  {
+    title: "DOG AND FAMILY TRAINING",
+    description: "Training sessions that involve the whole family to ensure consistent handling and command responses.",
+    href: "/services/dog-and-family-training",
+    imageSrc: "/images/dog-09.jpg", 
+    imageAlt: "Family dog training session"
+  },
+  {
+    title: "WELFARE",
+    description: "Professional assessment of kennels, shelters, and homes to ensure optimal care standards for dogs.",
+    href: "/services/welfare",
+    imageSrc: "/images/welfare.jpg",
+    imageAlt: "Dog welfare assessment"
+  },
+  {
+    title: "TRAP, NEUTER AND RELEASE (TNR)",
+    description: "Humane management of street dog populations through trap, neuter, and release programs.",
+    href: "/services/trap-neuter-release",
+    imageSrc: "/images/dog-10.jpg",
+    imageAlt: "Trap neuter release program"
+  },
+  {
+    title: "CRATE RENTAL",
+    description: "Quality crates available for rent for training, transport, or home use with your dog.",
+    href: "/services/crate-rental",
+    imageSrc: "/images/dog-11.jpg",
+    imageAlt: "Dog crates for rental"
+  },
+  {
+    title: "EDUCATION",
+    description: "Workshops, seminars, and educational materials on all aspects of dog care, training, and behavior.",
+    href: "/services/education",
+    imageSrc: "/images/education-dog.jpg",
+    imageAlt: "Dog education workshop"
+  }
+];
 
 export default function ServicesPage() {
   // Scroll to top on page load
@@ -53,9 +157,50 @@ export default function ServicesPage() {
         </div>
       </div>
       
+      {/* Main Service Categories */}
       <div id="services">
         <ServicesSection />
       </div>
+      
+      {/* Detailed Services Section */}
+      <section className="py-20 bg-gradient-to-b from-sky-50 to-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-sky-200/30 via-transparent to-transparent"></div>
+        <div className="container mx-auto px-6 relative z-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-sky-700">Our Training & Service Programs</h2>
+          <p className="text-xl text-center text-gray-700 mb-16 max-w-3xl mx-auto">
+            Browse our complete range of specialized dog training programs and services. Each program is tailored to meet specific needs and goals for you and your canine companion.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {detailedServices.map((service, index) => (
+              <Link key={index} href={service.href} className="block group">
+                <ServiceCard
+                  title={service.title}
+                  description={service.description}
+                  imageSrc={service.imageSrc}
+                  imageAlt={service.imageAlt}
+                />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* Call to Action Section */}
+      <section className="py-16 bg-sky-600 text-white">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Training?</h2>
+          <p className="text-xl mb-10 max-w-3xl mx-auto">
+            Enroll in one of our programs today and give your dog the skills they need to be a well-behaved and happy companion.
+          </p>
+          <Link 
+            href="/booking" 
+            className="inline-block px-8 py-4 bg-white text-sky-700 hover:bg-sky-50 text-lg font-semibold rounded-full transition-colors shadow-lg"
+          >
+            Book a Class Now
+          </Link>
+        </div>
+      </section>
       
       <Footer />
     </div>
