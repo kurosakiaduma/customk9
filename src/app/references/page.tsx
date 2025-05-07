@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
 import TestimonialsSection from "../components/sections/TestimonialsSection";
@@ -13,18 +14,59 @@ export default function ReferencesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
-      <div className="h-[30vh] bg-gradient-to-b from-sky-700 to-sky-500 relative">
+      {/* Custom Hero Section for References */}
+      <div className="relative h-[60vh] bg-sky-800 overflow-hidden">
         <Navigation />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">References</h1>
+        
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/dog-10.jpg"
+            alt="Happy dogs with owners"
+            fill
+            priority
+            sizes="100vw"
+            style={{ objectFit: 'cover' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-900/80 to-sky-600/50"></div>
+          
+          {/* Decorative Quote Marks */}
+          <div className="absolute top-[20%] left-[10%] text-[200px] text-white/10 font-serif leading-none">
+            "
+          </div>
+          <div className="absolute bottom-[20%] right-[10%] text-[200px] text-white/10 font-serif leading-none rotate-180">
+            "
+          </div>
+        </div>
+        
+        {/* Hero Content */}
+        <div className="container mx-auto px-6 h-full flex items-center relative z-10">
+          <div className="max-w-2xl mx-auto text-center animate-fade-in">
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6 drop-shadow-lg">
+              What Our Clients Say
+            </h1>
+            <p className="text-xl text-white/90 mb-8 drop-shadow-md max-w-xl mx-auto italic">
+              "We're proud to share the experiences of our clients and the professional organizations that endorse our work."
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <a href="#testimonials" className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md">
+                Read Testimonials
+              </a>
+              <a href="#professional-references" className="px-6 py-3 bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold rounded-full transition-colors shadow-md">
+                Professional References
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       
       {/* Client Testimonials Section */}
-      <TestimonialsSection />
+      <div id="testimonials">
+        <TestimonialsSection />
+      </div>
       
       {/* Professional References Section */}
-      <section className="py-16 bg-gradient-to-b from-sky-100 to-white">
+      <section id="professional-references" className="py-16 bg-gradient-to-b from-sky-100 to-white">
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-sky-700">Professional References</h2>
           

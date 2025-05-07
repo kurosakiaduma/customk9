@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
 
@@ -12,14 +13,46 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
-      <div className="h-[30vh] bg-gradient-to-b from-sky-700 to-sky-500 relative">
+      {/* Custom Hero Section for Booking */}
+      <div className="relative h-[60vh] bg-sky-700 overflow-hidden">
         <Navigation />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">Class Booking</h1>
+        
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/training-classes.jpg"
+            alt="Dog training class"
+            fill
+            priority
+            sizes="100vw"
+            style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-700/70 via-sky-600/60 to-sky-500/50"></div>
+        </div>
+        
+        {/* Hero Content */}
+        <div className="container mx-auto px-6 h-full flex items-center relative z-10">
+          <div className="max-w-2xl animate-fade-in">
+            <span className="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium mb-4">Enrollment Now Open</span>
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
+              Book Your Training Class
+            </h1>
+            <p className="text-xl text-white/90 mb-8 drop-shadow-md max-w-xl">
+              Register for our popular dog training classes and behavior consultations. Limited spots available each month.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <a href="#booking-form" className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md">
+                Reserve Your Spot
+              </a>
+              <a href="/services" className="px-6 py-3 bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold rounded-full transition-colors shadow-md">
+                View Services
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       
-      <section className="py-16">
+      <section id="booking-form" className="py-16">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto bg-white/70 backdrop-blur-md p-8 rounded-lg shadow-lg">
             <h2 className="text-2xl md:text-3xl font-bold mb-6 text-sky-700">Register for an Upcoming Class</h2>

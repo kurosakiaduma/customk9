@@ -21,6 +21,9 @@ const galleryImages = [
   { src: "/images/dog-12.jpg", alt: "Dog image 12", width: 600, height: 400 },
 ];
 
+// Featured gallery images for hero section
+const featuredImages = galleryImages.slice(0, 5);
+
 export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -31,14 +34,49 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
-      <div className="h-[30vh] bg-gradient-to-b from-sky-700 to-sky-500 relative">
+      {/* Custom Hero Section for Gallery */}
+      <div className="relative h-[70vh] bg-sky-900 overflow-hidden">
         <Navigation />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">Gallery</h1>
+        
+        {/* Gallery Hero Grid Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="grid grid-cols-5 h-full">
+            {featuredImages.map((image, index) => (
+              <div key={index} className="relative h-full overflow-hidden">
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  fill
+                  sizes="20vw"
+                  style={{ objectFit: 'cover' }}
+                  className="transition-transform duration-10000 hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-sky-900/50 hover:bg-sky-900/30 transition-colors duration-500"></div>
+              </div>
+            ))}
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-sky-900 via-sky-900/50 to-transparent"></div>
+        </div>
+        
+        {/* Hero Content */}
+        <div className="container mx-auto px-6 h-full flex items-center relative z-10">
+          <div className="max-w-2xl animate-fade-in pt-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
+              Our Photo Gallery
+            </h1>
+            <p className="text-xl text-white/90 mb-8 drop-shadow-md max-w-xl">
+              Explore our collection of happy dogs and their owners enjoying their training journey with CustomK9 Kenya.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <a href="#main-gallery" className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md">
+                Browse Gallery
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       
-      <section className="py-16">
+      <section id="main-gallery" className="py-16">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold mb-8 text-sky-700 text-center">Our Dogs in Action</h2>
