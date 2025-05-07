@@ -268,25 +268,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Rehoming Section */}
-      <section id="rehoming" className="py-20 bg-white">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-sky-700">Rehoming Services</h2>
-          <p className="text-lg text-gray-700 mb-12 max-w-3xl mx-auto">
-            We don't breed or sell dogs. Instead, we actively encourage spay and neuter to prevent unwanted litters and offer rehoming services to keep more dogs from ending up at the KSPCA.
-          </p>
-          
-          <div className="bg-sky-50 p-8 rounded-xl max-w-3xl mx-auto">
-            <h3 className="text-xl font-semibold mb-4">Looking for a New Best Friend?</h3>
-            <p className="mb-6">Check out our current dogs looking for loving homes</p>
-            <Link href="#rehoming-gallery" 
-              className="px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-full transition-colors inline-block">
-              View Available Dogs
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Testimonials */}
       <section className="py-20 bg-sky-800 text-white">
         <div className="container mx-auto px-6">
@@ -305,7 +286,7 @@ export default function Home() {
                 location: "Mombasa"
               },
               {
-                text: "The rehoming process was smooth and thorough. They really care about matching dogs with the right families.",
+                text: "The classes were excellent and well-structured. My puppy and I both learned so much in just a few weeks.",
                 name: "Sarah M.",
                 location: "Nakuru"
               }
@@ -360,7 +341,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Section - Add this before the footer */}
+      {/* About Section */}
       <section id="about" className="py-20 bg-sky-50">
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-sky-700">About CustomK9 Kenya</h2>
@@ -382,7 +363,7 @@ export default function Home() {
                 I believe that educating people leads to better communication with their dogs, resulting in better training and behavior. When owners can read their dog's body language effectively, they can use positive, humane methods to train their companions.
               </p>
               <p className="text-lg text-gray-700">
-                I do not breed or sell dogs, but instead actively work to prevent unwanted litters through education about spaying and neutering. My rehoming services aim to find loving homes for dogs in need, reducing the burden on animal shelters.
+                I actively promote responsible dog ownership through education about proper care, nutrition, and training to enhance the bond between dogs and their owners.
               </p>
             </div>
           </div>
