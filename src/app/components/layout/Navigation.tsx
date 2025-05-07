@@ -42,6 +42,7 @@ const mainNavLinks: NavLink[] = [
   },
   { href: "/booking", label: "Class Booking" },
   { href: "/gallery", label: "Gallery" },
+  { href: "/events", label: "Events" },
   { href: "/references", label: "References" },
   { href: "/blog", label: "Blog" },
   { href: "/client-area", label: "Client Area" },
