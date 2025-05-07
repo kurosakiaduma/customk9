@@ -52,47 +52,49 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
       {/* Hero Section with Navigation */}
       <section className="relative h-[100vh] flex items-center overflow-hidden">
-        {/* Navigation - blue background with white text */}
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0099ff] shadow-md">
+        {/* Navigation - transparent background with white text */}
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled ? "bg-[#0099ff] shadow-md" : "bg-transparent"
+        }`}>
           <div className="container mx-auto">
             {/* Desktop Navigation */}
             <div className="hidden md:flex justify-center items-center">
               <div className="flex justify-center py-3">
-                <Link href="/" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="/" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Home
                 </Link>
-                <Link href="#about" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#about" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   About Us
                 </Link>
-                <Link href="#services" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#services" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Services
                 </Link>
-                <Link href="#class-booking" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#class-booking" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Class Booking
                 </Link>
-                <Link href="#gallery" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#gallery" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Gallery
                 </Link>
-                <Link href="#references" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#references" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   References
                 </Link>
-                <Link href="#blog" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#blog" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Blog
                 </Link>
-                <Link href="#contacts" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#contacts" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Contacts
                 </Link>
-                <Link href="#client-area" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5">
+                <Link href="#client-area" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Client Area
                 </Link>
               </div>
             </div>
             
             {/* Mobile Navigation */}
-            <div className="md:hidden flex justify-between items-center py-3">
-              <div className="text-white font-bold text-xl">CustomK9 Kenya</div>
+            <div className="md:hidden flex justify-between items-center py-3 px-4">
+              <div className="text-white font-bold text-xl drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">CustomK9 Kenya</div>
               <button 
-                className="text-white focus:outline-none"
+                className="text-white focus:outline-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,7 +105,7 @@ export default function Home() {
             
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-              <div className="md:hidden bg-[#0099ff] border-t border-sky-300">
+              <div className="md:hidden bg-[#0099ff]/90 backdrop-blur-sm border-t border-sky-300">
                 <div className="flex flex-col py-2">
                   <Link href="/" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Home
