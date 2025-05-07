@@ -20,26 +20,7 @@ type NavSection = {
 const mainNavLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
-  { 
-    href: "/services", 
-    label: "Services",
-    dropdown: [
-      { href: "/services/puppy-manners", label: "PUPPY MANNERS AND SOCIALIZATION" },
-      { href: "/services/basic-obedience", label: "BASIC OBEDIENCE" },
-      { href: "/services/refresher-obedience", label: "REFRESHER OBEDIENCE" },
-      { href: "/services/intro-to-agility", label: "INTRO TO AGILITY" },
-      { href: "/services/show-handling", label: "SHOW HANDLING / RING CRAFT" },
-      { href: "/services/loose-leash-walking", label: "LOOSE LEASH WALKING" },
-      { href: "/services/beginning-tracking", label: "BEGINNING TRACKING FOR FUN" },
-      { href: "/services/clicker-training", label: "CLICKER TRAINING" },
-      { href: "/services/supervised-playtime", label: "SUPERVISED PLAYTIME" },
-      { href: "/services/dog-and-family-training", label: "DOG AND FAMILY TRAINING" },
-      { href: "/services/welfare", label: "WELFARE" },
-      { href: "/services/trap-neuter-release", label: "TRAP, NEUTER AND RELEASE (TNR)" },
-      { href: "/services/crate-rental", label: "CRATE RENTAL" },
-      { href: "/services/education", label: "EDUCATION" }
-    ]
-  },
+  { href: "/services", label: "Services" },
   { href: "/booking", label: "Class Booking" },
   { href: "/gallery", label: "Gallery" },
   { href: "/events", label: "Events" },
