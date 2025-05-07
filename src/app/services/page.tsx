@@ -149,15 +149,15 @@ export default function ServicesPage() {
               <a href="#services" className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md">
                 View All Services
               </a>
-              <a href="/booking" className="px-6 py-3 bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold rounded-full transition-colors shadow-md">
+              <a href="/client-area" className="px-6 py-3 bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold rounded-full transition-colors shadow-md">
                 Book a Session
               </a>
               <a 
-                href="/booking" 
+                href="/client-area" 
                 className="px-6 py-3 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center"
                 onClick={(e) => {
-                  // Force navigation to booking page
-                  window.location.href = "/booking";
+                  // Force navigation to client area page
+                  window.location.href = "/client-area";
                   e.preventDefault();
                 }}
               >
@@ -208,15 +208,15 @@ export default function ServicesPage() {
             Enroll in one of our programs today and give your dog the skills they need to be a well-behaved and happy companion.
           </p>
           <Link 
-            href="/booking" 
+            href="/client-area" 
             className="inline-block px-8 py-4 bg-white text-sky-700 hover:bg-sky-50 text-lg font-semibold rounded-full transition-colors shadow-lg"
             onClick={(e) => {
-              // Force navigation to booking page
-              window.location.href = "/booking";
+              // Force navigation to client area page
+              window.location.href = "/client-area";
               e.preventDefault();
             }}
           >
-            Book a Class Now
+            Client Login
           </Link>
         </div>
       </section>

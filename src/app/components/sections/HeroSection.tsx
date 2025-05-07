@@ -75,12 +75,12 @@ export default function HeroSection() {
               Explore Services
             </Link>
             <Link 
-              href="/booking" 
+              href="/client-area" 
               key="main-book-now-link"
               className="px-8 py-4 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center justify-center"
               onClick={(e) => {
-                // Force navigation to booking page
-                window.location.href = "/booking";
+                // Force navigation to client area page
+                window.location.href = "/client-area";
                 e.preventDefault();
               }}
             >
