@@ -144,3 +144,18 @@ body {
 .animation-delay-500 {
   animation-delay: 500ms;
 }
+
+/* Dropdown Menu Styles */
+.dropdown-menu {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.2s, opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(-10px);
+}
+
+.group:hover .dropdown-menu {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.1s;
+}

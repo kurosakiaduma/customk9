@@ -88,7 +88,8 @@ export default function Navigation() {
   }, []);
 
   // Function to handle dropdown toggle
-  const toggleDropdown = (label: string) => {
+  const toggleDropdown = (label: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (activeDropdown === label) {
       setActiveDropdown(null);
     } else {
@@ -98,7 +99,11 @@ export default function Navigation() {
 
   // Close dropdowns when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Skip if clicked element is a part of dropdown trigger
+      if ((e.target as Element).closest('.dropdown-trigger')) {
+        return;
+      }
       setActiveDropdown(null);
     };
 
@@ -139,11 +144,10 @@ export default function Navigation() {
                 {link.dropdown ? (
                   <>
                     <button 
-                      className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] flex items-center"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown(link.label);
-                      }}
+                      className="dropdown-trigger text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] flex items-center"
+                      onClick={(e) => toggleDropdown(link.label, e)}
+                      aria-expanded={activeDropdown === link.label}
+                      aria-haspopup="true"
                     >
                       {link.label}
                       <svg 
@@ -156,26 +160,26 @@ export default function Navigation() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
-                    {activeDropdown === link.label && (
-                      <div 
-                        className="absolute left-0 mt-1 w-64 bg-[#333]/90 backdrop-blur-md rounded-md shadow-lg py-2 z-20"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {link.dropdown.map((dropdownLink, dropdownIndex) => (
-                          <Link 
-                            key={dropdownIndex}
-                            href={dropdownLink.href}
-                            className="block px-4 py-2 text-sm text-white hover:bg-sky-600 transition-colors"
-                            onClick={() => {
-                              handleNavClick(dropdownLink.label);
-                              setActiveDropdown(null);
-                            }}
-                          >
-                            {dropdownLink.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                    <div 
+                      className={`absolute left-0 mt-1 w-64 bg-[#333]/90 backdrop-blur-md rounded-md shadow-lg py-2 z-20 
+                        dropdown-menu md:group-hover:delay-100
+                        ${activeDropdown === link.label ? '!opacity-100 !visible' : ''}
+                      `}
+                    >
+                      {link.dropdown.map((dropdownLink, dropdownIndex) => (
+                        <Link 
+                          key={dropdownIndex}
+                          href={dropdownLink.href}
+                          className="block px-4 py-2 text-sm text-white hover:bg-sky-600 transition-colors"
+                          onClick={() => {
+                            handleNavClick(dropdownLink.label);
+                            setActiveDropdown(null);
+                          }}
+                        >
+                          {dropdownLink.label}
+                        </Link>
+                      ))}
+                    </div>
                   </>
                 ) : (
                   <Link 
@@ -219,8 +223,9 @@ export default function Navigation() {
                   {link.dropdown ? (
                     <>
                       <button 
-                        className="w-full text-left text-white hover:bg-white/10 transition-colors py-3 px-4 font-semibold uppercase text-sm flex justify-between items-center"
-                        onClick={() => toggleDropdown(link.label)}
+                        className="w-full text-left text-white hover:bg-white/10 transition-colors py-3 px-4 font-semibold uppercase text-sm flex justify-between items-center dropdown-trigger"
+                        onClick={(e) => toggleDropdown(link.label, e)}
+                        aria-expanded={activeDropdown === link.label}
                       >
                         {link.label}
                         <svg 
