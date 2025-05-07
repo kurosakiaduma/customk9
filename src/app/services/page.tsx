@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import ServicesSection from "../components/sections/ServicesSection";
 import ServiceCard from "../components/ui/ServiceCard";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
@@ -79,13 +78,6 @@ const detailedServices = [
     href: "/services/dog-and-family-training",
     imageSrc: "/images/dog-09.jpg", 
     imageAlt: "Family dog training session"
-  },
-  {
-    title: "WELFARE",
-    description: "Professional assessment of kennels, shelters, and homes to ensure optimal care standards for dogs.",
-    href: "/services/welfare",
-    imageSrc: "/images/welfare.jpg",
-    imageAlt: "Dog welfare assessment"
   },
   {
     title: "TRAP, NEUTER AND RELEASE (TNR)",
@@ -171,13 +163,8 @@ export default function ServicesPage() {
         </div>
       </div>
       
-      {/* Main Service Categories */}
-      <div id="services">
-        <ServicesSection />
-      </div>
-      
       {/* Detailed Services Section */}
-      <section className="py-20 bg-gradient-to-b from-sky-50 to-white relative overflow-hidden">
+      <section id="services" className="py-20 bg-gradient-to-b from-sky-50 to-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-sky-200/30 via-transparent to-transparent"></div>
         <div className="container mx-auto px-6 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-sky-700">Our Training & Service Programs</h2>
@@ -200,24 +187,35 @@ export default function ServicesPage() {
         </div>
       </section>
       
-      {/* Call to Action Section */}
+      {/* Enhanced Call to Action Section */}
       <section className="py-16 bg-sky-600 text-white">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Training?</h2>
           <p className="text-xl mb-10 max-w-3xl mx-auto">
             Enroll in one of our programs today and give your dog the skills they need to be a well-behaved and happy companion.
           </p>
-          <Link 
-            href="/client-area" 
-            className="inline-block px-8 py-4 bg-white text-sky-700 hover:bg-sky-50 text-lg font-semibold rounded-full transition-colors shadow-lg"
-            onClick={(e) => {
-              // Force navigation to client area page
-              window.location.href = "/client-area";
-              e.preventDefault();
-            }}
-          >
-            Client Login
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/client-area" 
+              className="px-8 py-4 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center justify-center"
+              onClick={(e) => {
+                // Force navigation to client area page
+                window.location.href = "/client-area";
+                e.preventDefault();
+              }}
+            >
+              <span className="mr-2">Book Now</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </Link>
+            <Link 
+              href="/client-area" 
+              className="px-8 py-4 bg-white text-sky-700 hover:bg-sky-50 text-lg font-semibold rounded-full transition-colors shadow-lg"
+            >
+              Client Login
+            </Link>
+          </div>
         </div>
       </section>
       
