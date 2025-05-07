@@ -7,6 +7,7 @@ type ServiceCardProps = {
   icon?: ReactNode;
   imageSrc?: string;
   imageAlt?: string;
+  onBookNowClick?: () => void;
 };
 
 export default function ServiceCard({ 
@@ -14,7 +15,8 @@ export default function ServiceCard({
   description, 
   icon, 
   imageSrc, 
-  imageAlt 
+  imageAlt,
+  onBookNowClick
 }: ServiceCardProps) {
   if (imageSrc) {
     return (
@@ -34,7 +36,18 @@ export default function ServiceCard({
         {/* Content section below image */}
         <div className="p-6 bg-gradient-to-br from-sky-100/80 to-white/90 backdrop-blur-md">
           <h3 className="text-xl font-bold mb-3 text-sky-800 group-hover:text-sky-600 transition-colors">{title}</h3>
-          <p className="text-gray-700 leading-relaxed">{description}</p>
+          <p className="text-gray-700 leading-relaxed mb-4">{description}</p>
+          
+          {/* Book Now button */}
+          <button
+            onClick={onBookNowClick}
+            className="mt-2 px-4 py-2 bg-yellow-500 text-white hover:bg-yellow-400 font-semibold rounded-full transition-colors shadow-md transform hover:scale-105 flex items-center justify-center text-sm w-full"
+          >
+            <span>Book Now</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
       </div>
     );
@@ -49,7 +62,18 @@ export default function ServiceCard({
         </div>
       )}
       <h3 className="text-xl font-bold mb-3 text-sky-800 group-hover:text-sky-600 transition-colors">{title}</h3>
-      <p className="text-gray-700 leading-relaxed">{description}</p>
+      <p className="text-gray-700 leading-relaxed mb-4">{description}</p>
+      
+      {/* Book Now button */}
+      <button
+        onClick={onBookNowClick}
+        className="mt-4 px-4 py-2 bg-yellow-500 text-white hover:bg-yellow-400 font-semibold rounded-full transition-colors shadow-md transform hover:scale-105 flex items-center justify-center text-sm"
+      >
+        <span>Book Now</span>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
     </div>
   );
 } 

@@ -1,4 +1,5 @@
 import ServiceCard from "../ui/ServiceCard";
+import { useRouter } from "next/navigation";
 
 // This could be moved to a data file later
 const servicesData = [
@@ -26,6 +27,13 @@ const servicesData = [
 ];
 
 export default function ServicesSection() {
+  const router = useRouter();
+
+  const handleBookNow = () => {
+    // Redirect to client area/booking page
+    router.push("/client-area");
+  };
+
   return (
     <section id="services" className="py-20 bg-gradient-to-b from-white to-sky-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-200/30 via-transparent to-transparent"></div>
@@ -41,6 +49,7 @@ export default function ServicesSection() {
               icon={<span className="text-3xl">{service.icon}</span>}
               imageSrc={service.imageSrc}
               imageAlt={service.imageAlt}
+              onBookNowClick={handleBookNow}
             />
           ))}
         </div>
