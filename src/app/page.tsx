@@ -3,6 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+// Import Swiper and required modules
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+import 'swiper/css/pagination';
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -22,47 +30,49 @@ export default function Home() {
     };
   }, []);
 
+  // Array of dog images for the carousel
+  const dogImages = [
+    "/images/dog-01.jpg",
+    "/images/dog-02.jpg",
+    "/images/dog-03.jpg",
+    "/images/dog-04.jpg",
+    "/images/dog-05.jpg",
+    "/images/dog-06.jpg",
+    "/images/dog-07.jpg",
+    "/images/dog-08.jpg",
+    "/images/dog-09.jpg",
+    "/images/dog-10.jpg",
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 text-gray-800">
       {/* Hero Section with Transparent Navigation */}
       <section className="relative h-[100vh] flex items-center overflow-hidden">
-        {/* Navigation - now with scroll effect */}
+        {/* Navigation - completely transparent in hero section, only becomes solid on scroll */}
         <nav className={`fixed top-0 left-0 right-0 z-50 p-6 flex justify-between items-center transition-all duration-300 ${
           isScrolled ? "bg-amber-800/90 backdrop-blur-sm shadow-lg" : "bg-transparent"
         }`}>
-          <div className={`text-2xl font-bold transition-colors duration-300 ${
-            isScrolled ? "text-white" : "text-white drop-shadow-md"
-          }`}>
+          <div className="text-2xl font-bold text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
             CustomK9 Kenya
           </div>
           <div className="hidden md:flex space-x-8">
-            <Link href="#services" className={`transition-colors duration-300 ${
-              isScrolled ? "text-white hover:text-amber-300" : "text-white hover:text-amber-300 drop-shadow-md"
-            }`}>
+            <Link href="#services" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Services
             </Link>
-            <Link href="#education" className={`transition-colors duration-300 ${
-              isScrolled ? "text-white hover:text-amber-300" : "text-white hover:text-amber-300 drop-shadow-md"
-            }`}>
+            <Link href="#education" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Education
             </Link>
-            <Link href="#rehoming" className={`transition-colors duration-300 ${
-              isScrolled ? "text-white hover:text-amber-300" : "text-white hover:text-amber-300 drop-shadow-md"
-            }`}>
+            <Link href="#rehoming" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Rehoming
             </Link>
-            <Link href="#about" className={`transition-colors duration-300 ${
-              isScrolled ? "text-white hover:text-amber-300" : "text-white hover:text-amber-300 drop-shadow-md"
-            }`}>
+            <Link href="#about" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               About
             </Link>
-            <Link href="#contact" className={`transition-colors duration-300 ${
-              isScrolled ? "text-white hover:text-amber-300" : "text-white hover:text-amber-300 drop-shadow-md"
-            }`}>
+            <Link href="#contact" className="text-white hover:text-amber-300 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] font-semibold">
               Contact
             </Link>
           </div>
-          <button className="md:hidden text-white">
+          <button className="md:hidden text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -70,44 +80,51 @@ export default function Home() {
         </nav>
 
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-black opacity-50 z-10"></div> {/* Increased opacity for better text contrast */}
+          <div className="absolute inset-0 bg-black opacity-30 z-10"></div> {/* Reduced opacity to see more of the background image */}
           <div className="h-full w-full relative">
-            {/* Enhanced placeholder for hero image - can be replaced with an actual image */}
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-800 to-amber-600 opacity-30"></div>
-            <div className="absolute inset-0">
-              {/* This is where you would add an actual image with Next.js Image component */}
-              {/* Example:
-              <Image 
-                src="/images/hero-dog.jpg" 
-                alt="Professional dog trainer with happy dog"
-                layout="fill"
-                objectFit="cover"
-                priority
-              />
-              */}
-              {/* For now using a better placeholder */}
-              <div className="h-full w-full flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative w-full h-full">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white opacity-10 text-[20rem]">
-                      🐕
-                    </div>
+            {/* Image Carousel */}
+            <Swiper
+              spaceBetween={0}
+              centeredSlides={true}
+              effect={'fade'}
+              autoplay={{
+                delay: 5000,
+                disableOnInteraction: false,
+              }}
+              speed={1500}
+              pagination={{
+                clickable: true,
+              }}
+              modules={[Autoplay, EffectFade, Pagination]}
+              className="h-full w-full"
+            >
+              {dogImages.map((image, index) => (
+                <SwiperSlide key={index} className="h-full w-full">
+                  <div className="relative h-full w-full">
+                    <Image
+                      src={image}
+                      alt={`Beautiful dog image ${index + 1}`}
+                      fill
+                      priority={index === 0}
+                      style={{ objectFit: 'cover' }}
+                      className="transition-opacity duration-1000"
+                    />
                   </div>
-                </div>
-              </div>
-            </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         </div>
         
         <div className="container mx-auto px-6 md:px-12 relative z-20">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
+          <div className="max-w-3xl animate-fade-in">
+            <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6 animate-slide-up">
               Educating Kenya on <span className="text-amber-300">Dog Welfare</span> and <span className="text-amber-300">Positive Training</span>
             </h1>
-            <p className="text-xl text-white/90 mb-8">
+            <p className="text-xl text-white/90 mb-8 animate-slide-up animation-delay-300">
               Empowering owners with knowledge to build better relationships with their dogs through positive, humane methods.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 animate-slide-up animation-delay-500">
               <Link href="#services" 
                 className="px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full transition-colors text-center">
                 Explore Services
