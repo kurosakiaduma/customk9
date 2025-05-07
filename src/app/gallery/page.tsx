@@ -74,26 +74,6 @@ export default function GalleryPage() {
             </a>
           </div>
         </div>
-
-        {/* Decorative Elements - Small image thumbnails at the bottom */}
-        <div className="absolute bottom-4 right-4 left-4 z-10 overflow-hidden">
-          <div className="flex justify-between gap-2 max-w-6xl mx-auto">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <div 
-                key={num}
-                className="w-24 h-16 md:w-32 md:h-20 relative rounded-md overflow-hidden transition-transform hover:scale-105 hover:-translate-y-1 shadow-md"
-              >
-                <Image
-                  src={`/images/dog${num}.jpg`}
-                  alt={`Gallery thumbnail ${num}`}
-                  fill
-                  sizes="(max-width: 768px) 96px, 128px"
-                  style={{ objectFit: 'cover' }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
       
       {/* Main Gallery Content */}
@@ -164,7 +144,7 @@ export default function GalleryPage() {
                 <div className="p-4">
                   <p className="text-gray-700 font-medium">{image.alt}</p>
                   <span className="inline-block px-2 py-1 bg-sky-100 text-sky-700 text-xs rounded-full mt-2 capitalize">
-                    {activeFilter}
+                    {activeFilter === "all" ? "gallery" : activeFilter}
                   </span>
                 </div>
               </div>
