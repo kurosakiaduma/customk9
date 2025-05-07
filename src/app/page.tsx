@@ -81,9 +81,6 @@ export default function Home() {
                 <Link href="#blog" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Blog
                 </Link>
-                <Link href="#contacts" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
-                  Contacts
-                </Link>
                 <Link href="#client-area" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Client Area
                 </Link>
@@ -127,9 +124,6 @@ export default function Home() {
                   </Link>
                   <Link href="#blog" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Blog
-                  </Link>
-                  <Link href="#contacts" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
-                    Contacts
                   </Link>
                   <Link href="#client-area" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Client Area
@@ -190,10 +184,6 @@ export default function Home() {
               <Link href="#services" 
                 className="px-8 py-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-full transition-colors text-center shadow-lg">
                 Explore Services
-              </Link>
-              <Link href="#contact" 
-                className="px-8 py-4 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/50 font-semibold rounded-full transition-colors text-center shadow-lg">
-                Get in Touch
               </Link>
             </div>
           </div>
@@ -302,41 +292,6 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto bg-sky-50 rounded-xl p-8 md:p-12 shadow-sm">
-            <h2 className="text-3xl font-bold mb-6 text-sky-700 text-center">Get in Touch</h2>
-            <p className="text-center mb-8 text-gray-700">
-              Need a service not covered here? Have questions about dog behavior or training?
-              We're here to help!
-            </p>
-            
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-gray-700 mb-2" htmlFor="name">Name</label>
-                  <input type="text" id="name" className="w-full px-4 py-3 border border-sky-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
-                <div>
-                  <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
-                  <input type="email" id="email" className="w-full px-4 py-3 border border-sky-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-gray-700 mb-2" htmlFor="message">Message</label>
-                <textarea id="message" rows={4} className="w-full px-4 py-3 border border-sky-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
-              </div>
-              <div className="text-center">
-                <button type="submit" className="px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-full transition-colors">
-                  Send Message
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       </section>
