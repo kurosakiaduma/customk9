@@ -26,85 +26,163 @@ const featuredImages = galleryImages.slice(0, 5);
 
 export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState("all");
 
   // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  const filteredImages = activeFilter === "all" 
+    ? galleryImages 
+    : galleryImages.filter(img => img.alt.includes(activeFilter));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
       {/* Custom Hero Section for Gallery */}
-      <div className="relative h-[70vh] bg-sky-900 overflow-hidden">
+      <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
         
-        {/* Gallery Hero Grid Background */}
+        {/* Background Image without Overlay */}
         <div className="absolute inset-0 z-0">
-          <div className="grid grid-cols-5 h-full">
-            {featuredImages.map((image, index) => (
-              <div key={index} className="relative h-full overflow-hidden">
-                <Image
-                  src={image.src}
-                  alt={image.alt}
-                  fill
-                  sizes="20vw"
-                  style={{ objectFit: 'cover' }}
-                  className="transition-transform duration-10000 hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-sky-900/50 hover:bg-sky-900/30 transition-colors duration-500"></div>
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-sky-900 via-sky-900/50 to-transparent"></div>
+          <Image
+            src="/images/gallery-hero.jpg"
+            alt="Dog training gallery"
+            fill
+            priority
+            sizes="100vw"
+            style={{ objectFit: 'cover', objectPosition: 'center 40%' }}
+          />
+          {/* Light text shadow container for readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/15 to-transparent"></div>
         </div>
         
         {/* Hero Content */}
         <div className="container mx-auto px-6 h-full flex items-center relative z-10">
-          <div className="max-w-2xl animate-fade-in pt-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
-              Our Photo Gallery
+          <div className="max-w-2xl animate-fade-in">
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              Our Training Gallery
             </h1>
-            <p className="text-xl text-white/90 mb-8 drop-shadow-md max-w-xl">
-              Explore our collection of happy dogs and their owners enjoying their training journey with CustomK9 Kenya.
+            <p className="text-xl text-white mb-8 drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] max-w-xl">
+              Browse through photos and videos of our successful training programs, happy dogs, and proud owners.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <a href="#main-gallery" className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md">
-                Browse Gallery
-              </a>
-            </div>
+            <a 
+              href="#main-gallery" 
+              className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md"
+            >
+              Explore Gallery
+            </a>
+          </div>
+        </div>
+
+        {/* Decorative Elements - Small image thumbnails at the bottom */}
+        <div className="absolute bottom-4 right-4 left-4 z-10 overflow-hidden">
+          <div className="flex justify-between gap-2 max-w-6xl mx-auto">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <div 
+                key={num}
+                className="w-24 h-16 md:w-32 md:h-20 relative rounded-md overflow-hidden transition-transform hover:scale-105 hover:-translate-y-1 shadow-md"
+              >
+                <Image
+                  src={`/images/dog${num}.jpg`}
+                  alt={`Gallery thumbnail ${num}`}
+                  fill
+                  sizes="(max-width: 768px) 96px, 128px"
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
+            ))}
           </div>
         </div>
       </div>
       
+      {/* Main Gallery Content */}
       <section id="main-gallery" className="py-16">
         <div className="container mx-auto px-6">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8 text-sky-700 text-center">Our Dogs in Action</h2>
-            
-            {/* Masonry Gallery */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {galleryImages.map((image, index) => (
-                <div 
-                  key={index} 
-                  className={`relative ${
-                    index % 3 === 0 ? 'row-span-2' : ''
-                  } overflow-hidden rounded-xl cursor-pointer transform transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}
-                  onClick={() => setSelectedImage(image.src)}
-                >
-                  <div className="aspect-square relative">
-                    <Image
-                      src={image.src}
-                      alt={image.alt}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      style={{ objectFit: 'cover' }}
-                      className="transition-transform duration-500 hover:scale-110"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <h2 className="text-3xl font-bold text-sky-700 mb-8 text-center">Dog Training Photo Gallery</h2>
+          
+          {/* Gallery Filters */}
+          <div className="mb-8 flex flex-wrap justify-center gap-2">
+            <button 
+              onClick={() => setActiveFilter("all")}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                activeFilter === "all" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              All Photos
+            </button>
+            <button 
+              onClick={() => setActiveFilter("training")}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                activeFilter === "training" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              Training
+            </button>
+            <button 
+              onClick={() => setActiveFilter("classes")}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                activeFilter === "classes" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              Classes
+            </button>
+            <button 
+              onClick={() => setActiveFilter("puppies")}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                activeFilter === "puppies" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              Puppies
+            </button>
+            <button 
+              onClick={() => setActiveFilter("events")}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                activeFilter === "events" ? "bg-sky-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              Events
+            </button>
           </div>
+          
+          {/* Gallery Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredImages.map((image) => (
+              <div 
+                key={image.src} 
+                className="rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105 group bg-white"
+              >
+                <div className="relative h-64">
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
+                <div className="p-4">
+                  <p className="text-gray-700 font-medium">{image.alt}</p>
+                  <span className="inline-block px-2 py-1 bg-sky-100 text-sky-700 text-xs rounded-full mt-2 capitalize">
+                    {activeFilter}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Empty State */}
+          {filteredImages.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-500 mb-4">No images found for this category.</p>
+              <button 
+                onClick={() => setActiveFilter("all")}
+                className="px-6 py-2 bg-sky-600 text-white rounded-full hover:bg-sky-700 transition-colors"
+              >
+                View All Images
+              </button>
+            </div>
+          )}
         </div>
       </section>
       

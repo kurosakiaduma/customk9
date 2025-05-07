@@ -15,10 +15,10 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
       {/* Custom Hero Section for Services */}
-      <div className="relative h-[60vh] bg-sky-700 overflow-hidden">
+      <div className="relative h-[60vh] overflow-hidden">
         <Navigation />
         
-        {/* Background Image with Overlay */}
+        {/* Background Image without Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/images/behavior-consultation.jpg"
@@ -28,16 +28,17 @@ export default function ServicesPage() {
             sizes="100vw"
             style={{ objectFit: 'cover', objectPosition: 'center 40%' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-900/80 to-sky-700/40"></div>
+          {/* Text shadow container to ensure readability without overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent"></div>
         </div>
         
         {/* Hero Content */}
         <div className="container mx-auto px-6 h-full flex items-center relative z-10">
           <div className="max-w-2xl animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Professional Dog Services
             </h1>
-            <p className="text-xl text-white/90 mb-8 drop-shadow-md max-w-xl">
+            <p className="text-xl text-white mb-8 drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] max-w-xl">
               From behavior consultations to training classes and welfare assessments, we provide comprehensive services for you and your canine companion.
             </p>
             <div className="flex flex-wrap gap-4">

@@ -14,10 +14,10 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
       {/* Custom Hero Section for Booking */}
-      <div className="relative h-[60vh] bg-sky-700 overflow-hidden">
+      <div className="relative h-[60vh] overflow-hidden">
         <Navigation />
         
-        {/* Background Image with Overlay */}
+        {/* Background Image without Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/images/training-classes.jpg"
@@ -27,17 +27,18 @@ export default function BookingPage() {
             sizes="100vw"
             style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-700/70 via-sky-600/60 to-sky-500/50"></div>
+          {/* Light text shadow container for readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/15 to-transparent"></div>
         </div>
         
         {/* Hero Content */}
         <div className="container mx-auto px-6 h-full flex items-center relative z-10">
           <div className="max-w-2xl animate-fade-in">
-            <span className="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium mb-4">Enrollment Now Open</span>
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
+            <span className="inline-block px-4 py-1 bg-sky-500/80 backdrop-blur-sm text-white rounded-full text-sm font-medium mb-4 shadow-md">Enrollment Now Open</span>
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               Book Your Training Class
             </h1>
-            <p className="text-xl text-white/90 mb-8 drop-shadow-md max-w-xl">
+            <p className="text-xl text-white mb-8 drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] max-w-xl">
               Register for our popular dog training classes and behavior consultations. Limited spots available each month.
             </p>
             <div className="flex flex-wrap gap-4">
