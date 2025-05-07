@@ -7,6 +7,7 @@ import { Metadata } from 'next';
 import Navigation from '../components/layout/Navigation';
 import Footer from '../components/layout/Footer';
 import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { getUpcomingEvents, getFeaturedEvents } from '../data/eventsData';
 
 // This would typically be fetched from an API or CMS
 const eventsData = [
@@ -85,89 +86,113 @@ const eventsData = [
 ];
 
 export default function EventsPage() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [filteredEvents, setFilteredEvents] = useState(eventsData);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Get all unique categories
-  const categories = ['All', ...new Set(eventsData.map(event => event.category))];
-  
-  // Featured events for the carousel
-  const featuredEvents = eventsData.filter(event => event.featured);
-
-  // Handle filtering
-  useEffect(() => {
-    let filtered = eventsData;
-    
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(event => event.category === selectedCategory);
-    }
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(event => 
-        event.title.toLowerCase().includes(query) || 
-        event.description.toLowerCase().includes(query) ||
-        event.location.toLowerCase().includes(query)
-      );
-    }
-    
-    setFilteredEvents(filtered);
-  }, [selectedCategory, searchQuery]);
+  const featuredEvents = getFeaturedEvents();
+  const upcomingEvents = getUpcomingEvents();
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-[60vh] flex items-center">
+      <section className="relative h-[50vh] md:h-[60vh] flex items-center">
         <div className="absolute inset-0 z-0">
           <Image 
-            src="/images/events/hero-image.jpg" 
-            alt="Dogs at an event gathering"
+            src="/images/hero-events.jpg" 
+            alt="Dog events and workshops" 
             fill
             className="object-cover"
             priority
           />
+          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
         </div>
         
-        <div className="relative z-10 container mx-auto px-4 text-white text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
-            Upcoming Dog Events
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
+            Events & Workshops
           </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
-            Join our community for competitions, workshops, adoption days, and more events for dog lovers across Kenya
+          <p className="text-xl text-white max-w-3xl mx-auto mb-8">
+            Join our community events, workshops, and competitions designed for dogs and their owners.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="#featured-events" 
-              className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-md transition-colors shadow-lg"
-            >
-              View Featured Events
-            </Link>
-            <Link 
-              href="#all-events" 
-              className="bg-white text-sky-600 hover:bg-gray-100 font-semibold py-3 px-6 rounded-md transition-colors shadow-lg"
-            >
-              Browse All Events
-            </Link>
-          </div>
         </div>
       </section>
       
-      {/* Featured Events Section */}
-      <section id="featured-events" className="py-16 bg-white">
+      {/* Featured Events */}
+      {featuredEvents.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-gray-800 mb-10 text-center">Featured Events</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {featuredEvents.map((event) => (
+                <div key={event.id} className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-[1.02] duration-300">
+                  <div className="relative h-64">
+                    <Image 
+                      src={event.image} 
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute top-4 left-4 bg-sky-600 text-white text-sm font-semibold py-1 px-3 rounded-full">
+                      {event.category}
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-3">{event.title}</h3>
+                    
+                    <div className="flex flex-wrap gap-4 mb-4">
+                      <div className="flex items-center text-gray-600">
+                        <CalendarIcon className="h-5 w-5 mr-2 text-sky-600" />
+                        <span>{event.date}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-gray-600">
+                        <ClockIcon className="h-5 w-5 mr-2 text-sky-600" />
+                        <span>{event.time.split(' - ')[0]}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-gray-600">
+                        <MapPinIcon className="h-5 w-5 mr-2 text-sky-600" />
+                        <span>{event.location}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-600 mb-6">
+                      {event.description.substring(0, 150)}...
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-gray-600">
+                        <UserGroupIcon className="h-5 w-5 mr-2 text-sky-600" />
+                        <span>{event.attending} attending</span>
+                      </div>
+                      
+                      <Link 
+                        href={`/events/${event.id}`}
+                        className="inline-flex items-center justify-center bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+      
+      {/* All Upcoming Events */}
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-2 text-gray-800">Featured Events</h2>
-          <div className="w-20 h-1 bg-sky-500 mb-10"></div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-10 text-center">Upcoming Events</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredEvents.map(event => (
-              <div 
+            {upcomingEvents.map((event) => (
+              <Link 
                 key={event.id} 
-                className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl"
+                href={`/events/${event.id}`}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="relative h-48">
                   <Image 
@@ -176,204 +201,53 @@ export default function EventsPage() {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute top-0 right-0 bg-sky-600 text-white text-sm font-semibold py-1 px-3 rounded-bl-lg">
+                  <div className="absolute top-3 left-3 bg-sky-600 text-white text-xs font-semibold py-1 px-2 rounded-full">
                     {event.category}
                   </div>
                 </div>
                 
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800">{event.title}</h3>
-                  <div className="flex items-center mb-2 text-gray-600">
-                    <CalendarIcon className="h-5 w-5 mr-2" />
-                    <span>{event.date}</span>
-                  </div>
-                  <div className="flex items-center mb-2 text-gray-600">
-                    <ClockIcon className="h-5 w-5 mr-2" />
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center mb-4 text-gray-600">
-                    <MapPinIcon className="h-5 w-5 mr-2" />
-                    <span>{event.location}</span>
+                <div className="p-5">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">{event.title}</h3>
+                  
+                  <div className="flex items-center text-gray-600 mb-1">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-sky-600" />
+                    <span className="text-sm">{event.date}</span>
                   </div>
                   
-                  <p className="text-gray-600 mb-4 line-clamp-3">{event.description}</p>
+                  <div className="flex items-center text-gray-600 mb-1">
+                    <MapPinIcon className="h-4 w-4 mr-2 text-sky-600" />
+                    <span className="text-sm">{event.location}</span>
+                  </div>
                   
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center text-sky-600">
-                      <UserGroupIcon className="h-5 w-5 mr-1" />
-                      <span className="text-sm font-semibold">{event.attending} attending</span>
+                  <div className="mt-4 flex justify-between items-center">
+                    <div className="flex items-center text-gray-600">
+                      <UserGroupIcon className="h-4 w-4 mr-1 text-sky-600" />
+                      <span className="text-xs">{event.attending} attending</span>
                     </div>
-                    <Link 
-                      href={`/events/${event.id}`} 
-                      className="text-sky-600 hover:text-sky-800 font-semibold"
-                    >
-                      View Details →
-                    </Link>
+                    
+                    <span className="text-sky-600 text-sm font-medium">View Details →</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
       
-      {/* All Events Section with Filtering */}
-      <section id="all-events" className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-2 text-gray-800">All Events</h2>
-          <div className="w-20 h-1 bg-sky-500 mb-10"></div>
-          
-          {/* Search and Filters */}
-          <div className="mb-10 flex flex-col md:flex-row gap-6">
-            <div className="md:w-1/3">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search events..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <svg
-                  className="absolute right-3 top-3 h-6 w-6 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  className={`py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-sky-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* Events Grid */}
-          {filteredEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredEvents.map(event => (
-                <div 
-                  key={event.id} 
-                  className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="relative h-48">
-                    <Image 
-                      src={event.image} 
-                      alt={event.title}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute top-0 right-0 bg-sky-600 text-white text-sm font-semibold py-1 px-3 rounded-bl-lg">
-                      {event.category}
-                    </div>
-                  </div>
-                  
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2 text-gray-800">{event.title}</h3>
-                    <div className="flex items-center mb-2 text-gray-600">
-                      <CalendarIcon className="h-5 w-5 mr-2" />
-                      <span>{event.date}</span>
-                    </div>
-                    <div className="flex items-center mb-2 text-gray-600">
-                      <ClockIcon className="h-5 w-5 mr-2" />
-                      <span>{event.time}</span>
-                    </div>
-                    <div className="flex items-center mb-4 text-gray-600">
-                      <MapPinIcon className="h-5 w-5 mr-2" />
-                      <span>{event.location}</span>
-                    </div>
-                    
-                    <p className="text-gray-600 mb-4 line-clamp-3">{event.description}</p>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center text-sky-600">
-                        <UserGroupIcon className="h-5 w-5 mr-1" />
-                        <span className="text-sm font-semibold">{event.attending} attending</span>
-                      </div>
-                      <Link 
-                        href={`/events/${event.id}`} 
-                        className="text-sky-600 hover:text-sky-800 font-semibold"
-                      >
-                        View Details →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-gray-600 text-xl mb-4">No events found matching your criteria</p>
-              <button
-                className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-6 rounded-md transition-colors"
-                onClick={() => {
-                  setSelectedCategory('All');
-                  setSearchQuery('');
-                }}
-              >
-                Reset Filters
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-      
-      {/* Call-to-Action Section */}
-      <section className="py-16 bg-sky-600 text-white text-center">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4">Host Your Own Dog Event</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Do you have a dog-related event you'd like to organize? We can help you plan, promote, and host your event with our expertise.
+      {/* Call to Action */}
+      <section className="py-16 bg-sky-700 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-6">Want to Host a Dog Event?</h2>
+          <p className="text-xl mb-8 max-w-3xl mx-auto">
+            CustomK9 provides venue and professional support for dog-related events. 
+            Contact us to discuss your event needs.
           </p>
-          <Link
-            href="/contact" 
-            className="bg-white text-sky-600 hover:bg-gray-100 font-semibold py-3 px-8 rounded-md transition-colors shadow-lg inline-block"
+          <Link 
+            href="/contact"
+            className="inline-flex items-center justify-center bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-3 px-6 rounded-md transition-colors"
           >
-            Contact Us to Get Started
+            Get in Touch
           </Link>
-        </div>
-      </section>
-      
-      {/* Upcoming Calendar Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-2 text-gray-800">Events Calendar</h2>
-          <div className="w-20 h-1 bg-sky-500 mb-10"></div>
-          
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <p className="text-center text-gray-600 mb-8">
-              View our upcoming events at a glance and plan your schedule accordingly.
-            </p>
-            
-            <div className="flex justify-center">
-              <Link
-                href="/events/calendar" 
-                className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-8 rounded-md transition-colors"
-              >
-                View Full Calendar
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
       

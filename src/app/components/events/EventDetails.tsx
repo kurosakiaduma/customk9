@@ -1,57 +1,38 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import Navigation from '../../components/layout/Navigation';
-import Footer from '../../components/layout/Footer';
-import EventDetails from '../../components/events/EventDetails';
-import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon, ShareIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { getEventById } from '../../data/eventsData';
-
-// Define types for page params
-interface EventPageParams {
-  params: {
-    id: string;
-  };
-}
-
-export default function EventPage({ params }: EventPageParams) {
-  // Convert the id param to a number
-  const eventId = parseInt(params.id, 10);
-  
-  // Get the event by ID
-  const event = getEventById(eventId);
-  
-  // If the event doesn't exist, return not found page
-  if (!event) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="text-center p-8 max-w-md">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Event Not Found</h1>
-          <p className="text-gray-600 mb-6">
-            The event you're looking for doesn't exist or may have been removed.
-          </p>
-          <a 
-            href="/events"
-            className="inline-block bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
-          >
-            Return to Events
-          </a>
-        </div>
-      </div>
-    );
-  }
-  
-  // Render the event details using the EventDetails component
-  return <EventDetails event={event} />;
-}
-
-// Create a separate client component in the same file for now
-// In production, this should be moved to a separate file in the components directory
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import Navigation from '../../components/layout/Navigation';
+import Footer from '../../components/layout/Footer';
+import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon, ShareIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
-function EventDetails({ event }: { event: any }) { // Use proper type instead of 'any' in production
+// Define proper types for our event object
+interface ScheduleItem {
+  time: string;
+  activity: string;
+}
+
+interface Event {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  image: string;
+  description: string;
+  category: string;
+  attending: number;
+  featured: boolean;
+  organizer?: string;
+  price?: string;
+  contact?: string;
+  website?: string;
+  schedule?: ScheduleItem[];
+}
+
+// Create the EventDetails component
+export default function EventDetails({ event }: { event: Event }) {
   const [isRegistered, setIsRegistered] = useState(false);
   
   const handleRegister = () => {
@@ -260,48 +241,6 @@ function EventDetails({ event }: { event: any }) { // Use proper type instead of
                 </address>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Similar Events Section */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 text-gray-800">Similar Events You Might Like</h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {eventsData
-              .filter(e => e.id !== event.id && e.category === event.category)
-              .slice(0, 3)
-              .map(similarEvent => (
-                <div 
-                  key={similarEvent.id} 
-                  className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div className="relative h-40">
-                    <Image 
-                      src={similarEvent.image} 
-                      alt={similarEvent.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="text-lg font-bold mb-2 text-gray-800">{similarEvent.title}</h3>
-                    <div className="flex items-center mb-2 text-gray-600 text-sm">
-                      <CalendarIcon className="h-4 w-4 mr-1" />
-                      <span>{similarEvent.date}</span>
-                    </div>
-                    <Link 
-                      href={`/events/${similarEvent.id}`} 
-                      className="text-sky-600 hover:text-sky-800 font-medium text-sm"
-                    >
-                      View Details →
-                    </Link>
-                  </div>
-                </div>
-              ))}
           </div>
         </div>
       </section>
