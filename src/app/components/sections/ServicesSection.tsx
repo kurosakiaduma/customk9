@@ -12,7 +12,9 @@ const servicesData = [
   {
     title: "Training Classes",
     description: "Group classes focusing on positive reinforcement techniques for dogs of all ages and skill levels.",
-    icon: "👨‍🏫"
+    icon: "👨‍🏫",
+    imageSrc: "/images/training-classes.jpg",
+    imageAlt: "Dog training classes"
   },
   {
     title: "Kennel Inspection",
