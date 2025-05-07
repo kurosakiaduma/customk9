@@ -51,6 +51,14 @@ export default function BookingPage() {
               <a 
                 href="#booking-form" 
                 className="px-6 py-3 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Scroll to booking form
+                  const bookingFormElement = document.getElementById('booking-form');
+                  if (bookingFormElement) {
+                    bookingFormElement.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
               >
                 <span className="mr-2">Book Now</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

@@ -76,7 +76,13 @@ export default function HeroSection() {
             </Link>
             <Link 
               href="/booking" 
+              key="main-book-now-link"
               className="px-8 py-4 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center justify-center"
+              onClick={(e) => {
+                // Force navigation to booking page
+                window.location.href = "/booking";
+                e.preventDefault();
+              }}
             >
               <span className="mr-2">Book Now</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
