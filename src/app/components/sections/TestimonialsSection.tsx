@@ -3,7 +3,7 @@ import Image from "next/image";
 // This could be moved to a data file later
 const testimonials = [
   {
-    text: "The training methods I learned completely transformed my relationship with my dog. He's so much calmer and happier now.",
+    text: "The training methods I learned completely transformed my relationship with my dog. He&apos;s so much calmer and happier now.",
     name: "Maria K.",
     location: "Nairobi",
     imageSrc: "/images/testimonial-maria.jpg"
@@ -19,6 +19,13 @@ const testimonials = [
     name: "Sarah M.",
     location: "Nakuru",
     imageSrc: "/images/testimonial-sarah.jpg"
+  },
+  {
+    id: 1,
+    image: "/images/client1.jpg",
+    text: "The training from CustomK9 transformed our dog&apos;s behavior completely. Highly recommend!",
+    name: "Sarah Thompson",
+    role: "Owner of Max, Golden Retriever"
   }
 ];
 
@@ -44,7 +51,7 @@ export default function TestimonialsSection() {
                 </div>
               )}
               <div className="p-8">
-                <p className="italic mb-6 text-sky-50">"{testimonial.text}"</p>
+                <p className="italic mb-6 text-sky-50">&ldquo;{testimonial.text}&rdquo;</p>
                 <div className="flex items-center gap-4">
                   {!testimonial.imageSrc && (
                     <div className="w-12 h-12 bg-sky-600 rounded-full flex items-center justify-center">

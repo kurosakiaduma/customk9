@@ -1,0 +1,5 @@
+# Ignore test and development files
+.eslintrc.local.json
+.vscode
+*.test.*
+**/__tests__ 
