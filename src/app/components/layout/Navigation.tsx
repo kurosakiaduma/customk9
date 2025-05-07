@@ -18,6 +18,7 @@ type NavSection = {
 // Navigation data structure - could be moved to a separate file
 const mainNavLinks: NavLink[] = [
   { href: "/", label: "Home" },
+  { href: "/about", label: "About Us" },
   { href: "/services", label: "Services" },
   { href: "/booking", label: "Class Booking" },
   { href: "/gallery", label: "Gallery" },
