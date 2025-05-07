@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectFade, Navigation as SwiperNavigation, Pagination } from 'swiper/modules';
-import Navbar from "../layout/Navigation";
 
 // This could be moved to a data file later
 const dogImages = [
@@ -23,8 +22,6 @@ const dogImages = [
 export default function HeroSection() {
   return (
     <section className="relative h-[100vh] flex items-center overflow-hidden">
-      <Navbar />
-      
       <div className="absolute inset-0 z-0">
         <div className="h-full w-full relative">
           {/* Image Carousel */}
