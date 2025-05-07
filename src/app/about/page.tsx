@@ -40,12 +40,29 @@ export default function AboutPage() {
             <p className="text-xl text-white mb-8 drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] max-w-xl">
               Meet Amy, the passionate force behind CustomK9 Kenya, bringing decades of animal experience to dog training and education.
             </p>
+            <div className="flex flex-wrap gap-4">
+              <a 
+                href="#amys-profile" 
+                className="px-6 py-3 bg-white text-sky-700 hover:bg-sky-50 font-semibold rounded-full transition-colors shadow-md"
+              >
+                Learn More
+              </a>
+              <a 
+                href="/booking" 
+                className="px-6 py-3 bg-yellow-500 text-white hover:bg-yellow-400 font-bold rounded-full transition-colors shadow-xl animate-pulse hover:animate-none transform hover:scale-105 flex items-center"
+              >
+                <span className="mr-2">Book Now</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
       
       {/* Amy's Profile Section */}
-      <section className="py-16">
+      <section id="amys-profile" className="py-16">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-sky-700 mb-8 text-center">Amy's Profile</h2>
