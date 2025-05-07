@@ -17,9 +17,11 @@ const servicesData = [
     imageAlt: "Dog training classes"
   },
   {
-    title: "Kennel Inspection",
-    description: "Professional assessment of kennel facilities to ensure they meet welfare standards and provide recommendations.",
-    icon: "🏠"
+    title: "Welfare",
+    description: "Professional assessment of animal welfare conditions and recommendations to ensure optimal care standards.",
+    icon: "🏠",
+    imageSrc: "/images/welfare.jpg",
+    imageAlt: "Dog welfare assessment"
   }
 ];
 
