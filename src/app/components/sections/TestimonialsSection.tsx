@@ -1,9 +1,12 @@
+import Image from "next/image";
+
 // This could be moved to a data file later
 const testimonials = [
   {
     text: "The training methods I learned completely transformed my relationship with my dog. He's so much calmer and happier now.",
     name: "Maria K.",
-    location: "Nairobi"
+    location: "Nairobi",
+    imageSrc: "/images/testimonial-maria.jpg"
   },
   {
     text: "I never understood why my dog was behaving the way she did until our consultation. The insights were invaluable.",
@@ -25,13 +28,31 @@ export default function TestimonialsSection() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-sky-700/50 p-8 rounded-xl">
-              <p className="italic mb-6">"{testimonial.text}"</p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-sky-600 rounded-full"></div>
-                <div>
-                  <p className="font-bold">{testimonial.name}</p>
-                  <p className="text-sky-200">{testimonial.location}</p>
+            <div key={index} className="bg-sky-700/50 backdrop-blur-sm p-0 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-5px] group">
+              {testimonial.imageSrc && (
+                <div className="w-full h-48 relative">
+                  <Image 
+                    src={testimonial.imageSrc}
+                    alt={`${testimonial.name} testimonial`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    style={{ objectFit: 'cover' }}
+                    className="transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+              )}
+              <div className="p-8">
+                <p className="italic mb-6 text-sky-50">"{testimonial.text}"</p>
+                <div className="flex items-center gap-4">
+                  {!testimonial.imageSrc && (
+                    <div className="w-12 h-12 bg-sky-600 rounded-full flex items-center justify-center">
+                      <span className="text-xl font-bold text-white">{testimonial.name.charAt(0)}</span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-bold">{testimonial.name}</p>
+                    <p className="text-sky-200">{testimonial.location}</p>
+                  </div>
                 </div>
               </div>
             </div>
