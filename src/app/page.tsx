@@ -52,36 +52,33 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
       {/* Hero Section with Navigation */}
       <section className="relative h-[100vh] flex items-center overflow-hidden">
-        {/* Navigation - transparent background with white text */}
+        {/* Navigation - transparent background with white text, glassomorphic when scrolled */}
         <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-[#0099ff] shadow-md" : "bg-transparent"
+          isScrolled ? "bg-[#0099ff]/60 backdrop-blur-md shadow-lg border-b border-white/10" : "bg-transparent"
         }`}>
           <div className="container mx-auto">
             {/* Desktop Navigation */}
             <div className="hidden md:flex justify-center items-center">
               <div className="flex justify-center py-3">
-                <Link href="/" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="/" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Home
                 </Link>
-                <Link href="#about" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
-                  About Us
-                </Link>
-                <Link href="#services" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="#services" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Services
                 </Link>
-                <Link href="#class-booking" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="#class-booking" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Class Booking
                 </Link>
-                <Link href="#gallery" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="#gallery" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Gallery
                 </Link>
-                <Link href="#references" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="#references" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   References
                 </Link>
-                <Link href="#blog" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="#blog" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Blog
                 </Link>
-                <Link href="#client-area" className="text-white hover:text-sky-100 font-semibold uppercase text-sm px-5 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+                <Link href="#client-area" className="text-white hover:text-white hover:bg-white/10 transition-colors rounded-md font-semibold uppercase text-sm px-5 py-2 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
                   Client Area
                 </Link>
               </div>
@@ -102,30 +99,27 @@ export default function Home() {
             
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-              <div className="md:hidden bg-[#0099ff]/90 backdrop-blur-sm border-t border-sky-300">
+              <div className="md:hidden bg-[#0099ff]/60 backdrop-blur-md border-t border-white/10 shadow-lg">
                 <div className="flex flex-col py-2">
-                  <Link href="/" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Home
                   </Link>
-                  <Link href="#about" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
-                    About Us
-                  </Link>
-                  <Link href="#services" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="#services" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Services
                   </Link>
-                  <Link href="#class-booking" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="#class-booking" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Class Booking
                   </Link>
-                  <Link href="#gallery" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="#gallery" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Gallery
                   </Link>
-                  <Link href="#references" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="#references" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     References
                   </Link>
-                  <Link href="#blog" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="#blog" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Blog
                   </Link>
-                  <Link href="#client-area" className="text-white hover:bg-sky-600 py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="#client-area" className="text-white hover:bg-white/10 transition-colors py-2 px-4 font-semibold uppercase text-sm" onClick={() => setMobileMenuOpen(false)}>
                     Client Area
                   </Link>
                 </div>
@@ -191,33 +185,34 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
+      <section id="services" className="py-20 bg-gradient-to-b from-white to-sky-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-200/30 via-transparent to-transparent"></div>
+        <div className="container mx-auto px-6 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-sky-700">Our Services</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-sky-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-gradient-to-br from-sky-200/60 via-sky-100/40 to-white/40 backdrop-blur-md p-8 rounded-xl border border-sky-300/40 shadow-[0_10px_30px_rgba(0,140,255,0.15)] hover:shadow-[0_15px_30px_rgba(0,140,255,0.25)] transition-all duration-300 hover:translate-y-[-5px] group hover:bg-gradient-to-br hover:from-sky-300/60 hover:via-sky-200/50 hover:to-white/50">
+              <div className="w-16 h-16 bg-sky-500/30 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 group-hover:bg-sky-600/40 transition-all duration-300 border border-sky-400/40 group-hover:ring-2 group-hover:ring-sky-300/70 group-hover:ring-offset-2 group-hover:ring-offset-transparent">
                 <span className="text-3xl">🔍</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-sky-700">Behavior Consultations</h3>
-              <p className="text-gray-600">One-on-one sessions to address specific behavior challenges and develop personalized training plans.</p>
+              <h3 className="text-xl font-bold mb-3 text-sky-800 group-hover:text-sky-600 transition-colors">Behavior Consultations</h3>
+              <p className="text-gray-700 leading-relaxed">One-on-one sessions to address specific behavior challenges and develop personalized training plans.</p>
             </div>
             
-            <div className="bg-sky-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-gradient-to-br from-sky-200/60 via-sky-100/40 to-white/40 backdrop-blur-md p-8 rounded-xl border border-sky-300/40 shadow-[0_10px_30px_rgba(0,140,255,0.15)] hover:shadow-[0_15px_30px_rgba(0,140,255,0.25)] transition-all duration-300 hover:translate-y-[-5px] group hover:bg-gradient-to-br hover:from-sky-300/60 hover:via-sky-200/50 hover:to-white/50">
+              <div className="w-16 h-16 bg-sky-500/30 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 group-hover:bg-sky-600/40 transition-all duration-300 border border-sky-400/40 group-hover:ring-2 group-hover:ring-sky-300/70 group-hover:ring-offset-2 group-hover:ring-offset-transparent">
                 <span className="text-3xl">👨‍🏫</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-sky-700">Training Classes</h3>
-              <p className="text-gray-600">Group classes focusing on positive reinforcement techniques for dogs of all ages and skill levels.</p>
+              <h3 className="text-xl font-bold mb-3 text-sky-800 group-hover:text-sky-600 transition-colors">Training Classes</h3>
+              <p className="text-gray-700 leading-relaxed">Group classes focusing on positive reinforcement techniques for dogs of all ages and skill levels.</p>
             </div>
             
-            <div className="bg-sky-50 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-gradient-to-br from-sky-200/60 via-sky-100/40 to-white/40 backdrop-blur-md p-8 rounded-xl border border-sky-300/40 shadow-[0_10px_30px_rgba(0,140,255,0.15)] hover:shadow-[0_15px_30px_rgba(0,140,255,0.25)] transition-all duration-300 hover:translate-y-[-5px] group hover:bg-gradient-to-br hover:from-sky-300/60 hover:via-sky-200/50 hover:to-white/50">
+              <div className="w-16 h-16 bg-sky-500/30 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 group-hover:bg-sky-600/40 transition-all duration-300 border border-sky-400/40 group-hover:ring-2 group-hover:ring-sky-300/70 group-hover:ring-offset-2 group-hover:ring-offset-transparent">
                 <span className="text-3xl">🏠</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-sky-700">Kennel Inspection</h3>
-              <p className="text-gray-600">Professional assessment of kennel facilities to ensure they meet welfare standards and provide recommendations.</p>
+              <h3 className="text-xl font-bold mb-3 text-sky-800 group-hover:text-sky-600 transition-colors">Kennel Inspection</h3>
+              <p className="text-gray-700 leading-relaxed">Professional assessment of kennel facilities to ensure they meet welfare standards and provide recommendations.</p>
             </div>
           </div>
         </div>
@@ -249,10 +244,14 @@ export default function Home() {
               </ul>
             </div>
             <div className="md:w-1/2 relative h-80 md:h-96 rounded-xl overflow-hidden">
-              {/* Placeholder for education image */}
-              <div className="absolute inset-0 bg-sky-200 flex items-center justify-center">
-                <span className="text-9xl opacity-20">🐕‍🦺</span>
-              </div>
+              <Image
+                src="/images/education-dog.jpg"
+                alt="Dog education and training"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                style={{ objectFit: 'cover' }}
+                className="rounded-xl"
+              />
             </div>
           </div>
         </div>
@@ -292,35 +291,6 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-20 bg-sky-50">
-        <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-sky-700">About CustomK9 Kenya</h2>
-          
-          <div className="flex flex-col md:flex-row gap-12 items-center">
-            <div className="md:w-1/3 relative h-80 rounded-xl overflow-hidden shadow-lg">
-              {/* Placeholder for profile image */}
-              <div className="absolute inset-0 bg-sky-700/20 flex items-center justify-center">
-                <span className="text-8xl opacity-20">👩‍🦱</span>
-              </div>
-            </div>
-            
-            <div className="md:w-2/3">
-              <h3 className="text-2xl font-bold mb-4 text-sky-700">Our Mission</h3>
-              <p className="text-lg text-gray-700 mb-6">
-                At CustomK9 Kenya, my mission is to provide education about dogs and their welfare to residents of Kenya through various channels including one-on-one consultations, classes, and publications.
-              </p>
-              <p className="text-lg text-gray-700 mb-6">
-                I believe that educating people leads to better communication with their dogs, resulting in better training and behavior. When owners can read their dog's body language effectively, they can use positive, humane methods to train their companions.
-              </p>
-              <p className="text-lg text-gray-700">
-                I actively promote responsible dog ownership through education about proper care, nutrition, and training to enhance the bond between dogs and their owners.
-              </p>
-            </div>
           </div>
         </div>
       </section>
