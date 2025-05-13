@@ -10,9 +10,6 @@ const dashboardNavLinks = [
   { href: "/client-area/dashboard/dogs", label: "My Dogs", icon: "paw" },
   { href: "/client-area/dashboard/training", label: "Training Plans", icon: "book" },
   { href: "/client-area/dashboard/calendar", label: "Appointments", icon: "calendar" },
-  { href: "/client-area/dashboard/messages", label: "Messages", icon: "message" },
-  { href: "/client-area/dashboard/resources", label: "Resources", icon: "file" },
-  { href: "/client-area/dashboard/community", label: "Community", icon: "users" },
   { href: "/client-area/dashboard/settings", label: "Settings", icon: "settings" },
 ];
 

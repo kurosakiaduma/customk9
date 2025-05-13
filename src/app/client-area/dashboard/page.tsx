@@ -43,24 +43,6 @@ const dummyUserData = {
       trainer: "Michael Clark"
     }
   ],
-  recentMessages: [
-    {
-      id: 1,
-      from: "Sarah Johnson",
-      subject: "Training Progress Update",
-      preview: "Max is doing great with the recall command. We should work on...",
-      date: "2 hours ago",
-      unread: true
-    },
-    {
-      id: 2,
-      from: "CustomK9 Kenya",
-      subject: "New Resources Available",
-      preview: "We've added new training videos for leash reactivity...",
-      date: "Yesterday",
-      unread: false
-    }
-  ],
   trainingPlans: [
     {
       id: 1,
@@ -213,25 +195,6 @@ const UpcomingSessionCard = ({ session }: { session: any }) => (
   </div>
 );
 
-const MessagePreview = ({ message }: { message: any }) => (
-  <Link 
-    href="/client-area/dashboard/messages" 
-    className="block p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-  >
-    <div className="flex justify-between items-start">
-      <h3 className="font-semibold text-gray-800 flex items-center">
-        {message.unread && (
-          <span className="w-2 h-2 bg-sky-600 rounded-full inline-block mr-2"></span>
-        )}
-        {message.from}
-      </h3>
-      <span className="text-xs text-gray-500">{message.date}</span>
-    </div>
-    <p className="text-sm font-medium text-gray-700 mt-1">{message.subject}</p>
-    <p className="text-sm text-gray-600 mt-1 truncate">{message.preview}</p>
-  </Link>
-);
-
 const TrainingPlanCard = ({ plan }: { plan: any }) => {
   // Count completed milestones
   const completedCount = plan.milestones.filter((m: any) => m.completed).length;
@@ -301,14 +264,14 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 };
 
 export default function DashboardPage() {
-  const { name, dogs, upcomingSessions, recentMessages, trainingPlans } = dummyUserData;
+  const { name, dogs, upcomingSessions, trainingPlans } = dummyUserData;
   
   return (
     <div className="space-y-8">
       <WelcomeSection name={name} />
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard 
           title="Upcoming Sessions" 
           value={upcomingSessions.length}
@@ -324,7 +287,7 @@ export default function DashboardPage() {
           value={dogs.length}
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998a12.078 12.078 0 01.665-6.479L12 14z"></path>
             </svg>
           }
           color="purple"
@@ -340,17 +303,6 @@ export default function DashboardPage() {
           }
           color="green"
           link="/client-area/dashboard/training"
-        />
-        <SummaryCard 
-          title="Unread Messages" 
-          value={recentMessages.filter(m => m.unread).length}
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-            </svg>
-          }
-          color="amber"
-          link="/client-area/dashboard/messages"
         />
       </div>
       
@@ -427,30 +379,6 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          {/* Recent Messages Section */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-sky-800">Recent Messages</h2>
-              <Link 
-                href="/client-area/dashboard/messages" 
-                className="text-sky-600 hover:text-sky-800 text-sm font-medium"
-              >
-                View All →
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {recentMessages.map((message: any) => (
-                <MessagePreview key={message.id} message={message} />
-              ))}
-              
-              {recentMessages.length === 0 && (
-                <div className="p-4 bg-gray-50 rounded-lg text-center">
-                  <p className="text-gray-600">No recent messages.</p>
-                </div>
-              )}
-            </div>
-          </div>
-          
           {/* Quick Actions */}
           <div>
             <h2 className="text-xl font-semibold text-sky-800 mb-4">Quick Actions</h2>
@@ -463,15 +391,6 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 Book New Training Session
-              </Link>
-              <Link 
-                href="/client-area/dashboard/messages?new=true" 
-                className="flex items-center p-3 bg-sky-50 rounded-lg text-sky-700 hover:bg-sky-100 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-                Message Your Trainer
               </Link>
               <Link 
                 href="/client-area/dashboard/dogs/add" 
