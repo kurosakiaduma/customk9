@@ -519,21 +519,27 @@ export default function DogsPage() {
       
       {/* Intake Form Alert - show only if not completed */}
       {!hasSubmittedIntakeForm && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start">
-          <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mr-4">
-            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-amber-800 font-medium mb-1">Complete Your Client Intake Form</h3>
-            <p className="text-amber-700 mb-3">Help us create a personalized training plan for your dog by completing the client intake form.</p>
-            <Link 
-              href="/client-area/registration" 
-              className="inline-block px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium transition-colors"
-            >
-              Complete Intake Form
-            </Link>
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-6 mb-8">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-5">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-amber-800 text-xl font-bold mb-2">Complete Your Client Intake Form</h3>
+              <p className="text-amber-700 mb-4">
+                Before adding dogs to your profile, please complete our comprehensive intake form. This is a 
+                <strong> required first step</strong> that helps us understand your dog's specific needs, behavior patterns,
+                and your training goals. Without this information, we cannot create an effective training plan.
+              </p>
+              <Link 
+                href="/client-area/registration" 
+                className="inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium text-base transition-colors shadow-md"
+              >
+                Start Intake Process Now
+              </Link>
+            </div>
           </div>
         </div>
       )}

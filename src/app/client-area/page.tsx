@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
+import Link from "next/link";
 
 export default function ClientAreaPage() {
   const [activeTab, setActiveTab] = useState("login");
@@ -304,120 +305,95 @@ export default function ClientAreaPage() {
                   </div>
                 </div>
               ) : (
-                /* Registration Form */
                 <div>
-                  <h2 className="text-2xl font-bold text-sky-700 mb-6">Create an Account</h2>
-                  <form className="space-y-6" onSubmit={handleRegister}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label htmlFor="firstName" className="block mb-2 text-sm font-medium text-gray-700">First Name</label>
-                        <input 
-                          type="text" 
-                          id="firstName" 
-                          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
-                          placeholder="John"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="lastName" className="block mb-2 text-sm font-medium text-gray-700">Last Name</label>
-                        <input 
-                          type="text" 
-                          id="lastName" 
-                          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
-                          placeholder="Doe"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="regEmail" className="block mb-2 text-sm font-medium text-gray-700">Email Address</label>
-                      <input 
-                        type="email" 
-                        id="regEmail" 
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="phone" className="block mb-2 text-sm font-medium text-gray-700">Phone Number</label>
-                      <input 
-                        type="tel" 
-                        id="phone" 
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
-                        placeholder="+254 XXX XXX XXX"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="regPassword" className="block mb-2 text-sm font-medium text-gray-700">Password</label>
-                      <input 
-                        type="password" 
-                        id="regPassword" 
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
-                        placeholder="Create a password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Password must be at least 8 characters long with a mix of letters, numbers and symbols.
-                      </p>
-                    </div>
-                    <div>
-                      <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-gray-700">Confirm Password</label>
-                      <input 
-                        type="password" 
-                        id="confirmPassword" 
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
-                        placeholder="Confirm your password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id="terms" 
-                          className="h-4 w-4 text-sky-600"
-                          checked={termsAccepted}
-                          onChange={(e) => setTermsAccepted(e.target.checked)} 
-                          disabled={isLoading}
-                        />
-                        <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
-                          I agree to the Terms of Service and Privacy Policy
-                        </label>
-                      </div>
-                    </div>
-                    <button 
-                      type="submit" 
-                      className="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors shadow-md flex items-center justify-center"
-                      disabled={isLoading}
+                  <h2 className="text-2xl font-bold text-sky-700 mb-6">Join CustomK9</h2>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-5 mb-6">
+                    <h3 className="text-lg font-semibold text-emerald-800 mb-2">Complete Dog Training Intake Process</h3>
+                    <p className="text-emerald-700 mb-4">
+                      Our comprehensive intake form is the first step in creating a personalized training plan for you and your dog. This helps us understand your dog's specific needs, behavior, and your training goals.
+                    </p>
+                    <Link 
+                      href="/client-area/registration" 
+                      className="block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors shadow-md text-center"
                     >
-                      {isLoading ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Creating Account...
-                        </>
-                      ) : (
-                        "Create Account"
-                      )}
-                    </button>
-                  </form>
+                      Start Client Intake Process
+                    </Link>
+                  </div>
+                  
+                  <div className="border-t border-gray-200 pt-6 mt-6">
+                    <p className="text-gray-700 mb-4 text-center">Already have your information on file?</p>
+                    <form className="space-y-6" onSubmit={handleRegister}>
+                      <div>
+                        <label htmlFor="regEmail" className="block mb-2 text-sm font-medium text-gray-700">Email Address</label>
+                        <input 
+                          type="email" 
+                          id="regEmail" 
+                          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                          placeholder="your@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="regPassword" className="block mb-2 text-sm font-medium text-gray-700">Password</label>
+                        <input 
+                          type="password" 
+                          id="regPassword" 
+                          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                          placeholder="Create a password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-gray-700">Confirm Password</label>
+                        <input 
+                          type="password" 
+                          id="confirmPassword" 
+                          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
+                          placeholder="Confirm your password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex items-center">
+                          <input 
+                            type="checkbox" 
+                            id="terms" 
+                            className="h-4 w-4 text-sky-600"
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)} 
+                            disabled={isLoading}
+                          />
+                          <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
+                            I agree to the Terms of Service and Privacy Policy
+                          </label>
+                        </div>
+                      </div>
+                      <button 
+                        type="submit" 
+                        className="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors shadow-md flex items-center justify-center"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Creating Account...
+                          </>
+                        ) : (
+                          "Create Basic Account"
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                  
                   <div className="mt-6 text-center">
                     <p className="text-gray-600">
                       Already have an account?{" "}
@@ -427,19 +403,6 @@ export default function ClientAreaPage() {
                       >
                         Login
                       </button>
-                    </p>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-gray-700 mb-2">Need to provide more details for training?</p>
-                    <a 
-                      href="/client-area/registration" 
-                      className="block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors shadow-md text-center"
-                    >
-                      Complete Full Intake Form
-                    </a>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Our comprehensive intake form helps us understand your dog's specific needs and create a personalized training plan.
                     </p>
                   </div>
                 </div>
