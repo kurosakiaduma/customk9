@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Demo data for the dashboard
 const dummyUserData = {
@@ -16,6 +16,21 @@ const dummyUserData = {
       image: "/images/dog-01.jpg",
       level: "Intermediate",
       progress: 65,
+      // Additional details from intake form
+      intakeDetails: {
+        dogSource: "Rescue Shelter",
+        timeWithDog: "1 year 5 months",
+        medicalIssues: "None",
+        vetClinic: "Central Vet Hospital",
+        vetName: "Dr. Amanda Williams",
+        vetPhone: "+254 712 345 678",
+        previousTraining: "Basic obedience class at local pet store",
+        behaviorNotes: "Some reactivity to loud noises, good with other dogs",
+        sleepLocation: "Dog bed in bedroom",
+        feedingSchedule: "Twice daily - morning and evening",
+        walkFrequency: "Twice daily - 30 minutes each",
+        walkEquipment: ["harness", "flat-collar"],
+      }
     },
     {
       id: 2,
@@ -25,6 +40,21 @@ const dummyUserData = {
       image: "/images/dog-02.jpg",
       level: "Beginner",
       progress: 30,
+      // Additional details from intake form
+      intakeDetails: {
+        dogSource: "Reputable Breeder",
+        timeWithDog: "10 months",
+        medicalIssues: "Mild hip dysplasia - monitored by vet",
+        vetClinic: "PetCare Veterinary Center",
+        vetName: "Dr. James Peterson",
+        vetPhone: "+254 723 456 789", 
+        previousTraining: "Puppy socialization classes",
+        behaviorNotes: "Very food motivated, some excitability with guests",
+        sleepLocation: "Crate in the living room",
+        feedingSchedule: "Three times daily - small portions",
+        walkFrequency: "Three times daily - short walks",
+        walkEquipment: ["head-halter", "harness"],
+      }
     },
   ],
   upcomingSessions: [
@@ -156,6 +186,18 @@ const DogProfileCard = ({ dog }: { dog: any }) => (
         </div>
       </div>
       
+      {dog.intakeDetails && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <h4 className="text-sm font-medium text-gray-700 mb-1">Intake Information</h4>
+          <ul className="text-xs text-gray-600 space-y-1">
+            <li><span className="font-medium">Source:</span> {dog.intakeDetails.dogSource}</li>
+            <li><span className="font-medium">Time with dog:</span> {dog.intakeDetails.timeWithDog}</li>
+            <li><span className="font-medium">Vet:</span> {dog.intakeDetails.vetName}</li>
+            <li><span className="font-medium">Walk routine:</span> {dog.intakeDetails.walkFrequency}</li>
+          </ul>
+        </div>
+      )}
+      
       <div className="mt-4">
         <Link 
           href={`/client-area/dashboard/dogs/${dog.id}`}
@@ -265,10 +307,41 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 
 export default function DashboardPage() {
   const { name, dogs, upcomingSessions, trainingPlans } = dummyUserData;
+  const [hasFilledIntakeForm, setHasFilledIntakeForm] = useState<boolean>(false);
+  
+  // Check if the user has filled the intake form
+  useEffect(() => {
+    // In a real app, this would check if the user has submitted an intake form
+    const intakeFormCompleted = localStorage.getItem("customk9_intake_completed");
+    if (intakeFormCompleted) {
+      setHasFilledIntakeForm(true);
+    }
+  }, []);
   
   return (
     <div className="space-y-8">
       <WelcomeSection name={name} />
+      
+      {/* Intake Form Alert - show only if not completed */}
+      {!hasFilledIntakeForm && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start">
+          <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-amber-800 font-medium mb-1">Complete Your Client Intake Form</h3>
+            <p className="text-amber-700 mb-3">Help us create a personalized training plan by completing the client intake form with details about your dog.</p>
+            <Link 
+              href="/client-area/registration" 
+              className="inline-block px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              Complete Intake Form
+            </Link>
+          </div>
+        </div>
+      )}
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

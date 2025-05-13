@@ -429,6 +429,19 @@ export default function ClientAreaPage() {
                       </button>
                     </p>
                   </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-gray-700 mb-2">Need to provide more details for training?</p>
+                    <a 
+                      href="/client-area/registration" 
+                      className="block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors shadow-md text-center"
+                    >
+                      Complete Full Intake Form
+                    </a>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Our comprehensive intake form helps us understand your dog's specific needs and create a personalized training plan.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

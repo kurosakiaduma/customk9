@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,7 +24,25 @@ const dogData = [
       { name: "DHPP", date: "February 2, 2024", nextDue: "February 2, 2025" },
       { name: "Bordetella", date: "November 5, 2023", nextDue: "May 5, 2024" },
     ],
-    behaviorNotes: "Max is showing great progress with recall training, but still has some reactivity to other male dogs. Working on controlled exposure and positive reinforcement."
+    behaviorNotes: "Max is showing great progress with recall training, but still has some reactivity to other male dogs. Working on controlled exposure and positive reinforcement.",
+    // Intake form information
+    intakeDetails: {
+      dogSource: "Rescue Shelter",
+      timeWithDog: "1 year 5 months",
+      medicalIssues: "None",
+      vetClinic: "Central Vet Hospital",
+      vetName: "Dr. Amanda Williams",
+      vetPhone: "+254 712 345 678",
+      previousTraining: "Basic obedience class at local pet store",
+      behaviorConcerns: "Some reactivity to loud noises, good with other dogs",
+      sleepLocation: "Dog bed in bedroom",
+      feedingSchedule: "Twice daily - morning and evening",
+      walkFrequency: "Twice daily - 30 minutes each",
+      walkEquipment: ["harness", "flat-collar"],
+      trainingGoals: "Improve recall reliability, reduce reactivity to other dogs",
+      fearfulSituations: "Thunderstorms and fireworks",
+      responseToNewPeople: "Initially cautious but warms up quickly",
+    }
   },
   {
     id: 2,
@@ -44,7 +62,25 @@ const dogData = [
       { name: "DHPP", date: "January 10, 2024", nextDue: "January 10, 2025" },
       { name: "Leptospirosis", date: "January 10, 2024", nextDue: "July 10, 2024" },
     ],
-    behaviorNotes: "Bella is very friendly and sociable with both humans and other dogs. Training focus is on basic commands and leash manners. Excels at food motivation but can be easily distracted in new environments."
+    behaviorNotes: "Bella is very friendly and sociable with both humans and other dogs. Training focus is on basic commands and leash manners. Excels at food motivation but can be easily distracted in new environments.",
+    // Intake form information
+    intakeDetails: {
+      dogSource: "Reputable Breeder",
+      timeWithDog: "10 months",
+      medicalIssues: "Mild hip dysplasia - monitored by vet",
+      vetClinic: "PetCare Veterinary Center",
+      vetName: "Dr. James Peterson",
+      vetPhone: "+254 723 456 789", 
+      previousTraining: "Puppy socialization classes",
+      behaviorConcerns: "Very food motivated, some excitability with guests",
+      sleepLocation: "Crate in the living room",
+      feedingSchedule: "Three times daily - small portions",
+      walkFrequency: "Three times daily - short walks",
+      walkEquipment: ["head-halter", "harness"],
+      trainingGoals: "Basic obedience commands, leash manner improvement",
+      fearfulSituations: "None observed",
+      responseToNewPeople: "Very friendly and sometimes jumps up",
+    }
   },
 ];
 
@@ -74,7 +110,7 @@ const isOverdue = (dueDateString: string) => {
 
 // Dog profile detail component
 const DogDetailCard = ({ dog }: { dog: any }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'training'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'training' | 'intake'>('overview');
   
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-md overflow-hidden">
@@ -105,10 +141,10 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
       
       {/* Tabs Navigation */}
       <div className="px-4 border-b border-gray-200">
-        <nav className="flex -mb-px">
+        <nav className="flex -mb-px overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-4 px-4 text-sm font-medium border-b-2 ${
+            className={`py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
               activeTab === 'overview'
                 ? 'border-sky-600 text-sky-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -118,7 +154,7 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
           </button>
           <button
             onClick={() => setActiveTab('health')}
-            className={`py-4 px-4 text-sm font-medium border-b-2 ${
+            className={`py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
               activeTab === 'health'
                 ? 'border-sky-600 text-sky-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -128,13 +164,23 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
           </button>
           <button
             onClick={() => setActiveTab('training')}
-            className={`py-4 px-4 text-sm font-medium border-b-2 ${
+            className={`py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
               activeTab === 'training'
                 ? 'border-sky-600 text-sky-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             Training
+          </button>
+          <button
+            onClick={() => setActiveTab('intake')}
+            className={`py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+              activeTab === 'intake'
+                ? 'border-sky-600 text-sky-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Intake Form
           </button>
         </nav>
       </div>
@@ -334,6 +380,105 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
             </div>
           </div>
         )}
+
+        {/* Intake Form Tab */}
+        {activeTab === 'intake' && dog.intakeDetails && (
+          <div className="space-y-5">
+            <h3 className="text-lg font-semibold mb-3">Client Intake Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <h4 className="text-base font-medium text-sky-700 mb-3">Dog Background</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Where did you get your dog?</p>
+                    <p className="font-medium">{dog.intakeDetails.dogSource}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">How long have you had your dog?</p>
+                    <p className="font-medium">{dog.intakeDetails.timeWithDog}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Previous Training</p>
+                    <p className="font-medium">{dog.intakeDetails.previousTraining}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-base font-medium text-sky-700 mb-3">Health Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Medical Issues</p>
+                    <p className="font-medium">{dog.intakeDetails.medicalIssues}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Veterinarian</p>
+                    <p className="font-medium">{dog.intakeDetails.vetName}</p>
+                    <p className="text-sm">{dog.intakeDetails.vetClinic}</p>
+                    <p className="text-sm">{dog.intakeDetails.vetPhone}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-base font-medium text-sky-700 mb-3">Daily Routine</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Sleep Location</p>
+                    <p className="font-medium">{dog.intakeDetails.sleepLocation}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Feeding Schedule</p>
+                    <p className="font-medium">{dog.intakeDetails.feedingSchedule}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Walking Routine</p>
+                    <p className="font-medium">{dog.intakeDetails.walkFrequency}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {dog.intakeDetails.walkEquipment.map((item: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-sky-50 text-sky-700 rounded-full text-xs">
+                          {item.replace('-', ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-base font-medium text-sky-700 mb-3">Behavior & Goals</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Behavior Concerns</p>
+                    <p className="font-medium">{dog.intakeDetails.behaviorConcerns}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Response to New People</p>
+                    <p className="font-medium">{dog.intakeDetails.responseToNewPeople}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Fearful Situations</p>
+                    <p className="font-medium">{dog.intakeDetails.fearfulSituations}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Training Goals</p>
+                    <p className="font-medium">{dog.intakeDetails.trainingGoals}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-5">
+              <Link 
+                href="/client-area/registration"
+                className="px-4 py-2 bg-sky-100 text-sky-700 rounded-md text-sm font-medium hover:bg-sky-200 transition-colors"
+              >
+                Update Intake Form
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -341,6 +486,15 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
 
 export default function DogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [hasSubmittedIntakeForm, setHasSubmittedIntakeForm] = useState(false);
+  
+  // Check if intake form has been submitted
+  useEffect(() => {
+    const intakeFormCompleted = localStorage.getItem("customk9_intake_completed");
+    if (intakeFormCompleted) {
+      setHasSubmittedIntakeForm(true);
+    }
+  }, []);
   
   // Filter dogs based on search term
   const filteredDogs = dogData.filter((dog) => 
@@ -362,6 +516,27 @@ export default function DogsPage() {
           Register New Dog
         </Link>
       </div>
+      
+      {/* Intake Form Alert - show only if not completed */}
+      {!hasSubmittedIntakeForm && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start">
+          <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-amber-800 font-medium mb-1">Complete Your Client Intake Form</h3>
+            <p className="text-amber-700 mb-3">Help us create a personalized training plan for your dog by completing the client intake form.</p>
+            <Link 
+              href="/client-area/registration" 
+              className="inline-block px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              Complete Intake Form
+            </Link>
+          </div>
+        </div>
+      )}
       
       {/* Search bar */}
       <div className="relative">
