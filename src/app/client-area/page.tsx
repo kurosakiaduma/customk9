@@ -2,16 +2,128 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
 
 export default function ClientAreaPage() {
   const [activeTab, setActiveTab] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Scroll to top on page load
+  const router = useRouter();
+  
+  // Check if user is already authenticated
   useEffect(() => {
+    // In a real app, this would check a token in localStorage or cookies
+    const hasAuthToken = localStorage.getItem("customk9_auth_token");
+    if (hasAuthToken) {
+      setIsAuthenticated(true);
+    }
+    
+    // Scroll to top on page load
     window.scrollTo(0, 0);
   }, []);
+
+  // Redirect to dashboard if authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/client-area/dashboard");
+    }
+  }, [isAuthenticated, router]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    setIsLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      // Simple validation
+      if (!email || !password) {
+        setFormError("Please fill in all fields");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Demo login - Accept any valid-looking email with any password
+      if (email.includes('@') && email.includes('.') && password.length >= 6) {
+        // Store fake auth token
+        localStorage.setItem("customk9_auth_token", "demo_token_12345");
+        localStorage.setItem("customk9_user_name", "John");
+        
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      } else {
+        setFormError("Invalid email or password");
+        setIsLoading(false);
+      }
+    }, 1000);
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    setIsLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      // Simple validation
+      if (!email || !password || !firstName || !lastName || !phone) {
+        setFormError("Please fill in all required fields");
+        setIsLoading(false);
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        setFormError("Passwords do not match");
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!termsAccepted) {
+        setFormError("You must accept the terms and conditions");
+        setIsLoading(false);
+        return;
+      }
+      
+      if (password.length < 8) {
+        setFormError("Password must be at least 8 characters long");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Store fake auth token
+      localStorage.setItem("customk9_auth_token", "demo_token_12345");
+      localStorage.setItem("customk9_user_name", firstName);
+      
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  const simulateGuestLogin = () => {
+    setIsLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      // Store fake auth token for demo
+      localStorage.setItem("customk9_auth_token", "demo_token_guest");
+      localStorage.setItem("customk9_user_name", "Demo User");
+      
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
@@ -55,6 +167,23 @@ export default function ClientAreaPage() {
               >
                 Register
               </button>
+              <button 
+                onClick={simulateGuestLogin}
+                className="px-6 py-3 bg-sky-700 text-white hover:bg-sky-800 font-semibold rounded-full transition-colors shadow-md flex items-center"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </>
+                ) : (
+                  "Try Demo"
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -89,11 +218,21 @@ export default function ClientAreaPage() {
             </div>
             
             <div className="bg-white/80 backdrop-blur-sm p-8 rounded-xl shadow-lg">
+              {/* Form Error Message */}
+              {formError && (
+                <div className="bg-red-50 text-red-700 p-3 rounded-md mb-6 flex items-start">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span>{formError}</span>
+                </div>
+              )}
+              
               {activeTab === "login" ? (
                 /* Login Form */
                 <div>
                   <h2 className="text-2xl font-bold text-sky-700 mb-6">Welcome Back</h2>
-                  <form className="space-y-6">
+                  <form className="space-y-6" onSubmit={handleLogin}>
                     <div>
                       <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700">Email Address</label>
                       <input 
@@ -101,6 +240,9 @@ export default function ClientAreaPage() {
                         id="email" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -113,6 +255,9 @@ export default function ClientAreaPage() {
                         id="password" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="flex items-center">
@@ -120,6 +265,9 @@ export default function ClientAreaPage() {
                         type="checkbox" 
                         id="remember" 
                         className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded" 
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        disabled={isLoading}
                       />
                       <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
                         Remember me
@@ -127,9 +275,20 @@ export default function ClientAreaPage() {
                     </div>
                     <button 
                       type="submit" 
-                      className="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors shadow-md"
+                      className="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors shadow-md flex items-center justify-center"
+                      disabled={isLoading}
                     >
-                      Sign In
+                      {isLoading ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Signing In...
+                        </>
+                      ) : (
+                        "Sign In"
+                      )}
                     </button>
                   </form>
                   <div className="mt-6 text-center">
@@ -148,7 +307,7 @@ export default function ClientAreaPage() {
                 /* Registration Form */
                 <div>
                   <h2 className="text-2xl font-bold text-sky-700 mb-6">Create an Account</h2>
-                  <form className="space-y-6">
+                  <form className="space-y-6" onSubmit={handleRegister}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="firstName" className="block mb-2 text-sm font-medium text-gray-700">First Name</label>
@@ -157,6 +316,9 @@ export default function ClientAreaPage() {
                           id="firstName" 
                           className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                           placeholder="John"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          disabled={isLoading}
                         />
                       </div>
                       <div>
@@ -166,6 +328,9 @@ export default function ClientAreaPage() {
                           id="lastName" 
                           className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                           placeholder="Doe"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
@@ -176,6 +341,9 @@ export default function ClientAreaPage() {
                         id="regEmail" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -185,6 +353,9 @@ export default function ClientAreaPage() {
                         id="phone" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="+254 XXX XXX XXX"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -194,6 +365,9 @@ export default function ClientAreaPage() {
                         id="regPassword" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="Create a password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isLoading}
                       />
                       <p className="mt-1 text-sm text-gray-500">
                         Password must be at least 8 characters long with a mix of letters, numbers and symbols.
@@ -206,11 +380,21 @@ export default function ClientAreaPage() {
                         id="confirmPassword" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="mt-4">
                       <div className="flex items-center">
-                        <input type="checkbox" id="terms" className="h-4 w-4 text-sky-600" />
+                        <input 
+                          type="checkbox" 
+                          id="terms" 
+                          className="h-4 w-4 text-sky-600"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)} 
+                          disabled={isLoading}
+                        />
                         <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
                           I agree to the Terms of Service and Privacy Policy
                         </label>
@@ -218,9 +402,20 @@ export default function ClientAreaPage() {
                     </div>
                     <button 
                       type="submit" 
-                      className="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors shadow-md"
+                      className="w-full py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-md transition-colors shadow-md flex items-center justify-center"
+                      disabled={isLoading}
                     >
-                      Create Account
+                      {isLoading ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Creating Account...
+                        </>
+                      ) : (
+                        "Create Account"
+                      )}
                     </button>
                   </form>
                   <div className="mt-6 text-center">
