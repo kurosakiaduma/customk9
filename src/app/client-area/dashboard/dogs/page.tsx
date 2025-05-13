@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { Tab } from "@headlessui/react";
+import { format } from "date-fns";
 
-// Demo data for dogs
-const dogData = [
+// Demo data for dogs - now as a constant to use as fallback
+const defaultDogData = [
   {
     id: 1,
     name: "Max",
@@ -109,7 +112,7 @@ const isOverdue = (dueDateString: string) => {
 };
 
 // Dog profile detail component
-const DogDetailCard = ({ dog }: { dog: any }) => {
+const DogProfileCard = ({ dog }: { dog: any }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'training' | 'intake'>('overview');
   
   return (
@@ -118,11 +121,16 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
       <div className="relative">
         <div className="h-48 w-full relative">
           <Image
-            src={dog.image}
+            src={dog.image || "/images/dog-placeholder.jpg"}
             alt={dog.name}
             fill
             sizes="100%"
             style={{ objectFit: "cover" }}
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              const imgElement = e.target as HTMLImageElement;
+              imgElement.src = "/images/dog-placeholder.jpg";
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         </div>
@@ -484,113 +492,105 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
   );
 };
 
-export default function DogsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [hasSubmittedIntakeForm, setHasSubmittedIntakeForm] = useState(false);
-  
-  // Check if intake form has been submitted
+const DogsPage = () => {
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [hasSubmittedIntakeForm, setHasSubmittedIntakeForm] = useState<boolean>(false);
+  const [dogData, setDogData] = useState<any[]>([]);
+
   useEffect(() => {
-    const intakeFormCompleted = localStorage.getItem("customk9_intake_completed");
-    if (intakeFormCompleted) {
-      setHasSubmittedIntakeForm(true);
+    // Check if intake form has been submitted - for conditional UI
+    const hasCompletedIntake = localStorage.getItem("intakeFormCompleted") === "true";
+    setHasSubmittedIntakeForm(hasCompletedIntake);
+
+    // Load dogs from localStorage
+    try {
+      const storedDogs = localStorage.getItem("dogs");
+      if (storedDogs) {
+        const parsedDogs = JSON.parse(storedDogs);
+        if (Array.isArray(parsedDogs) && parsedDogs.length > 0) {
+          setDogData(parsedDogs);
+          return;
+        }
+      }
+      // If no dogs in localStorage or parsing error, use default data
+      setDogData(defaultDogData);
+    } catch (error) {
+      console.error("Error loading dogs from localStorage:", error);
+      setDogData(defaultDogData);
     }
   }, []);
-  
+
   // Filter dogs based on search term
-  const filteredDogs = dogData.filter((dog) => 
+  const filteredDogs = dogData.filter(dog =>
     dog.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dog.breed.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-sky-800">My Dogs</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">My Dogs</h1>
+          <p className="text-gray-600">Manage your dog profiles and training information</p>
+        </div>
         <Link 
           href="/client-area/dashboard/dogs/add" 
-          className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium hover:bg-sky-700 transition-colors flex items-center"
+          className="mt-4 md:mt-0 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md font-medium flex items-center"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
           </svg>
-          Register New Dog
+          Add Dog
         </Link>
       </div>
-      
-      {/* Intake Form Alert - show only if not completed */}
-      {!hasSubmittedIntakeForm && (
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-6 mb-8">
-          <div className="flex items-start">
-            <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-5">
-              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-amber-800 text-xl font-bold mb-2">Complete Your Client Intake Form</h3>
-              <p className="text-amber-700 mb-4">
-                Before adding dogs to your profile, please complete our comprehensive intake form. This is a 
-                <strong> required first step</strong> that helps us understand your dog's specific needs, behavior patterns,
-                and your training goals. Without this information, we cannot create an effective training plan.
-              </p>
-              <Link 
-                href="/client-area/registration" 
-                className="inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium text-base transition-colors shadow-md"
-              >
-                Start Intake Process Now
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Search bar */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-        </div>
+
+      <div className="mb-6">
         <input
           type="search"
-          className="block w-full p-3 pl-10 text-sm border border-gray-200 rounded-lg focus:ring-sky-500 focus:border-sky-500"
-          placeholder="Search by dog name or breed..."
+          placeholder="Search dogs by name or breed..."
+          className="w-full max-w-md p-2 border border-gray-300 rounded-md"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      
-      {/* Dogs List */}
-      <div className="space-y-6">
-        {filteredDogs.length > 0 ? (
-          filteredDogs.map((dog) => (
-            <DogDetailCard key={dog.id} dog={dog} />
-          ))
-        ) : (
-          <div className="text-center py-10 bg-gray-50 rounded-lg">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+
+      {/* Display message if no dogs */}
+      {filteredDogs.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No dogs found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Try a different search term or clear the search.' : 'You haven\'t registered any dogs yet.'}
-            </p>
-            {!searchTerm && (
-              <div className="mt-6">
-                <Link 
-                  href="/client-area/dashboard/dogs/add" 
-                  className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium hover:bg-sky-700 transition-colors inline-flex items-center"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"></path>
-                  </svg>
-                  Register Your First Dog
-                </Link>
-              </div>
-            )}
           </div>
-        )}
+          <h3 className="text-lg font-semibold mb-2">No Dogs Found</h3>
+          <p className="text-gray-600 mb-4">
+            {searchTerm ? `No dogs match your search "${searchTerm}".` : "You haven't added any dogs to your profile yet."}
+          </p>
+          {!searchTerm && (
+            <Link 
+              href="/client-area/dashboard/dogs/add"
+              className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+              Register Your First Dog
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Display dog grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredDogs.map((dog) => (
+          <DogProfileCard key={dog.id} dog={dog} />
+        ))}
       </div>
+
+      {/* Dog detail section (shown when a dog is selected) */}
+      {/* ... rest of the component ... */}
     </div>
   );
-} 
+};
+
+export default DogsPage; 
