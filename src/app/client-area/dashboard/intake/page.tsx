@@ -7,8 +7,11 @@ import { useRouter } from "next/navigation";
 // Type definitions for the form data
 interface OtherPet {
   name: string;
+  age: string;
+  ageUnit: string;
   breed: string;
   gender: string;
+  sterilized: string;
 }
 
 interface FormData {
@@ -20,32 +23,75 @@ interface FormData {
   sterilized: string;
   dogSource: string;
   timeWithDog: string;
-  medicalIssues: string;
+  medications: string;
+  currentDeworming: string;
+  tickFleaPreventative: string;
+  vetClinic: string;
   vetName: string;
+  vetAddress: string;
   vetPhone: string;
+  medicalIssues: string;
   
   // Other Pets
   otherPets: OtherPet[];
   
   // Lifestyle
+  homeAloneLocation: string;
   sleepLocation: string;
+  hasCrate: string;
+  likesCrate: string;
+  crateLocation: string;
+  chewsCrate: string;
+  hoursAlone: string;
+  foodBrand: string;
   feedingSchedule: string;
+  foodLeftOut: string;
+  allergies: string;
+  toyTypes: string;
+  toyPlayTime: string;
+  toyStorage: string;
   walkFrequency: string;
-  walkEquipment: string[];
+  walkPerson: string;
+  walkDuration: string;
+  otherExercise: string;
+  walkEquipment: string;
+  offLeash: string;
+  forestVisits: string;
+  pulling: string;
+  pullingPrevention: string;
   
   // History
   previousTraining: string;
-  behaviorConcerns: string;
-  fearfulSituations: string;
+  growled: string;
+  growlDetails: string;
+  bitten: string;
+  biteDetails: string;
+  biteInjury: string;
+  fearful: string;
+  fearDetails: string;
+  newPeopleResponse: string;
+  groomingResponse: string;
+  ignoreReaction: string;
+  previousServices: string;
+  toolsUsed: string;
   
-  // Goals
+  // Likes/Dislikes & Goals
+  likesAboutDog: string[];
+  dislikesAboutDog: string[];
+  whyTraining: string;
   trainingGoals: string;
+  idealDogBehavior: string;
+  
+  // Behavior Checklist
+  behaviorChecklist: string[];
+  behaviorDetails: string;
+  fearDescription: string;
 }
 
 export default function IntakeFormPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 4;
+  const totalPages = 5;
   const [isLoading, setIsLoading] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<{
     success: boolean;
@@ -62,28 +108,71 @@ export default function IntakeFormPage() {
     sterilized: "",
     dogSource: "",
     timeWithDog: "",
-    medicalIssues: "",
+    medications: "",
+    currentDeworming: "",
+    tickFleaPreventative: "",
+    vetClinic: "",
     vetName: "",
+    vetAddress: "",
     vetPhone: "",
+    medicalIssues: "",
     
     // Other Pets
     otherPets: [
-      { name: "", breed: "", gender: "" },
+      { name: "", age: "", ageUnit: "Y", breed: "", gender: "", sterilized: "" },
     ],
     
     // Lifestyle
+    homeAloneLocation: "",
     sleepLocation: "",
+    hasCrate: "",
+    likesCrate: "",
+    crateLocation: "",
+    chewsCrate: "",
+    hoursAlone: "",
+    foodBrand: "",
     feedingSchedule: "",
+    foodLeftOut: "",
+    allergies: "",
+    toyTypes: "",
+    toyPlayTime: "",
+    toyStorage: "",
     walkFrequency: "",
-    walkEquipment: [],
+    walkPerson: "",
+    walkDuration: "",
+    otherExercise: "",
+    walkEquipment: "",
+    offLeash: "",
+    forestVisits: "",
+    pulling: "",
+    pullingPrevention: "",
     
     // History
     previousTraining: "",
-    behaviorConcerns: "",
-    fearfulSituations: "",
+    growled: "",
+    growlDetails: "",
+    bitten: "",
+    biteDetails: "",
+    biteInjury: "",
+    fearful: "",
+    fearDetails: "",
+    newPeopleResponse: "",
+    groomingResponse: "",
+    ignoreReaction: "",
+    previousServices: "",
+    toolsUsed: "",
     
-    // Goals
-    trainingGoals: ""
+    // Likes/Dislikes & Goals
+    likesAboutDog: ["", "", "", "", ""],
+    dislikesAboutDog: ["", "", "", "", ""],
+    whyTraining: "",
+    trainingGoals: "",
+    idealDogBehavior: "",
+    
+    // Behavior Checklist
+    behaviorChecklist: [],
+    behaviorDetails: "",
+    fearDescription: "",
   });
   
   // Handle input changes
@@ -111,6 +200,16 @@ export default function IntakeFormPage() {
     }
   };
   
+  // Handle likes/dislikes arrays
+  const handleArrayItemChange = (arrayName: 'likesAboutDog' | 'dislikesAboutDog', index: number, value: string) => {
+    const newArray = [...formData[arrayName]];
+    newArray[index] = value;
+    setFormData({
+      ...formData,
+      [arrayName]: newArray
+    });
+  };
+  
   // Handle other pets form
   const handleOtherPetChange = (index: number, field: keyof OtherPet, value: string) => {
     const newPets = [...formData.otherPets];
@@ -123,13 +222,15 @@ export default function IntakeFormPage() {
   
   // Add another pet to the form
   const addAnotherPet = () => {
-    setFormData({
-      ...formData,
-      otherPets: [
-        ...formData.otherPets,
-        { name: "", breed: "", gender: "" }
-      ]
-    });
+    if (formData.otherPets.length < 3) {
+      setFormData({
+        ...formData,
+        otherPets: [
+          ...formData.otherPets,
+          { name: "", age: "", ageUnit: "Y", breed: "", gender: "", sterilized: "" }
+        ]
+      });
+    }
   };
   
   // Handle form submission
@@ -210,8 +311,9 @@ export default function IntakeFormPage() {
           <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
             <div>Dog Information</div>
             <div>Lifestyle</div>
-            <div>Behavior</div>
+            <div>History</div>
             <div>Goals</div>
+            <div>Behavior</div>
           </div>
         </div>
       </div>
@@ -270,7 +372,7 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Breed</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Breed (or mix)</label>
                 <input
                   type="text"
                   name="breed"
@@ -283,19 +385,8 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Gender</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Female or Male? Is your dog sterilized?</label>
                 <div className="flex space-x-4 mt-2">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="gender"
-                      value="male"
-                      checked={formData.gender === "male"}
-                      onChange={handleInputChange}
-                      className="form-radio h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Male</span>
-                  </label>
                   <label className="inline-flex items-center">
                     <input
                       type="radio"
@@ -307,11 +398,18 @@ export default function IntakeFormPage() {
                     />
                     <span className="ml-2 text-gray-700">Female</span>
                   </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="male"
+                      checked={formData.gender === "male"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">Male</span>
+                  </label>
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Sterilized</label>
                 <div className="flex space-x-4 mt-2">
                   <label className="inline-flex items-center">
                     <input
@@ -322,7 +420,7 @@ export default function IntakeFormPage() {
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
-                    <span className="ml-2 text-gray-700">Yes</span>
+                    <span className="ml-2 text-gray-700">Sterilized: Yes</span>
                   </label>
                   <label className="inline-flex items-center">
                     <input
@@ -333,7 +431,7 @@ export default function IntakeFormPage() {
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
-                    <span className="ml-2 text-gray-700">No</span>
+                    <span className="ml-2 text-gray-700">Sterilized: No</span>
                   </label>
                 </div>
               </div>
@@ -364,16 +462,68 @@ export default function IntakeFormPage() {
               
               <div className="md:col-span-2">
                 <label className="block text-gray-700 text-sm font-medium mb-1">
-                  Any medical issues we should be aware of?
+                  List all medications your dog is currently taking.
                 </label>
                 <textarea
-                  name="medicalIssues"
-                  value={formData.medicalIssues}
+                  name="medications"
+                  value={formData.medications}
                   onChange={handleInputChange}
-                  rows={3}
-                  placeholder="Describe any medical issues, allergies, or special needs"
+                  rows={2}
+                  placeholder="List current medications"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Is your dog current on deworming?</label>
+                <div className="flex space-x-4 mt-2">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="currentDeworming"
+                      value="Y"
+                      checked={formData.currentDeworming === "Y"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">Yes</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="currentDeworming"
+                      value="N"
+                      checked={formData.currentDeworming === "N"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">No</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Is your dog on any tick/Flea preventative?</label>
+                <input
+                  type="text"
+                  name="tickFleaPreventative"
+                  value={formData.tickFleaPreventative}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No and type if applicable"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Vet Clinic</label>
+                <input
+                  type="text"
+                  name="vetClinic"
+                  value={formData.vetClinic}
+                  onChange={handleInputChange}
+                  placeholder="Vet Clinic Name"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
               </div>
               
               <div>
@@ -389,6 +539,18 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Vet's Address</label>
+                <input
+                  type="text"
+                  name="vetAddress"
+                  value={formData.vetAddress}
+                  onChange={handleInputChange}
+                  placeholder="Clinic Address"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
                 <label className="block text-gray-700 text-sm font-medium mb-1">Vet's Phone</label>
                 <input
                   type="tel"
@@ -399,13 +561,27 @@ export default function IntakeFormPage() {
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 />
               </div>
+              
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  Please list any current or past medical issues including surgeries, infections, tick fever, etc.
+                </label>
+                <textarea
+                  name="medicalIssues"
+                  value={formData.medicalIssues}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Describe any medical issues, surgeries, etc."
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
             </div>
             
-            <h3 className="text-lg font-medium text-sky-700 mt-6 mb-3">Other Pets in Household</h3>
+            <h3 className="text-lg font-medium text-sky-700 mt-6 mb-3">Other Pets In The Home</h3>
             {formData.otherPets.map((pet, index) => (
               <div key={index} className="p-4 bg-gray-50 rounded-lg mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                  <div className="md:col-span-2">
                     <label className="block text-gray-700 text-sm font-medium mb-1">Name</label>
                     <input
                       type="text"
@@ -414,6 +590,27 @@ export default function IntakeFormPage() {
                       placeholder="Pet's Name"
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                     />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">Age</label>
+                    <div className="flex">
+                      <input
+                        type="text"
+                        value={pet.age}
+                        onChange={(e) => handleOtherPetChange(index, 'age', e.target.value)}
+                        placeholder="Age"
+                        className="w-full p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      />
+                      <select
+                        value={pet.ageUnit}
+                        onChange={(e) => handleOtherPetChange(index, 'ageUnit', e.target.value)}
+                        className="p-2 border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      >
+                        <option value="Y">Y</option>
+                        <option value="M">M</option>
+                      </select>
+                    </div>
                   </div>
                   
                   <div>
@@ -427,53 +624,65 @@ export default function IntakeFormPage() {
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Gender</label>
-                    <div className="flex space-x-4 mt-2">
-                      <label className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          checked={pet.gender === "male"}
-                          onChange={(e) => handleOtherPetChange(index, 'gender', "male")}
-                          className="form-radio h-4 w-4 text-sky-600"
-                        />
-                        <span className="ml-2 text-gray-700">Male</span>
-                      </label>
-                      <label className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          checked={pet.gender === "female"}
-                          onChange={(e) => handleOtherPetChange(index, 'gender', "female")}
-                          className="form-radio h-4 w-4 text-sky-600"
-                        />
-                        <span className="ml-2 text-gray-700">Female</span>
-                      </label>
+                  <div className="md:col-span-2">
+                    <label className="block text-gray-700 text-sm font-medium mb-1">F/M, Sterilized?</label>
+                    <div className="flex space-x-2">
+                      <select
+                        value={pet.gender}
+                        onChange={(e) => handleOtherPetChange(index, 'gender', e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      >
+                        <option value="">Select</option>
+                        <option value="F">F</option>
+                        <option value="M">M</option>
+                      </select>
+                      <select
+                        value={pet.sterilized}
+                        onChange={(e) => handleOtherPetChange(index, 'sterilized', e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      >
+                        <option value="">Sterilized?</option>
+                        <option value="Y">Yes</option>
+                        <option value="N">No</option>
+                      </select>
                     </div>
                   </div>
                 </div>
-                
-                {index === formData.otherPets.length - 1 && (
-                  <div className="mt-4">
-                    <button 
-                      type="button" 
-                      onClick={addAnotherPet}
-                      className="text-sky-600 hover:text-sky-800 font-medium"
-                    >
-                      + Add Another Pet
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
+            
+            {formData.otherPets.length < 3 && (
+              <div className="mt-4">
+                <button 
+                  type="button" 
+                  onClick={addAnotherPet}
+                  className="text-sky-600 hover:text-sky-800 font-medium"
+                >
+                  + Add Another Pet
+                </button>
+              </div>
+            )}
           </div>
         )}
         
         {/* Page 2: Lifestyle */}
         {currentPage === 2 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">Lifestyle</h2>
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog's Lifestyle</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Where is your dog when he is home alone?</label>
+                <input
+                  type="text"
+                  name="homeAloneLocation"
+                  value={formData.homeAloneLocation}
+                  onChange={handleInputChange}
+                  placeholder="Crate, specific room, etc."
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-1">Where does your dog sleep at night?</label>
                 <input
@@ -487,99 +696,291 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Feeding schedule</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Does your dog have a crate?</label>
                 <input
                   type="text"
-                  name="feedingSchedule"
-                  value={formData.feedingSchedule}
+                  name="hasCrate"
+                  value={formData.hasCrate}
                   onChange={handleInputChange}
-                  placeholder="Once a day, Twice a day, etc."
+                  placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 />
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">How often do you walk your dog?</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Does your dog like the crate?</label>
+                <input
+                  type="text"
+                  name="likesCrate"
+                  value={formData.likesCrate}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Where is the crate located?</label>
+                <input
+                  type="text"
+                  name="crateLocation"
+                  value={formData.crateLocation}
+                  onChange={handleInputChange}
+                  placeholder="Location in home"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Does your dog chew or destroy the crate?</label>
+                <input
+                  type="text"
+                  name="chewsCrate"
+                  value={formData.chewsCrate}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">How many hours does your dog spend alone each day?</label>
+                <input
+                  type="text"
+                  name="hoursAlone"
+                  value={formData.hoursAlone}
+                  onChange={handleInputChange}
+                  placeholder="Number of hours"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">What kind/brand of food do your feed your dog?</label>
+                <input
+                  type="text"
+                  name="foodBrand"
+                  value={formData.foodBrand}
+                  onChange={handleInputChange}
+                  placeholder="Brand and type"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">How much and how often does your dog eat?</label>
+                <input
+                  type="text"
+                  name="feedingSchedule"
+                  value={formData.feedingSchedule}
+                  onChange={handleInputChange}
+                  placeholder="Amount and frequency"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Is food left out during the day for your dog to eat?</label>
+                <input
+                  type="text"
+                  name="foodLeftOut"
+                  value={formData.foodLeftOut}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Dog's allergies:</label>
+                <input
+                  type="text"
+                  name="allergies"
+                  value={formData.allergies}
+                  onChange={handleInputChange}
+                  placeholder="List any known allergies"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">What kind of toys does your dog have daily access to?</label>
+                <input
+                  type="text"
+                  name="toyTypes"
+                  value={formData.toyTypes}
+                  onChange={handleInputChange}
+                  placeholder="Types of toys"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">How long does your dog play with toys?</label>
+                <input
+                  type="text"
+                  name="toyPlayTime"
+                  value={formData.toyPlayTime}
+                  onChange={handleInputChange}
+                  placeholder="Duration"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Where are the toys kept when not in use?</label>
+                <input
+                  type="text"
+                  name="toyStorage"
+                  value={formData.toyStorage}
+                  onChange={handleInputChange}
+                  placeholder="Storage location"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">How often does your dog go on a walk?</label>
                 <input
                   type="text"
                   name="walkFrequency"
                   value={formData.walkFrequency}
                   onChange={handleInputChange}
-                  placeholder="Daily, Twice daily, etc."
+                  placeholder="Frequency"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Who walks your dog?</label>
+                <input
+                  type="text"
+                  name="walkPerson"
+                  value={formData.walkPerson}
+                  onChange={handleInputChange}
+                  placeholder="Person responsible"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">How long is the walk?</label>
+                <input
+                  type="text"
+                  name="walkDuration"
+                  value={formData.walkDuration}
+                  onChange={handleInputChange}
+                  placeholder="Duration"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Does your dog have any other exercise activities?</label>
+                <input
+                  type="text"
+                  name="otherExercise"
+                  value={formData.otherExercise}
+                  onChange={handleInputChange}
+                  placeholder="Other activities"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 />
               </div>
               
               <div className="md:col-span-2">
-                <label className="block text-gray-700 text-sm font-medium mb-2">What equipment do you use when walking your dog?</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  What does your dog wear on a walk? (Harness, Buckle Collar, No-Pull Harness, Choke Chain, Prong/Choke Collar, HeadHalter)
+                </label>
+                <input
+                  type="text"
+                  name="walkEquipment"
+                  value={formData.walkEquipment}
+                  onChange={handleInputChange}
+                  placeholder="Equipment used"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Do you ever walk your dog off leash?</label>
+                <div className="flex space-x-4 mt-2">
                   <label className="inline-flex items-center">
                     <input
-                      type="checkbox"
-                      name="walkEquipment"
-                      value="flat-collar"
-                      checked={formData.walkEquipment.includes("flat-collar")}
-                      onChange={handleCheckboxChange}
-                      className="form-checkbox h-4 w-4 text-sky-600"
+                      type="radio"
+                      name="offLeash"
+                      value="Y"
+                      checked={formData.offLeash === "Y"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
                     />
-                    <span className="ml-2 text-gray-700">Flat Collar</span>
+                    <span className="ml-2 text-gray-700">Yes</span>
                   </label>
                   <label className="inline-flex items-center">
                     <input
-                      type="checkbox"
-                      name="walkEquipment"
-                      value="harness"
-                      checked={formData.walkEquipment.includes("harness")}
-                      onChange={handleCheckboxChange}
-                      className="form-checkbox h-4 w-4 text-sky-600"
+                      type="radio"
+                      name="offLeash"
+                      value="N"
+                      checked={formData.offLeash === "N"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
                     />
-                    <span className="ml-2 text-gray-700">Harness</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="walkEquipment"
-                      value="slip-collar"
-                      checked={formData.walkEquipment.includes("slip-collar")}
-                      onChange={handleCheckboxChange}
-                      className="form-checkbox h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Slip Collar</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="walkEquipment"
-                      value="head-halter"
-                      checked={formData.walkEquipment.includes("head-halter")}
-                      onChange={handleCheckboxChange}
-                      className="form-checkbox h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Head Halter</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="walkEquipment"
-                      value="prong-collar"
-                      checked={formData.walkEquipment.includes("prong-collar")}
-                      onChange={handleCheckboxChange}
-                      className="form-checkbox h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Prong Collar</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="walkEquipment"
-                      value="electronic-collar"
-                      checked={formData.walkEquipment.includes("electronic-collar")}
-                      onChange={handleCheckboxChange}
-                      className="form-checkbox h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Electronic Collar</span>
+                    <span className="ml-2 text-gray-700">No</span>
                   </label>
                 </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Do you take your dog to the Forest?</label>
+                <input
+                  type="text"
+                  name="forestVisits"
+                  value={formData.forestVisits}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No, frequency"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Does your dog pull on walks?</label>
+                <div className="flex space-x-4 mt-2">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="pulling"
+                      value="Y"
+                      checked={formData.pulling === "Y"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">Yes</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="pulling"
+                      value="N"
+                      checked={formData.pulling === "N"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">No</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  If your dog pulls, what have you tried to change his behavior?
+                </label>
+                <textarea
+                  name="pullingPrevention"
+                  value={formData.pullingPrevention}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe methods tried"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
               </div>
             </div>
           </div>
