@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircleIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
 
 // Define interfaces for our data
 interface Service {
@@ -16,6 +17,22 @@ interface Service {
   image: string;
 }
 
+interface PublicEvent {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  duration: string;
+  location: string;
+  price: number;
+  trainer: string;
+  capacity: number;
+  enrolled: number;
+  image: string;
+  tags: string[];
+}
+
 interface Dog {
   id: number;
   name: string;
@@ -25,7 +42,9 @@ interface Dog {
 }
 
 interface BookingData {
+  bookingType: 'personal' | 'public' | null;
   selectedService: Service | null;
+  selectedEvent: PublicEvent | null;
   selectedDate: string;
   selectedTime: string;
   selectedDog: Dog | null;
@@ -69,6 +88,85 @@ const AVAILABLE_SERVICES: Service[] = [
   },
 ];
 
+// Mock data for public events
+const PUBLIC_EVENTS: PublicEvent[] = [
+  {
+    id: 101,
+    title: 'Weekend Group Obedience Class',
+    description: 'Join our popular group class for basic obedience training with professional trainers. Great for socialization and learning in a structured environment.',
+    date: '2024-07-15',
+    time: '10:00 AM',
+    duration: '2 hours',
+    location: 'CustomK9 Training Center - Main Hall',
+    price: 2500,
+    trainer: 'Sarah Johnson',
+    capacity: 8,
+    enrolled: 5,
+    image: '/images/services/group-class.jpg',
+    tags: ['Beginner-Friendly', 'All Ages']
+  },
+  {
+    id: 102,
+    title: 'Puppy Socialization Event',
+    description: 'A special event designed for puppies under 6 months to develop social skills and confidence in a safe, controlled environment.',
+    date: '2024-07-17',
+    time: '4:00 PM',
+    duration: '90 minutes',
+    location: 'CustomK9 Training Center - Puppy Area',
+    price: 1800,
+    trainer: 'Michael Clark',
+    capacity: 10,
+    enrolled: 4,
+    image: '/images/services/puppy-social.jpg',
+    tags: ['Puppies Only', 'Under 6 Months']
+  },
+  {
+    id: 103,
+    title: 'Advanced Skills Workshop',
+    description: 'For dogs who have mastered the basics and are ready for more challenging commands, including off-leash work and distance commands.',
+    date: '2024-07-20',
+    time: '9:00 AM',
+    duration: '3 hours',
+    location: 'Central Park Training Ground',
+    price: 3500,
+    trainer: 'James Wilson',
+    capacity: 6,
+    enrolled: 3,
+    image: '/images/services/advanced-workshop.jpg',
+    tags: ['Advanced', 'Prior Training Required']
+  },
+  {
+    id: 104,
+    title: 'Agility Introduction',
+    description: 'Learn the basics of dog agility training with our specialized equipment and expert guidance. Great for energetic dogs.',
+    date: '2024-07-22',
+    time: '2:00 PM',
+    duration: '2 hours',
+    location: 'CustomK9 Agility Course',
+    price: 2800,
+    trainer: 'Emily Rodriguez',
+    capacity: 8,
+    enrolled: 2,
+    image: '/images/services/agility.jpg',
+    tags: ['Active Dogs', 'All Skill Levels']
+  },
+  {
+    id: 105,
+    title: 'Reactive Dog Management',
+    description: 'Specialized workshop for owners of reactive dogs. Learn techniques to manage reactivity and build confidence.',
+    date: '2024-07-24',
+    time: '5:00 PM',
+    duration: '2 hours',
+    location: 'CustomK9 Training Center - Private Area',
+    price: 4000,
+    trainer: 'David Thompson',
+    capacity: 5,
+    enrolled: 3,
+    image: '/images/services/reactive-dogs.jpg',
+    tags: ['Behavioral Issues', 'Small Group']
+  }
+];
+
 // Available time slots (these would normally come from the server based on date)
 const TIME_SLOTS = [
   '9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
@@ -80,7 +178,9 @@ export default function BookAppointmentPage() {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [bookingData, setBookingData] = useState<BookingData>({
+    bookingType: null,
     selectedService: null,
+    selectedEvent: null,
     selectedDate: '',
     selectedTime: '',
     selectedDog: null,
@@ -132,7 +232,7 @@ export default function BookAppointmentPage() {
   };
   
   // Go back to previous step
-  const goToPreviousStep = () => {
+  const goToPrevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
       window.scrollTo(0, 0);
@@ -142,24 +242,84 @@ export default function BookAppointmentPage() {
   // Check if current step is complete
   const isStepComplete = (step: number): boolean => {
     switch (step) {
-      case 1: // Select service
-        return bookingData.selectedService !== null;
-      case 2: // Select date and time
-        return bookingData.selectedDate !== '' && bookingData.selectedTime !== '';
-      case 3: // Select dog
-        return bookingData.selectedDog !== null;
-      case 4: // Terms and conditions
-        return bookingData.agreedToTerms;
-      case 5: // Payment
-        return bookingData.paymentMethod !== '';
+      case 1: // Select booking type 
+        return bookingData.bookingType !== null;
+      case 2: // Select service or event
+        return bookingData.bookingType === 'personal' 
+          ? bookingData.selectedService !== null 
+          : bookingData.selectedEvent !== null;
+      case 3: // Select date and time (for personal) or dog (for public)
+        return bookingData.bookingType === 'personal'
+          ? bookingData.selectedDate !== '' && bookingData.selectedTime !== ''
+          : bookingData.selectedDog !== null;
+      case 4: // Select dog (for personal) or terms (for public)
+        return bookingData.bookingType === 'personal'
+          ? bookingData.selectedDog !== null
+          : bookingData.agreedToTerms;
+      case 5: // Terms (for personal) or payment (for public)
+        return bookingData.bookingType === 'personal'
+          ? bookingData.agreedToTerms
+          : bookingData.paymentMethod !== '';
+      case 6: // Payment (for personal only)
+        return bookingData.bookingType === 'public' || bookingData.paymentMethod !== '';
       default:
         return false;
     }
   };
   
+  // Get step label based on booking type
+  const getStepLabel = (index: number): string => {
+    if (bookingData.bookingType === 'personal') {
+      const personalSteps = [
+        'Select Booking Type',
+        'Select Service',
+        'Choose Date & Time',
+        'Select Dog',
+        'Terms & Conditions',
+        'Payment',
+        'Confirmation'
+      ];
+      return personalSteps[index];
+    } else {
+      const publicSteps = [
+        'Select Booking Type',
+        'Select Event',
+        'Select Dog',
+        'Terms & Conditions',
+        'Payment',
+        'Confirmation'
+      ];
+      return publicSteps[index];
+    }
+  };
+  
+  // Select booking type
+  const selectBookingType = (type: 'personal' | 'public') => {
+    setBookingData({ 
+      ...bookingData, 
+      bookingType: type,
+      // Reset other selections when changing booking type
+      selectedService: null,
+      selectedEvent: null,
+      selectedDate: '',
+      selectedTime: ''
+    });
+  };
+  
   // Handle service selection
   const selectService = (service: Service) => {
     setBookingData({ ...bookingData, selectedService: service });
+  };
+  
+  // Handle event selection
+  const selectEvent = (event: PublicEvent) => {
+    setBookingData({ 
+      ...bookingData, 
+      selectedEvent: event,
+      // Set date and time automatically from the event
+      selectedDate: event.date,
+      selectedTime: event.time
+    });
   };
   
   // Handle date selection
@@ -193,41 +353,56 @@ export default function BookAppointmentPage() {
     const appointmentId = Math.floor(Math.random() * 10000);
     
     // Create new appointment object
-    const newAppointment = {
-      id: appointmentId,
-      title: bookingData.selectedService?.name,
-      date: bookingData.selectedDate,
-      time: bookingData.selectedTime,
-      duration: bookingData.selectedService?.duration,
-      location: 'CustomK9 Training Center',
-      trainer: 'John Doe',
-      dogName: bookingData.selectedDog?.name,
-      dogImage: bookingData.selectedDog?.image,
-      status: 'confirmed',
-      totalPrice: bookingData.selectedService?.price,
-      paymentMethod: bookingData.paymentMethod,
-      createdAt: new Date().toISOString()
-    };
+    const newAppointment = bookingData.bookingType === 'personal' 
+      ? {
+          id: appointmentId,
+          title: bookingData.selectedService?.name,
+          date: bookingData.selectedDate,
+          time: bookingData.selectedTime,
+          duration: bookingData.selectedService?.duration,
+          location: 'CustomK9 Training Center',
+          trainer: 'John Doe',
+          dogName: bookingData.selectedDog?.name,
+          dogImage: bookingData.selectedDog?.image,
+          status: 'confirmed',
+          totalPrice: bookingData.selectedService?.price,
+          paymentMethod: bookingData.paymentMethod,
+          createdAt: new Date().toISOString()
+        }
+      : {
+          id: appointmentId,
+          title: bookingData.selectedEvent?.title,
+          date: bookingData.selectedEvent?.date,
+          time: bookingData.selectedEvent?.time,
+          duration: bookingData.selectedEvent?.duration,
+          location: bookingData.selectedEvent?.location,
+          trainer: bookingData.selectedEvent?.trainer,
+          dogName: bookingData.selectedDog?.name,
+          dogImage: bookingData.selectedDog?.image,
+          status: 'confirmed',
+          totalPrice: bookingData.selectedEvent?.price,
+          paymentMethod: bookingData.paymentMethod,
+          isGroupEvent: true,
+          createdAt: new Date().toISOString()
+        };
     
     // Save to localStorage
     try {
-      const existingAppointments = localStorage.getItem('appointments');
-      let appointments = [];
+      // Get existing appointments or initialize empty array
+      const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
       
-      if (existingAppointments) {
-        appointments = JSON.parse(existingAppointments);
-      }
+      // Add new appointment to array
+      existingAppointments.push(newAppointment);
       
-      appointments.push(newAppointment);
-      localStorage.setItem('appointments', JSON.stringify(appointments));
+      // Save updated array back to localStorage
+      localStorage.setItem('appointments', JSON.stringify(existingAppointments));
       
-      // Show completion page
+      // Update UI to show booking is complete
       setIsBookingComplete(true);
+      setCurrentStep(bookingData.bookingType === 'personal' ? 7 : 6);
       
-      // Redirect to calendar page after 3 seconds
-      setTimeout(() => {
-        router.push('/client-area/dashboard/calendar');
-      }, 3000);
+      // Scroll to top to show confirmation
+      window.scrollTo(0, 0);
     } catch (error) {
       console.error('Error saving appointment:', error);
       alert('There was an error saving your appointment. Please try again.');
@@ -318,84 +493,198 @@ export default function BookAppointmentPage() {
         <p className="text-gray-600">Complete the steps below to schedule your appointment</p>
       </div>
       
-      {/* Progress Steps */}
-      <div className="mb-10">
-        <ol className="flex items-center w-full">
-          {[
-            'Select Service',
-            'Choose Date & Time',
-            'Select Dog',
-            'Terms & Conditions',
-            'Payment',
-            'Confirmation'
-          ].map((step, index) => (
-            <li key={index} className={`flex items-center ${index+1 < currentStep ? 'text-sky-600' : index+1 === currentStep ? 'text-sky-800' : 'text-gray-400'}`}>
-              <span className={`flex items-center justify-center w-8 h-8 rounded-full mr-2 ${
-                index+1 < currentStep ? 'bg-sky-100 text-sky-600 border-2 border-sky-600' :
-                index+1 === currentStep ? 'bg-sky-600 text-white' : 'bg-gray-100 text-gray-500'
-              }`}>
-                {index+1 < currentStep ? (
-                  <CheckCircleIcon className="w-5 h-5" />
-                ) : (
-                  index+1
-                )}
-              </span>
-              <span className={`hidden sm:inline-block text-sm ${
-                index+1 === currentStep ? 'font-medium' : 'font-normal'
-              }`}>
-                {step}
-              </span>
-              
-              {index < 5 && (
-                <span className="mx-2 sm:mx-4">
-                  <ChevronRightIcon className="w-4 h-4" />
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
+      {/* Progress indicator */}
+      <div className="mb-6">
+        <div className="relative">
+          <ol className="flex items-center w-full">
+            {bookingData.bookingType === 'personal' ? (
+              // Personal booking flow (7 steps including confirmation)
+              <>
+                <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 1 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 1 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 1 ? <CheckCircleIcon className="w-4 h-4" /> : 1}
+                  </span>
+                  <span className="ml-2 text-sm">Booking Type</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 2 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 2 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 2 ? <CheckCircleIcon className="w-4 h-4" /> : 2}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Service</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 3 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 3 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 3 ? <CheckCircleIcon className="w-4 h-4" /> : 3}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Date & Time</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 4 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 4 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 4 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 4 ? <CheckCircleIcon className="w-4 h-4" /> : 4}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Dog</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 5 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 5 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 5 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 5 ? <CheckCircleIcon className="w-4 h-4" /> : 5}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Terms</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 6 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 6 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 6 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 6 ? <CheckCircleIcon className="w-4 h-4" /> : 6}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Payment</span>
+                </li>
+              </>
+            ) : (
+              // Public event booking flow (6 steps including confirmation)
+              <>
+                <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 1 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 1 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 1 ? <CheckCircleIcon className="w-4 h-4" /> : 1}
+                  </span>
+                  <span className="ml-2 text-sm">Booking Type</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 2 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 2 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 2 ? <CheckCircleIcon className="w-4 h-4" /> : 2}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Event</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 3 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 3 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 3 ? <CheckCircleIcon className="w-4 h-4" /> : 3}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Dog</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 4 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 4 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 4 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 4 ? <CheckCircleIcon className="w-4 h-4" /> : 4}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Terms</span>
+                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
+                </li>
+                <li className={`flex items-center ${currentStep > 5 ? 'text-sky-600' : 'text-gray-500'}`}>
+                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                    currentStep === 5 ? 'bg-sky-100 text-sky-800' : 
+                    currentStep > 5 ? 'bg-sky-600 text-white' : 'bg-gray-200'
+                  }`}>
+                    {currentStep > 5 ? <CheckCircleIcon className="w-4 h-4" /> : 5}
+                  </span>
+                  <span className="hidden sm:inline ml-2 text-sm">Payment</span>
+                </li>
+              </>
+            )}
+          </ol>
+        </div>
       </div>
       
-      {/* Step 1: Select Service */}
+      {/* Step 1: Select Booking Type */}
       {currentStep === 1 && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Service</h2>
+          <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Booking Type</h2>
           
-          <div className="grid gap-4 sm:grid-cols-2">
-            {AVAILABLE_SERVICES.map((service) => (
-              <div 
-                key={service.id}
-                onClick={() => selectService(service)}
-                className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                  bookingData.selectedService?.id === service.id 
-                    ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500 ring-opacity-50' 
-                    : 'border-gray-200 hover:border-sky-200'
-                }`}
-              >
-                <div className="flex">
-                  <div className="flex-shrink-0 relative h-16 w-16 rounded-md overflow-hidden mr-4">
-                    <Image
-                      src={service.image}
-                      alt={service.name}
-                      fill
-                      sizes="64px"
-                      style={{ objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.currentTarget.src = "https://placedog.net/64/64"; // Fallback image
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">{service.name}</h3>
-                    <p className="text-sm text-gray-500">{service.description}</p>
-                    <div className="mt-2 flex justify-between">
-                      <span className="text-sm text-gray-700">{service.duration}</span>
-                      <span className="font-medium text-sky-700">KSh {service.price.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div 
+              onClick={() => selectBookingType('personal')}
+              className={`flex flex-col items-center p-6 border rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                bookingData.bookingType === 'personal' 
+                  ? 'border-sky-500 bg-sky-50' 
+                  : 'border-gray-200 hover:border-sky-300'
+              }`}
+            >
+              <div className="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center mb-4">
+                <UserIcon className="h-8 w-8 text-sky-600" />
               </div>
-            ))}
+              <h3 className="text-lg font-medium mb-2">Personal Training</h3>
+              <p className="text-center text-gray-500 text-sm">
+                Schedule a one-on-one session with our trainers tailored to your dog's needs.
+              </p>
+              <ul className="mt-4 text-sm text-gray-600 space-y-2">
+                <li className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Personalized attention</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Choose your own schedule</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Focus on specific training needs</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div 
+              onClick={() => selectBookingType('public')}
+              className={`flex flex-col items-center p-6 border rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                bookingData.bookingType === 'public' 
+                  ? 'border-sky-500 bg-sky-50' 
+                  : 'border-gray-200 hover:border-sky-300'
+              }`}
+            >
+              <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
+                <UserGroupIcon className="h-8 w-8 text-indigo-600" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">Public Event</h3>
+              <p className="text-center text-gray-500 text-sm">
+                Join one of our group classes or specialized training events with other dogs.
+              </p>
+              <ul className="mt-4 text-sm text-gray-600 space-y-2">
+                <li className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Socialization opportunities</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Cost-effective training</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Pre-scheduled events</span>
+                </li>
+              </ul>
+            </div>
           </div>
           
           <div className="mt-8 flex justify-end">
@@ -406,14 +695,146 @@ export default function BookAppointmentPage() {
                 isStepComplete(1) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next: Choose Date & Time
+              Next: {bookingData.bookingType === 'personal' ? 'Select Service' : 'Select Event'}
             </button>
           </div>
         </div>
       )}
       
-      {/* Step 2: Select Date and Time */}
+      {/* Step 2: Select Service */}
       {currentStep === 2 && (
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          {bookingData.bookingType === 'personal' ? (
+            <>
+              <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Service</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {AVAILABLE_SERVICES.map((service) => (
+                  <div 
+                    key={service.id}
+                    onClick={() => selectService(service)}
+                    className={`border p-4 rounded-lg cursor-pointer transition-all ${
+                      bookingData.selectedService?.id === service.id 
+                        ? 'border-sky-500 bg-sky-50 shadow-md' 
+                        : 'border-gray-200 hover:border-sky-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-start">
+                      <div className="relative w-20 h-20 mr-4 rounded-md overflow-hidden">
+                        <Image
+                          src={service.image}
+                          alt={service.name}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{service.name}</h3>
+                        <p className="text-gray-600 text-sm">{service.description}</p>
+                        <div className="mt-2 flex justify-between items-center">
+                          <span className="text-gray-600 text-sm">{service.duration}</span>
+                          <span className="font-medium">${(service.price / 100).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Public Event</h2>
+              <div className="space-y-6">
+                {PUBLIC_EVENTS.map((event) => (
+                  <div 
+                    key={event.id}
+                    onClick={() => selectEvent(event)}
+                    className={`border p-4 rounded-lg cursor-pointer transition-all ${
+                      bookingData.selectedEvent?.id === event.id 
+                        ? 'border-sky-500 bg-sky-50 shadow-md' 
+                        : 'border-gray-200 hover:border-sky-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex flex-col md:flex-row md:items-start">
+                      <div className="relative w-full md:w-32 h-32 md:mr-4 mb-4 md:mb-0 rounded-md overflow-hidden">
+                        <Image
+                          src={event.image}
+                          alt={event.title}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg">{event.title}</h3>
+                            <p className="text-gray-600 text-sm mb-2">{event.description}</p>
+                          </div>
+                          <div className="text-right mt-2 md:mt-0 md:ml-4 flex-shrink-0">
+                            <span className="font-medium block text-lg">${(event.price / 100).toFixed(2)}</span>
+                            <span className="text-gray-500 text-sm block">
+                              {event.enrolled}/{event.capacity} enrolled
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                          <div className="flex items-center text-gray-600">
+                            <CalendarIcon className="h-4 w-4 mr-1" />
+                            <span>{new Date(event.date).toLocaleDateString('en-US', { 
+                              weekday: 'short', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })} at {event.time}</span>
+                          </div>
+                          <span className="mx-2 text-gray-400">•</span>
+                          <div className="text-gray-600">{event.duration}</div>
+                          <span className="mx-2 text-gray-400">•</span>
+                          <div className="text-gray-600">{event.location}</div>
+                        </div>
+                        
+                        <div className="mt-3">
+                          <div className="text-sm text-gray-700">
+                            <span className="font-medium">Trainer:</span> {event.trainer}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {event.tags.map((tag, index) => (
+                            <span key={index} className="px-2 py-1 text-xs font-medium rounded-full bg-sky-100 text-sky-800">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          
+          <div className="mt-8 flex justify-between">
+            <button
+              onClick={goToPrevStep}
+              className="px-6 py-2 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Back
+            </button>
+            <button
+              onClick={goToNextStep}
+              disabled={!isStepComplete(2)}
+              className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
+                isStepComplete(2) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+              }`}
+            >
+              Next: {bookingData.bookingType === 'personal' ? 'Choose Date & Time' : 'Select Dog'}
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Step 3: Select Date and Time */}
+      {currentStep === 3 && bookingData.bookingType === 'personal' && (
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-6 text-gray-800">Choose Date & Time</h2>
           
@@ -459,16 +880,16 @@ export default function BookAppointmentPage() {
           
           <div className="mt-8 flex justify-between">
             <button
-              onClick={goToPreviousStep}
+              onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
-              disabled={!isStepComplete(2)}
+              disabled={!isStepComplete(3)}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
-                isStepComplete(2) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+                isStepComplete(3) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
               Next: Select Dog
@@ -477,8 +898,9 @@ export default function BookAppointmentPage() {
         </div>
       )}
       
-      {/* Step 3: Select Dog */}
-      {currentStep === 3 && (
+      {/* Step 4: Select Dog */}
+      {((currentStep === 4 && bookingData.bookingType === 'personal') || 
+        (currentStep === 3 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-6 text-gray-800">Select Your Dog</h2>
           
@@ -533,16 +955,16 @@ export default function BookAppointmentPage() {
           
           <div className="mt-8 flex justify-between">
             <button
-              onClick={goToPreviousStep}
+              onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
-              disabled={!isStepComplete(3)}
+              disabled={!isStepComplete(4)}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
-                isStepComplete(3) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+                isStepComplete(4) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
               Next: Terms & Conditions
@@ -551,8 +973,9 @@ export default function BookAppointmentPage() {
         </div>
       )}
       
-      {/* Step 4: Terms and Conditions */}
-      {currentStep === 4 && (
+      {/* Step 5: Terms and Conditions */}
+      {((currentStep === 5 && bookingData.bookingType === 'personal') || 
+        (currentStep === 4 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-6 text-gray-800">Terms & Conditions</h2>
           
@@ -589,16 +1012,16 @@ export default function BookAppointmentPage() {
           
           <div className="mt-8 flex justify-between">
             <button
-              onClick={goToPreviousStep}
+              onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
-              disabled={!isStepComplete(4)}
+              disabled={!isStepComplete(5)}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
-                isStepComplete(4) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+                isStepComplete(5) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
               Next: Payment
@@ -607,8 +1030,9 @@ export default function BookAppointmentPage() {
         </div>
       )}
       
-      {/* Step 5: Payment */}
-      {currentStep === 5 && (
+      {/* Step 6: Payment */}
+      {((currentStep === 6 && bookingData.bookingType === 'personal') || 
+        (currentStep === 5 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-6 text-gray-800">Payment Details</h2>
           
@@ -651,21 +1075,129 @@ export default function BookAppointmentPage() {
           
           <div className="mt-8 flex justify-between">
             <button
-              onClick={goToPreviousStep}
+              onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
             >
               Back
             </button>
             <button
               onClick={completeBooking}
-              disabled={!isStepComplete(5)}
+              disabled={!isStepComplete(6)}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
-                isStepComplete(5) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+                isStepComplete(6) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
               Complete Booking
             </button>
           </div>
+        </div>
+      )}
+      
+      {/* Booking completion screen */}
+      {isBookingComplete && (
+        <div className="bg-white p-8 rounded-xl shadow-md text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircleIcon className="h-12 w-12 text-green-600" />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Booking Confirmed!</h2>
+          
+          <p className="text-gray-600 mb-8 max-w-lg mx-auto">
+            {bookingData.bookingType === 'personal' 
+              ? `Your ${bookingData.selectedService?.name} appointment has been scheduled for ${new Date(bookingData.selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${bookingData.selectedTime}.`
+              : `You have successfully joined the "${bookingData.selectedEvent?.title}" event on ${new Date(bookingData.selectedEvent?.date || '').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${bookingData.selectedEvent?.time}.`
+            }
+          </p>
+          
+          <div className="bg-sky-50 border border-sky-100 rounded-lg p-6 mb-8 max-w-lg mx-auto">
+            <div className="flex items-center mb-4">
+              <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
+                <Image
+                  src={bookingData.selectedDog?.image || '/images/default-dog.jpg'}
+                  alt={bookingData.selectedDog?.name || 'Dog'}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">{bookingData.selectedDog?.name}</h3>
+                <p className="text-sm text-gray-500">{bookingData.selectedDog?.breed}</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-gray-500">Date:</span>
+                <p className="font-medium text-gray-800">
+                  {new Date(bookingData.bookingType === 'personal' ? bookingData.selectedDate : (bookingData.selectedEvent?.date || '')).toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
+                </p>
+              </div>
+              
+              <div>
+                <span className="text-gray-500">Time:</span>
+                <p className="font-medium text-gray-800">{bookingData.bookingType === 'personal' ? bookingData.selectedTime : bookingData.selectedEvent?.time}</p>
+              </div>
+              
+              <div>
+                <span className="text-gray-500">Duration:</span>
+                <p className="font-medium text-gray-800">
+                  {bookingData.bookingType === 'personal' ? bookingData.selectedService?.duration : bookingData.selectedEvent?.duration}
+                </p>
+              </div>
+              
+              <div>
+                <span className="text-gray-500">Location:</span>
+                <p className="font-medium text-gray-800">
+                  {bookingData.bookingType === 'personal' ? 'CustomK9 Training Center' : bookingData.selectedEvent?.location}
+                </p>
+              </div>
+              
+              <div className="col-span-2 mt-2">
+                <span className="text-gray-500">Payment Method:</span>
+                <p className="font-medium text-gray-800">{bookingData.paymentMethod}</p>
+              </div>
+              
+              <div className="col-span-2 mt-2">
+                <span className="text-gray-500">Amount Paid:</span>
+                <p className="font-semibold text-sky-700">
+                  KSh {((bookingData.bookingType === 'personal' ? bookingData.selectedService?.price : bookingData.selectedEvent?.price) || 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link 
+              href="/client-area/dashboard/calendar" 
+              className="px-6 py-3 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              View My Calendar
+            </Link>
+            
+            <Link 
+              href="/client-area/dashboard" 
+              className="px-6 py-3 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition-colors"
+            >
+              Return to Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
+      
+      {!isBookingComplete && currentStep > 1 && (
+        <div className="mt-8 flex justify-between">
+          <button
+            onClick={goToPrevStep}
+            className="px-6 py-2 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            Back
+          </button>
+          {/* This button will be rendered by the individual step components */}
         </div>
       )}
     </div>
