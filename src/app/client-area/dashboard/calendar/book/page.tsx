@@ -447,6 +447,16 @@ export default function BookAppointmentPage() {
     // Generate a random appointment ID
     const appointmentId = Math.floor(Math.random() * 10000);
     
+    // Get the first dog's image or use a default if none available
+    const dogImage = bookingData.selectedDogs.length > 0 
+      ? (bookingData.selectedDogs[0].image || "/images/dog-placeholder.jpg") 
+      : "/images/dog-placeholder.jpg";
+    
+    // Get the first dog's name or use a default if none available
+    const dogName = bookingData.selectedDogs.length > 0 
+      ? bookingData.selectedDogs[0].name 
+      : "Unknown Dog";
+    
     // Create new appointment object
     const newAppointment = bookingData.bookingType === 'personal' 
       ? {
@@ -457,8 +467,10 @@ export default function BookAppointmentPage() {
           duration: bookingData.selectedService?.duration,
           location: 'CustomK9 Training Center',
           trainer: 'John Doe',
+          dogName: dogName, // Use single dog name for compatibility
+          dogImage: dogImage, // Use single dog image for compatibility
           dogNames: bookingData.selectedDogs.map(dog => dog.name),
-          dogImages: bookingData.selectedDogs.map(dog => dog.image),
+          dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
           status: 'confirmed',
           totalPrice: bookingData.selectedService?.price,
           paymentMethod: bookingData.paymentMethod,
@@ -472,8 +484,10 @@ export default function BookAppointmentPage() {
           duration: bookingData.selectedEvent?.duration,
           location: bookingData.selectedEvent?.location,
           trainer: bookingData.selectedEvent?.trainer,
+          dogName: dogName, // Use single dog name for compatibility
+          dogImage: dogImage, // Use single dog image for compatibility
           dogNames: bookingData.selectedDogs.map(dog => dog.name),
-          dogImages: bookingData.selectedDogs.map(dog => dog.image),
+          dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
           status: 'confirmed',
           totalPrice: bookingData.selectedEvent?.price,
           paymentMethod: bookingData.paymentMethod,
@@ -838,13 +852,13 @@ export default function BookAppointmentPage() {
                     <div className="flex items-start">
                       <div className="relative w-20 h-20 mr-4 rounded-md overflow-hidden">
                         <Image
-                          src={service.image}
+                          src={service.image || "/images/dog-placeholder.jpg"}
                           alt={service.name}
                           fill
                           style={{ objectFit: 'cover' }}
                           onError={(e) => {
                             const imgElement = e.currentTarget as HTMLImageElement;
-                            imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
+                            imgElement.src = "/images/dog-placeholder.jpg"; // Use a consistent placeholder
                           }}
                         />
                       </div>
@@ -978,13 +992,13 @@ export default function BookAppointmentPage() {
                   <div className="flex flex-col md:flex-row md:items-start">
                     <div className="relative w-full md:w-40 h-40 md:mr-4 mb-4 md:mb-0 rounded-md overflow-hidden">
                       <Image
-                        src={bookingData.selectedEvent.image}
+                        src={bookingData.selectedEvent.image || "/images/dog-placeholder.jpg"}
                         alt={bookingData.selectedEvent.title}
                         fill
                         style={{ objectFit: 'cover' }}
                         onError={(e) => {
                           const imgElement = e.currentTarget as HTMLImageElement;
-                          imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
+                          imgElement.src = "/images/dog-placeholder.jpg"; // Use a consistent placeholder
                         }}
                       />
                     </div>
@@ -1160,14 +1174,14 @@ export default function BookAppointmentPage() {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 relative h-16 w-16 rounded-full overflow-hidden mr-4">
                         <Image
-                          src={dog.image}
+                          src={dog.image || "/images/dog-placeholder.jpg"}
                           alt={dog.name}
                           fill
                           sizes="64px"
                           style={{ objectFit: 'cover' }}
                           onError={(e) => {
                             const imgElement = e.currentTarget as HTMLImageElement;
-                            imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
+                            imgElement.src = "/images/dog-placeholder.jpg"; // Use a consistent placeholder
                           }}
                         />
                       </div>
@@ -1382,14 +1396,14 @@ export default function BookAppointmentPage() {
                   <div key={dog.id} className="flex items-center bg-white p-2 rounded-lg shadow-sm">
                     <div className="relative h-10 w-10 rounded-full overflow-hidden mr-2">
                       <Image
-                        src={dog.image}
+                        src={dog.image || "/images/dog-placeholder.jpg"}
                         alt={dog.name}
                         fill
                         sizes="40px"
                         style={{ objectFit: 'cover' }}
                         onError={(e) => {
                           const imgElement = e.currentTarget as HTMLImageElement;
-                          imgElement.src = "/images/dog-01.jpg"; // Fallback to a default dog image
+                          imgElement.src = "/images/dog-placeholder.jpg"; // Use a consistent placeholder
                         }}
                       />
                     </div>

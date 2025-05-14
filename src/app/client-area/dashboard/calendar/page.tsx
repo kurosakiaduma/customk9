@@ -167,13 +167,14 @@ export default function CalendarPage() {
                     <div className="flex items-start space-x-3">
                       <div className="relative h-12 w-12 rounded-full overflow-hidden flex-shrink-0">
                         <Image
-                          src={appointment.dogImage}
+                          src={appointment.dogImage || "/images/dog-placeholder.jpg"}
                           alt={appointment.dogName}
                           fill
                           sizes="48px"
                           style={{ objectFit: "cover" }}
                           onError={(e) => {
-                            e.currentTarget.src = "https://placedog.net/48/48"; // Fallback image
+                            const imgElement = e.currentTarget as HTMLImageElement;
+                            imgElement.src = "/images/dog-placeholder.jpg"; // Fallback image
                           }}
                         />
                       </div>
@@ -351,11 +352,15 @@ export default function CalendarPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8 relative rounded-full overflow-hidden mr-2">
                           <Image
-                            src={appointment.dogImage}
+                            src={appointment.dogImage || "/images/dog-placeholder.jpg"}
                             alt={appointment.dogName}
                             fill
                             sizes="32px"
                             style={{ objectFit: "cover" }}
+                            onError={(e) => {
+                              const imgElement = e.currentTarget as HTMLImageElement;
+                              imgElement.src = "/images/dog-placeholder.jpg"; // Fallback image
+                            }}
                           />
                         </div>
                         <div className="text-sm text-gray-700">{appointment.dogName}</div>
@@ -396,11 +401,15 @@ export default function CalendarPage() {
               <div className="flex items-center space-x-4 mb-4">
                 <div className="relative h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-sky-100">
                   <Image
-                    src={selectedAppointment.dogImage}
+                    src={selectedAppointment.dogImage || "/images/dog-placeholder.jpg"}
                     alt={selectedAppointment.dogName}
                     fill
                     sizes="64px"
                     style={{ objectFit: "cover" }}
+                    onError={(e) => {
+                      const imgElement = e.currentTarget as HTMLImageElement;
+                      imgElement.src = "/images/dog-placeholder.jpg"; // Fallback image
+                    }}
                   />
                 </div>
                 <div>
