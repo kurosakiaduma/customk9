@@ -85,6 +85,7 @@ interface FormData {
   // Behavior Checklist
   behaviorChecklist: string[];
   behaviorDetails: string;
+  undesirableBehavior: string;
   fearDescription: string;
 }
 
@@ -172,6 +173,7 @@ export default function IntakeFormPage() {
     // Behavior Checklist
     behaviorChecklist: [],
     behaviorDetails: "",
+    undesirableBehavior: "",
     fearDescription: "",
   });
   
@@ -986,50 +988,209 @@ export default function IntakeFormPage() {
           </div>
         )}
         
-        {/* Page 3: Behavior */}
+        {/* Page 3: History */}
         {currentPage === 3 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">Behavior & History</h2>
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog's History</h2>
             
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-1">
-                  Has your dog had previous training?
+                  Describe any previous training you pup had had and the organization or trainers name.
                 </label>
                 <textarea
                   name="previousTraining"
                   value={formData.previousTraining}
                   onChange={handleInputChange}
-                  rows={2}
-                  placeholder="Describe any previous training experience"
+                  rows={3}
+                  placeholder="Describe previous training experience and trainer/organization"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 ></textarea>
               </div>
               
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-1">
-                  Are there any behavior concerns you have?
+                  Has your dog ever growled at a person or dog?
+                </label>
+                <div className="flex space-x-4 mt-2">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="growled"
+                      value="Y"
+                      checked={formData.growled === "Y"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">Yes</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="growled"
+                      value="N"
+                      checked={formData.growled === "N"}
+                      onChange={handleInputChange}
+                      className="form-radio h-4 w-4 text-sky-600"
+                    />
+                    <span className="ml-2 text-gray-700">No</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  If yes, please describe what happened:
                 </label>
                 <textarea
-                  name="behaviorConcerns"
-                  value={formData.behaviorConcerns}
+                  name="growlDetails"
+                  value={formData.growlDetails}
                   onChange={handleInputChange}
-                  rows={2}
-                  placeholder="Describe any behavior issues or concerns"
+                  rows={3}
+                  placeholder="Describe the growling incident(s)"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 ></textarea>
               </div>
               
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-1">
-                  Are there any situations where your dog seems fearful?
+                  Has your dog ever nipped/bitten a person or another animal before?
+                </label>
+                <input
+                  type="text"
+                  name="bitten"
+                  value={formData.bitten}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  If yes, please describe what happened:
                 </label>
                 <textarea
-                  name="fearfulSituations"
-                  value={formData.fearfulSituations}
+                  name="biteDetails"
+                  value={formData.biteDetails}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Describe the biting incident(s)"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  If your dog has nipped/bitten a person or animal, was there a tear, scratch, bruise, bleeding, or puncture? (List all that apply.)
+                </label>
+                <textarea
+                  name="biteInjury"
+                  value={formData.biteInjury}
                   onChange={handleInputChange}
                   rows={2}
-                  placeholder="Describe situations that cause fear"
+                  placeholder="Describe any injuries caused"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  Is your dog fearful or nervous about certain people/dogs/situations?
+                </label>
+                <input
+                  type="text"
+                  name="fearful"
+                  value={formData.fearful}
+                  onChange={handleInputChange}
+                  placeholder="Yes/No"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  If yes, please describe:
+                </label>
+                <textarea
+                  name="fearDetails"
+                  value={formData.fearDetails}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Describe fearful behaviors and triggers"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  How does your dog respond to new people in your home?
+                </label>
+                <textarea
+                  name="newPeopleResponse"
+                  value={formData.newPeopleResponse}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe how your dog reacts to visitors"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  How does your dog respond to grooming or bathing?
+                </label>
+                <textarea
+                  name="groomingResponse"
+                  value={formData.groomingResponse}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe reaction to grooming/bathing"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  What is your reaction when your dog ignores you?
+                </label>
+                <textarea
+                  name="ignoreReaction"
+                  value={formData.ignoreReaction}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe your typical response"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  What trainers, boarding facilities, or pet services have you used for your dog in the past? (Name/City)
+                </label>
+                <textarea
+                  name="previousServices"
+                  value={formData.previousServices}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="List previous services used"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  Please list any of the following tools that you currently use or have previously used with your dog:
+                  <span className="block text-xs text-gray-600 mt-1">
+                    Martingale Collar, Prong Collar, Choke Chain, E-Collar, Bark Collar, Citronella Collar/Spray, Spray Water Bottle, Clicker, Extendible Leash, Waist Leash, Front-Attach Harness, No-Pull Harness, Regular Harness, Head Halti, Gentle Leader, or Others
+                  </span>
+                </label>
+                <textarea
+                  name="toolsUsed"
+                  value={formData.toolsUsed}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="List tools you've used with your dog"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                 ></textarea>
               </div>
@@ -1040,21 +1201,179 @@ export default function IntakeFormPage() {
         {/* Page 4: Goals */}
         {currentPage === 4 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">Training Goals</h2>
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog's Training Goals</h2>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-sky-700 mb-3">5 Things You Like About Your Dog</h3>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((num, index) => (
+                    <div key={`like-${index}`} className="flex items-center">
+                      <span className="mr-2 font-medium">{num}.</span>
+                      <input
+                        type="text"
+                        value={formData.likesAboutDog[index]}
+                        onChange={(e) => handleArrayItemChange('likesAboutDog', index, e.target.value)}
+                        placeholder={`Like #${num}`}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium text-sky-700 mb-3">5 Things You Wish You Could Change About Your Dog</h3>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((num, index) => (
+                    <div key={`dislike-${index}`} className="flex items-center">
+                      <span className="mr-2 font-medium">{num}.</span>
+                      <input
+                        type="text"
+                        value={formData.dislikesAboutDog[index]}
+                        onChange={(e) => handleArrayItemChange('dislikesAboutDog', index, e.target.value)}
+                        placeholder={`Thing to change #${num}`}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  What made you reach out to us for training assistance?
+                </label>
+                <textarea
+                  name="whyTraining"
+                  value={formData.whyTraining}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Describe your reasons for seeking training"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  What would you like to accomplish through training?
+                </label>
+                <textarea
+                  name="trainingGoals"
+                  value={formData.trainingGoals}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Describe your training goals"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  How would your ideal dog behave like?
+                </label>
+                <textarea
+                  name="idealDogBehavior"
+                  value={formData.idealDogBehavior}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Describe how you would like your dog to behave"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Page 5: Behavior Checklist */}
+        {currentPage === 5 && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">Behavior Checklist</h2>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-1">
-                What training goals do you have for your dog?
-              </label>
-              <textarea
-                name="trainingGoals"
-                value={formData.trainingGoals}
-                onChange={handleInputChange}
-                rows={5}
-                placeholder="Describe your specific training goals, what behaviors you want to improve, and what you hope to achieve from training."
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                required
-              ></textarea>
+              <p className="mb-4 text-gray-700">
+                Does your dog exhibit any of the following (check any or all that apply):
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  "Jumps on people", 
+                  "Doesn't listen",
+                  "Mouthing/nipping", 
+                  "Steals food/trash/objects",
+                  "Excessive vocalization", 
+                  "Chews items",
+                  "Play Biting", 
+                  "Digs in Yard",
+                  "Urinates when excited", 
+                  "Darts/escapes/ doors/gates",
+                  "Anxious when alone", 
+                  "Threatens/bites family members or strangers",
+                  "Threatens/growls at animals", 
+                  "Reactive/aggressive on leash"
+                ].map((behavior, index) => (
+                  <div key={index} className="flex items-start">
+                    <input
+                      type="checkbox"
+                      id={`behavior-${index}`}
+                      name="behaviorChecklist"
+                      value={behavior}
+                      checked={formData.behaviorChecklist.includes(behavior)}
+                      onChange={handleCheckboxChange}
+                      className="h-5 w-5 mt-0.5 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`behavior-${index}`} className="ml-2 text-gray-700">
+                      {behavior}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6">
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  Issue with certain genders or types of people, items of clothing, tools, uniforms. Please describe:
+                </label>
+                <textarea
+                  name="behaviorDetails"
+                  value={formData.behaviorDetails}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe specific issues with certain people or items"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  Shows undesirable behavior. Please describe below:
+                </label>
+                <textarea
+                  name="undesirableBehavior"
+                  value={formData.undesirableBehavior}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe any other undesirable behaviors"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-medium mb-1">
+                  Fearful. Please describe:
+                </label>
+                <textarea
+                  name="fearDescription"
+                  value={formData.fearDescription}
+                  onChange={handleInputChange}
+                  rows={2}
+                  placeholder="Describe any fearful behaviors"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                ></textarea>
+              </div>
+              
+              <div className="mt-8 text-gray-700">
+                <p>Thank you for taking the time to fill out our registration form. These details will help me better serve you and your dog. I look forward to working with you!</p>
+              </div>
             </div>
           </div>
         )}
