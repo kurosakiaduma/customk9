@@ -517,32 +517,37 @@ export default function DogsPage() {
         </Link>
       </div>
       
-      {/* Intake Form Alert - show only if not completed */}
-      {!hasSubmittedIntakeForm && (
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-6 mb-8">
-          <div className="flex items-start">
-            <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-5">
-              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      {/* Intake Form Alert - always show but with different message depending on completed status */}
+      <div className={`bg-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-50 border-2 border-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-300 rounded-lg p-6 mb-8`}>
+        <div className="flex items-start">
+          <div className={`flex-shrink-0 w-12 h-12 bg-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-100 rounded-full flex items-center justify-center mr-5`}>
+            <svg className={`w-7 h-7 text-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              {hasSubmittedIntakeForm ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-amber-800 text-xl font-bold mb-2">Complete Your Client Intake Form</h3>
-              <p className="text-amber-700 mb-4">
-                Before adding dogs to your profile, please complete our comprehensive intake form. This is a 
-                <strong> required first step</strong> that helps us understand your dog's specific needs, behavior patterns,
-                and your training goals. Without this information, we cannot create an effective training plan.
-              </p>
-              <Link 
-                href="/client-area/dashboard/intake" 
-                className="inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium text-base transition-colors shadow-md"
-              >
-                Start Intake Process Now
-              </Link>
-            </div>
+              )}
+            </svg>
+          </div>
+          <div>
+            <h3 className={`text-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-800 text-xl font-bold mb-2`}>
+              {hasSubmittedIntakeForm ? "Client Intake Form" : "Complete Your Client Intake Form"}
+            </h3>
+            <p className={`text-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-700 mb-4`}>
+              {hasSubmittedIntakeForm 
+                ? "The intake form contains essential information about you and your dogs. You can review or update your information at any time to ensure we have the most accurate details for creating effective training plans."
+                : "Before adding dogs to your profile, please complete our comprehensive intake form. This is a required first step that helps us understand your dog's specific needs, behavior patterns, and your training goals. Without this information, we cannot create an effective training plan."
+              }
+            </p>
+            <Link 
+              href="/client-area/dashboard/intake" 
+              className={`inline-block px-6 py-3 bg-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-600 hover:bg-${hasSubmittedIntakeForm ? 'sky' : 'amber'}-700 text-white rounded-md font-medium text-base transition-colors shadow-md`}
+            >
+              {hasSubmittedIntakeForm ? "Review or Update Intake Form" : "Start Intake Process Now"}
+            </Link>
           </div>
         </div>
-      )}
+      </div>
       
       {/* Search bar */}
       <div className="relative">

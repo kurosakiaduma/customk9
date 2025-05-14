@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -177,6 +177,30 @@ export default function IntakeFormPage() {
     fearDescription: "",
   });
   
+  // Load saved data if it exists
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem("customk9_intake_data");
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        setFormData(parsedData);
+        
+        // Show a notification that the form is being edited
+        setSubmissionStatus({
+          success: true,
+          message: "Your previously saved form has been loaded. You can make changes and resubmit."
+        });
+        
+        // Clear the notification after 5 seconds
+        setTimeout(() => {
+          setSubmissionStatus(null);
+        }, 5000);
+      }
+    } catch (error) {
+      console.error("Error loading saved form data:", error);
+    }
+  }, []);
+  
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -255,13 +279,15 @@ export default function IntakeFormPage() {
       // Show success message
       setSubmissionStatus({
         success: true,
-        message: "Your intake form has been submitted successfully!"
+        message: "Your intake form has been submitted successfully! You can update it anytime if needed."
       });
       
-      // Redirect after a short delay
-      setTimeout(() => {
-        router.push("/client-area/dashboard");
-      }, 2000);
+      // Set loading to false instead of redirecting
+      setIsLoading(false);
+      
+      // Reset to first page to allow for reviewing/editing
+      setCurrentPage(1);
+
     } catch (error) {
       console.error("Error saving form data:", error);
       setSubmissionStatus({
