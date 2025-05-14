@@ -60,7 +60,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'One-on-one session focused on basic commands and behavior',
     duration: '60 minutes',
     price: 4500,
-    image: '/images/services/obedience.jpg'
+    image: '/images/service-01.jpg'
   },
   {
     id: 2,
@@ -68,7 +68,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'Socialization and basic training for puppies under 6 months',
     duration: '90 minutes',
     price: 3000,
-    image: '/images/services/puppy-class.jpg'
+    image: '/images/service-02.jpg'
   },
   {
     id: 3,
@@ -76,7 +76,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'Assessment and plan for addressing specific behavior issues',
     duration: '120 minutes',
     price: 6000,
-    image: '/images/services/behavior.jpg'
+    image: '/images/service-03.jpg'
   },
   {
     id: 4,
@@ -84,7 +84,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'Series of 5 sessions for advanced commands and off-leash work',
     duration: '60 minutes per session',
     price: 18000,
-    image: '/images/services/advanced.jpg'
+    image: '/images/service-04.jpg'
   },
 ];
 
@@ -102,7 +102,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Sarah Johnson',
     capacity: 8,
     enrolled: 5,
-    image: '/images/services/group-class.jpg',
+    image: '/images/service-01.jpg',
     tags: ['Beginner-Friendly', 'All Ages']
   },
   {
@@ -117,7 +117,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Michael Clark',
     capacity: 10,
     enrolled: 4,
-    image: '/images/services/puppy-social.jpg',
+    image: '/images/service-02.jpg',
     tags: ['Puppies Only', 'Under 6 Months']
   },
   {
@@ -132,7 +132,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'James Wilson',
     capacity: 6,
     enrolled: 3,
-    image: '/images/services/advanced-workshop.jpg',
+    image: '/images/service-03.jpg',
     tags: ['Advanced', 'Prior Training Required']
   },
   {
@@ -147,7 +147,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Emily Rodriguez',
     capacity: 8,
     enrolled: 2,
-    image: '/images/services/agility.jpg',
+    image: '/images/service-04.jpg',
     tags: ['Active Dogs', 'All Skill Levels']
   },
   {
@@ -162,7 +162,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'David Thompson',
     capacity: 5,
     enrolled: 3,
-    image: '/images/services/reactive-dogs.jpg',
+    image: '/images/service-01.jpg',
     tags: ['Behavioral Issues', 'Small Group']
   },
   {
@@ -177,7 +177,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Sarah Johnson',
     capacity: 8,
     enrolled: 2,
-    image: '/images/services/group-class.jpg',
+    image: '/images/service-02.jpg',
     tags: ['All Levels', 'Group Training']
   },
   {
@@ -192,7 +192,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'David Thompson',
     capacity: 6,
     enrolled: 1,
-    image: '/images/services/reactive-dogs.jpg',
+    image: '/images/service-03.jpg',
     tags: ['Behavioral Issues', 'Specialized Training']
   }
 ];
@@ -230,6 +230,7 @@ export default function BookAppointmentPage() {
   // Load dogs from localStorage on initial load
   useEffect(() => {
     try {
+      // Check if there are dogs in localStorage
       const storedDogs = localStorage.getItem('dogs');
       if (storedDogs) {
         setDogs(JSON.parse(storedDogs));
@@ -241,31 +242,35 @@ export default function BookAppointmentPage() {
             name: 'Max',
             breed: 'German Shepherd',
             age: 3,
-            image: '/images/dogs/german-shepherd.jpg'
+            image: '/images/dog-01.jpg' // Using existing image instead of missing one
           },
           {
             id: 2,
             name: 'Bella',
             breed: 'Labrador Retriever',
             age: 2,
-            image: '/images/dogs/labrador.jpg'
+            image: '/images/dog-02.jpg' // Using existing image instead of missing one
           }
         ]);
       }
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error loading dogs from localStorage:', error);
-      // Fallback to empty array
-      setDogs([]);
-    } finally {
+      console.error('Error loading dogs:', error);
       setIsLoading(false);
     }
   }, []);
   
   // Move to next step if data for current step is valid
   const goToNextStep = () => {
+    console.log('Current step:', currentStep);
+    console.log('Step complete?', isStepComplete(currentStep));
+    console.log('Booking data:', bookingData);
+    
     if (isStepComplete(currentStep)) {
       setCurrentStep(currentStep + 1);
       window.scrollTo(0, 0);
+    } else {
+      console.log('Cannot proceed: current step is not complete');
     }
   };
   
@@ -287,17 +292,23 @@ export default function BookAppointmentPage() {
           ? bookingData.selectedService !== null 
           : bookingData.selectedEvent !== null;
       case 3: // Select date and time (for personal) or dog (for public)
-        return bookingData.bookingType === 'personal'
-          ? bookingData.selectedDate !== '' && bookingData.selectedTime !== ''
-          : bookingData.selectedDog !== null;
+        if (bookingData.bookingType === 'personal') {
+          return bookingData.selectedDate !== '' && bookingData.selectedTime !== '';
+        } else {
+          return bookingData.selectedDog !== null;
+        }
       case 4: // Select dog (for personal) or terms (for public)
-        return bookingData.bookingType === 'personal'
-          ? bookingData.selectedDog !== null
-          : bookingData.agreedToTerms;
+        if (bookingData.bookingType === 'personal') {
+          return bookingData.selectedDog !== null;
+        } else {
+          return bookingData.agreedToTerms;
+        }
       case 5: // Terms (for personal) or payment (for public)
-        return bookingData.bookingType === 'personal'
-          ? bookingData.agreedToTerms
-          : bookingData.paymentMethod !== '';
+        if (bookingData.bookingType === 'personal') {
+          return bookingData.agreedToTerms;
+        } else {
+          return bookingData.paymentMethod !== '';
+        }
       case 6: // Payment (for personal only)
         return bookingData.bookingType === 'public' || bookingData.paymentMethod !== '';
       default:
@@ -786,6 +797,10 @@ export default function BookAppointmentPage() {
                           alt={service.name}
                           fill
                           style={{ objectFit: 'cover' }}
+                          onError={(e) => {
+                            const imgElement = e.currentTarget as HTMLImageElement;
+                            imgElement.src = "/images/service-01.jpg"; // Fallback to a known existing image
+                          }}
                         />
                       </div>
                       <div className="flex-1">
@@ -922,6 +937,10 @@ export default function BookAppointmentPage() {
                         alt={bookingData.selectedEvent.title}
                         fill
                         style={{ objectFit: 'cover' }}
+                        onError={(e) => {
+                          const imgElement = e.currentTarget as HTMLImageElement;
+                          imgElement.src = "/images/service-01.jpg"; // Fallback to a known existing image
+                        }}
                       />
                     </div>
                     <div className="flex-1">
@@ -1100,7 +1119,8 @@ export default function BookAppointmentPage() {
                         sizes="64px"
                         style={{ objectFit: 'cover' }}
                         onError={(e) => {
-                          e.currentTarget.src = "https://placedog.net/64/64"; // Fallback image
+                          const imgElement = e.currentTarget as HTMLImageElement;
+                          imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
                         }}
                       />
                     </div>
@@ -1133,12 +1153,12 @@ export default function BookAppointmentPage() {
             </button>
             <button
               onClick={goToNextStep}
-              disabled={!isStepComplete(4)}
+              disabled={!isStepComplete(bookingData.bookingType === 'personal' ? 4 : 3)}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
-                isStepComplete(4) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+                isStepComplete(bookingData.bookingType === 'personal' ? 4 : 3) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next: Terms & Conditions
+              Next: {bookingData.bookingType === 'personal' ? 'Terms & Conditions' : 'Terms & Conditions'}
             </button>
           </div>
         </div>
@@ -1299,10 +1319,14 @@ export default function BookAppointmentPage() {
             <div className="flex items-center mb-4">
               <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
                 <Image
-                  src={bookingData.selectedDog?.image || '/images/default-dog.jpg'}
+                  src={bookingData.selectedDog?.image || '/images/dog-01.jpg'}
                   alt={bookingData.selectedDog?.name || 'Dog'}
                   fill
                   style={{ objectFit: 'cover' }}
+                  onError={(e) => {
+                    const imgElement = e.currentTarget as HTMLImageElement;
+                    imgElement.src = "/images/dog-01.jpg"; // Fallback to a default dog image
+                  }}
                 />
               </div>
               <div>
