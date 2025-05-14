@@ -60,7 +60,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'One-on-one session focused on basic commands and behavior',
     duration: '60 minutes',
     price: 4500,
-    image: '/images/service-01.jpg'
+    image: '/images/dog-01.jpg'
   },
   {
     id: 2,
@@ -68,7 +68,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'Socialization and basic training for puppies under 6 months',
     duration: '90 minutes',
     price: 3000,
-    image: '/images/service-02.jpg'
+    image: '/images/dog-02.jpg'
   },
   {
     id: 3,
@@ -76,7 +76,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'Assessment and plan for addressing specific behavior issues',
     duration: '120 minutes',
     price: 6000,
-    image: '/images/service-03.jpg'
+    image: '/images/dog-03.jpg'
   },
   {
     id: 4,
@@ -84,7 +84,7 @@ const AVAILABLE_SERVICES: Service[] = [
     description: 'Series of 5 sessions for advanced commands and off-leash work',
     duration: '60 minutes per session',
     price: 18000,
-    image: '/images/service-04.jpg'
+    image: '/images/dog-04.jpg'
   },
 ];
 
@@ -102,7 +102,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Sarah Johnson',
     capacity: 8,
     enrolled: 5,
-    image: '/images/service-01.jpg',
+    image: '/images/dog-01.jpg',
     tags: ['Beginner-Friendly', 'All Ages']
   },
   {
@@ -117,7 +117,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Michael Clark',
     capacity: 10,
     enrolled: 4,
-    image: '/images/service-02.jpg',
+    image: '/images/dog-02.jpg',
     tags: ['Puppies Only', 'Under 6 Months']
   },
   {
@@ -132,7 +132,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'James Wilson',
     capacity: 6,
     enrolled: 3,
-    image: '/images/service-03.jpg',
+    image: '/images/dog-03.jpg',
     tags: ['Advanced', 'Prior Training Required']
   },
   {
@@ -147,7 +147,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Emily Rodriguez',
     capacity: 8,
     enrolled: 2,
-    image: '/images/service-04.jpg',
+    image: '/images/dog-04.jpg',
     tags: ['Active Dogs', 'All Skill Levels']
   },
   {
@@ -162,7 +162,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'David Thompson',
     capacity: 5,
     enrolled: 3,
-    image: '/images/service-01.jpg',
+    image: '/images/dog-05.jpg',
     tags: ['Behavioral Issues', 'Small Group']
   },
   {
@@ -177,7 +177,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'Sarah Johnson',
     capacity: 8,
     enrolled: 2,
-    image: '/images/service-02.jpg',
+    image: '/images/dog-06.jpg',
     tags: ['All Levels', 'Group Training']
   },
   {
@@ -192,7 +192,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     trainer: 'David Thompson',
     capacity: 6,
     enrolled: 1,
-    image: '/images/service-03.jpg',
+    image: '/images/dog-07.jpg',
     tags: ['Behavioral Issues', 'Specialized Training']
   }
 ];
@@ -301,11 +301,13 @@ export default function BookAppointmentPage() {
         if (bookingData.bookingType === 'personal') {
           return bookingData.selectedDog !== null;
         } else {
-          return bookingData.agreedToTerms;
+          // Always allow proceeding from terms page for public booking
+          return true;
         }
       case 5: // Terms (for personal) or payment (for public)
         if (bookingData.bookingType === 'personal') {
-          return bookingData.agreedToTerms;
+          // Always allow proceeding from terms page for personal booking
+          return true;
         } else {
           return bookingData.paymentMethod !== '';
         }
@@ -799,7 +801,7 @@ export default function BookAppointmentPage() {
                           style={{ objectFit: 'cover' }}
                           onError={(e) => {
                             const imgElement = e.currentTarget as HTMLImageElement;
-                            imgElement.src = "/images/service-01.jpg"; // Fallback to a known existing image
+                            imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
                           }}
                         />
                       </div>
@@ -939,7 +941,7 @@ export default function BookAppointmentPage() {
                         style={{ objectFit: 'cover' }}
                         onError={(e) => {
                           const imgElement = e.currentTarget as HTMLImageElement;
-                          imgElement.src = "/images/service-01.jpg"; // Fallback to a known existing image
+                          imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
                         }}
                       />
                     </div>
