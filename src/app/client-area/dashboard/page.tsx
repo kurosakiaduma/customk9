@@ -153,62 +153,67 @@ const SummaryCard = ({
   );
 };
 
-const DogProfileCard = ({ dog }: { dog: any }) => (
-  <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-    <div className="relative h-32 w-full">
-      <Image
-        src={dog.image}
-        alt={dog.name}
-        fill
-        sizes="100%"
-        style={{ objectFit: "cover" }}
-      />
+const DogProfileCard = ({ dog }: { dog: any }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div className="relative h-32 w-full">
+        <Image
+          src={imageError ? "/images/dog-placeholder.jpg" : dog.image}
+          alt={dog.name}
+          fill
+          sizes="100%"
+          style={{ objectFit: "cover" }}
+          onError={() => setImageError(true)}
+        />
+      </div>
+      <div className="p-4">
+        <div className="flex justify-between items-start">
+          <h3 className="text-lg font-semibold text-gray-800">{dog.name}</h3>
+          <span className="px-2 py-1 bg-sky-100 text-sky-700 rounded-full text-xs">
+            {dog.level}
+          </span>
+        </div>
+        <p className="text-gray-600 text-sm mb-3">{dog.breed}, {dog.age}</p>
+        
+        <div className="mt-2">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-gray-600">Training Progress</span>
+            <span className="font-medium">{dog.progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-sky-600 h-2 rounded-full" 
+              style={{ width: `${dog.progress}%` }}
+            ></div>
+          </div>
+        </div>
+        
+        {dog.intakeDetails && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <h4 className="text-sm font-medium text-gray-700 mb-1">Intake Information</h4>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li><span className="font-medium">Source:</span> {dog.intakeDetails.dogSource}</li>
+              <li><span className="font-medium">Time with dog:</span> {dog.intakeDetails.timeWithDog}</li>
+              <li><span className="font-medium">Vet:</span> {dog.intakeDetails.vetName}</li>
+              <li><span className="font-medium">Walk routine:</span> {dog.intakeDetails.walkFrequency}</li>
+            </ul>
+          </div>
+        )}
+        
+        <div className="mt-4">
+          <Link 
+            href={`/client-area/dashboard/dogs/${dog.id}`}
+            className="text-sky-600 hover:text-sky-800 text-sm font-medium"
+          >
+            View Profile →
+          </Link>
+        </div>
+      </div>
     </div>
-    <div className="p-4">
-      <div className="flex justify-between items-start">
-        <h3 className="text-lg font-semibold text-gray-800">{dog.name}</h3>
-        <span className="px-2 py-1 bg-sky-100 text-sky-700 rounded-full text-xs">
-          {dog.level}
-        </span>
-      </div>
-      <p className="text-gray-600 text-sm mb-3">{dog.breed}, {dog.age}</p>
-      
-      <div className="mt-2">
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-600">Training Progress</span>
-          <span className="font-medium">{dog.progress}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-sky-600 h-2 rounded-full" 
-            style={{ width: `${dog.progress}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      {dog.intakeDetails && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <h4 className="text-sm font-medium text-gray-700 mb-1">Intake Information</h4>
-          <ul className="text-xs text-gray-600 space-y-1">
-            <li><span className="font-medium">Source:</span> {dog.intakeDetails.dogSource}</li>
-            <li><span className="font-medium">Time with dog:</span> {dog.intakeDetails.timeWithDog}</li>
-            <li><span className="font-medium">Vet:</span> {dog.intakeDetails.vetName}</li>
-            <li><span className="font-medium">Walk routine:</span> {dog.intakeDetails.walkFrequency}</li>
-          </ul>
-        </div>
-      )}
-      
-      <div className="mt-4">
-        <Link 
-          href={`/client-area/dashboard/dogs/${dog.id}`}
-          className="text-sky-600 hover:text-sky-800 text-sm font-medium"
-        >
-          View Profile →
-        </Link>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const UpcomingSessionCard = ({ session }: { session: any }) => (
   <div className="flex items-start p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -323,10 +328,10 @@ export default function DashboardPage() {
       <WelcomeSection name={name} />
       
       {/* Intake Form Alert - always show but with different message depending on completed status */}
-      <div className={`bg-${hasFilledIntakeForm ? 'sky' : 'amber'}-50 border-2 border-${hasFilledIntakeForm ? 'sky' : 'amber'}-300 rounded-lg p-6 mb-8`}>
+      <div className={hasFilledIntakeForm ? "bg-sky-50 border-2 border-sky-300 rounded-lg p-6 mb-8" : "bg-amber-50 border-2 border-amber-300 rounded-lg p-6 mb-8"}>
         <div className="flex items-start">
-          <div className={`flex-shrink-0 w-12 h-12 bg-${hasFilledIntakeForm ? 'sky' : 'amber'}-100 rounded-full flex items-center justify-center mr-5`}>
-            <svg className={`w-7 h-7 text-${hasFilledIntakeForm ? 'sky' : 'amber'}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <div className={hasFilledIntakeForm ? "flex-shrink-0 w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center mr-5" : "flex-shrink-0 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-5"}>
+            <svg className={hasFilledIntakeForm ? "w-7 h-7 text-sky-600" : "w-7 h-7 text-amber-600"} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               {hasFilledIntakeForm ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               ) : (
@@ -335,10 +340,10 @@ export default function DashboardPage() {
             </svg>
           </div>
           <div>
-            <h3 className={`text-${hasFilledIntakeForm ? 'sky' : 'amber'}-800 text-xl font-bold mb-2`}>
+            <h3 className={hasFilledIntakeForm ? "text-sky-800 text-xl font-bold mb-2" : "text-amber-800 text-xl font-bold mb-2"}>
               {hasFilledIntakeForm ? "Client Intake Form" : "Complete Your Client Intake Form"}
             </h3>
-            <p className={`text-${hasFilledIntakeForm ? 'sky' : 'amber'}-700 mb-4`}>
+            <p className={hasFilledIntakeForm ? "text-sky-700 mb-4" : "text-amber-700 mb-4"}>
               {hasFilledIntakeForm 
                 ? "Thank you for completing your intake form. You can review or update your information at any time to ensure we have the most current details about your dog."
                 : "Your training experience with CustomK9 starts with our comprehensive intake form. This is a required first step that helps us understand your dog's specific needs, behavior patterns, and your training goals. Without this information, we cannot create an effective training plan."
@@ -346,7 +351,10 @@ export default function DashboardPage() {
             </p>
             <Link 
               href="/client-area/dashboard/intake" 
-              className={`inline-block px-6 py-3 bg-${hasFilledIntakeForm ? 'sky' : 'amber'}-600 hover:bg-${hasFilledIntakeForm ? 'sky' : 'amber'}-700 text-white rounded-md font-medium text-base transition-colors shadow-md`}
+              className={hasFilledIntakeForm 
+                ? "inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-md font-medium text-base transition-colors shadow-md" 
+                : "inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium text-base transition-colors shadow-md"
+              }
             >
               {hasFilledIntakeForm ? "Review or Update Intake Form" : "Start Intake Process Now"}
             </Link>

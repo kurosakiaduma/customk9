@@ -111,6 +111,7 @@ const isOverdue = (dueDateString: string) => {
 // Dog profile detail component
 const DogDetailCard = ({ dog }: { dog: any }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'training' | 'intake'>('overview');
+  const [imageError, setImageError] = useState(false);
   
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-md overflow-hidden">
@@ -118,11 +119,12 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
       <div className="relative">
         <div className="h-48 w-full relative">
           <Image
-            src={dog.image}
+            src={imageError ? "/images/dog-placeholder.jpg" : dog.image}
             alt={dog.name}
             fill
             sizes="100%"
             style={{ objectFit: "cover" }}
+            onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         </div>
