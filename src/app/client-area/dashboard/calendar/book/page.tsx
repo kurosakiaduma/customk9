@@ -94,7 +94,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     id: 101,
     title: 'Weekend Group Obedience Class',
     description: 'Join our popular group class for basic obedience training with professional trainers. Great for socialization and learning in a structured environment.',
-    date: '2024-07-15',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 15).toISOString().split('T')[0],
     time: '10:00 AM',
     duration: '2 hours',
     location: 'CustomK9 Training Center - Main Hall',
@@ -109,7 +109,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     id: 102,
     title: 'Puppy Socialization Event',
     description: 'A special event designed for puppies under 6 months to develop social skills and confidence in a safe, controlled environment.',
-    date: '2024-07-17',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 17).toISOString().split('T')[0],
     time: '4:00 PM',
     duration: '90 minutes',
     location: 'CustomK9 Training Center - Puppy Area',
@@ -124,7 +124,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     id: 103,
     title: 'Advanced Skills Workshop',
     description: 'For dogs who have mastered the basics and are ready for more challenging commands, including off-leash work and distance commands.',
-    date: '2024-07-20',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 20).toISOString().split('T')[0],
     time: '9:00 AM',
     duration: '3 hours',
     location: 'Central Park Training Ground',
@@ -139,7 +139,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     id: 104,
     title: 'Agility Introduction',
     description: 'Learn the basics of dog agility training with our specialized equipment and expert guidance. Great for energetic dogs.',
-    date: '2024-07-22',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 22).toISOString().split('T')[0],
     time: '2:00 PM',
     duration: '2 hours',
     location: 'CustomK9 Agility Course',
@@ -154,7 +154,7 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     id: 105,
     title: 'Reactive Dog Management',
     description: 'Specialized workshop for owners of reactive dogs. Learn techniques to manage reactivity and build confidence.',
-    date: '2024-07-24',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 24).toISOString().split('T')[0],
     time: '5:00 PM',
     duration: '2 hours',
     location: 'CustomK9 Training Center - Private Area',
@@ -164,6 +164,36 @@ const PUBLIC_EVENTS: PublicEvent[] = [
     enrolled: 3,
     image: '/images/services/reactive-dogs.jpg',
     tags: ['Behavioral Issues', 'Small Group']
+  },
+  {
+    id: 106,
+    title: 'Weekend Group Class',
+    description: 'Group training session focusing on basic commands and socialization.',
+    date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 5).toISOString().split('T')[0],
+    time: '11:00 AM',
+    duration: '2 hours',
+    location: 'CustomK9 Training Center - Main Hall',
+    price: 2500,
+    trainer: 'Sarah Johnson',
+    capacity: 8,
+    enrolled: 2,
+    image: '/images/services/group-class.jpg',
+    tags: ['All Levels', 'Group Training']
+  },
+  {
+    id: 107,
+    title: 'Leash Reactivity Workshop',
+    description: 'Special workshop for dogs who react to other dogs or people while on leash.',
+    date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 12).toISOString().split('T')[0],
+    time: '3:00 PM',
+    duration: '2.5 hours',
+    location: 'CustomK9 Training Center - Private Area',
+    price: 3800,
+    trainer: 'David Thompson',
+    capacity: 6,
+    enrolled: 1,
+    image: '/images/services/reactive-dogs.jpg',
+    tags: ['Behavioral Issues', 'Specialized Training']
   }
 ];
 
@@ -321,6 +351,7 @@ export default function BookAppointmentPage() {
   
   // Handle event selection
   const selectEvent = (event: PublicEvent) => {
+    console.log(`Selecting event: ${event.title}`);
     setBookingData({ 
       ...bookingData, 
       selectedEvent: event,
@@ -821,6 +852,18 @@ export default function BookAppointmentPage() {
                     const dateString = day ? day.toISOString().split('T')[0] : '';
                     const eventsOnDay = PUBLIC_EVENTS.filter(event => event.date === dateString);
                     const isToday = day && day.toDateString() === new Date().toDateString();
+                    const hasEvents = eventsOnDay.length > 0;
+                    
+                    // Function to handle clicking on a day with events
+                    const handleDayClick = () => {
+                      if (hasEvents && eventsOnDay.length === 1) {
+                        // If only one event on this day, select it automatically
+                        selectEvent(eventsOnDay[0]);
+                      } else if (hasEvents) {
+                        // If multiple events, we could open a modal or expand them all
+                        // For now, we'll just make the events more visible
+                      }
+                    };
                     
                     return (
                       <div 
@@ -828,17 +871,23 @@ export default function BookAppointmentPage() {
                         className={`min-h-[80px] border rounded-md p-1 ${
                           !day ? 'bg-gray-50' : 
                           isToday ? 'bg-sky-50 border-sky-200' : 
-                          eventsOnDay.length > 0 ? 'hover:bg-sky-50 cursor-pointer' : 'hover:bg-gray-50'
+                          hasEvents ? 'border-sky-200 hover:bg-sky-50 cursor-pointer' : 'hover:bg-gray-50'
                         }`}
+                        onClick={hasEvents ? handleDayClick : undefined}
                       >
                         {day && (
                           <>
-                            <div className={`text-right mb-1 ${isToday ? 'font-bold text-sky-600' : ''}`}>
-                              {day.getDate()}
+                            <div className="flex justify-between items-center mb-1">
+                              <span className={`${hasEvents ? 'text-sky-600 font-medium' : ''} ${isToday ? 'font-bold text-sky-600' : ''}`}>
+                                {day.getDate()}
+                              </span>
+                              {hasEvents && (
+                                <span className="bg-sky-500 w-2 h-2 rounded-full"></span>
+                              )}
                             </div>
                             
                             <div className="space-y-1">
-                              {eventsOnDay.slice(0, 2).map(event => (
+                              {eventsOnDay.map(event => (
                                 <div 
                                   key={event.id}
                                   className={`text-xs p-1 rounded ${
@@ -846,17 +895,14 @@ export default function BookAppointmentPage() {
                                       ? 'bg-sky-600 text-white'
                                       : 'bg-sky-100 text-sky-800'
                                   } truncate cursor-pointer`}
-                                  onClick={() => selectEvent(event)}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent triggering the parent div's onClick
+                                    selectEvent(event);
+                                  }}
                                 >
                                   {event.time} - {event.title}
                                 </div>
                               ))}
-                              
-                              {eventsOnDay.length > 2 && (
-                                <div className="text-xs text-gray-500 pl-1">
-                                  +{eventsOnDay.length - 2} more
-                                </div>
-                              )}
                             </div>
                           </>
                         )}
@@ -1166,15 +1212,30 @@ export default function BookAppointmentPage() {
             <div className="bg-gray-50 p-4 rounded-md">
               <div className="flex justify-between mb-4 pb-4 border-b border-gray-200">
                 <div>
-                  <p className="font-medium">{bookingData.selectedService?.name}</p>
-                  <p className="text-sm text-gray-500">{bookingData.selectedService?.duration}</p>
+                  {bookingData.bookingType === 'personal' ? (
+                    <>
+                      <p className="font-medium">{bookingData.selectedService?.name}</p>
+                      <p className="text-sm text-gray-500">{bookingData.selectedService?.duration}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium">{bookingData.selectedEvent?.title}</p>
+                      <p className="text-sm text-gray-500">{bookingData.selectedEvent?.duration}</p>
+                    </>
+                  )}
                 </div>
-                <p className="font-medium">KSh {bookingData.selectedService?.price.toLocaleString()}</p>
+                <p className="font-medium">
+                  KSh {(bookingData.bookingType === 'personal' 
+                        ? bookingData.selectedService?.price 
+                        : bookingData.selectedEvent?.price)?.toLocaleString()}
+                </p>
               </div>
               
               <div className="flex justify-between font-bold text-lg">
                 <p>Total</p>
-                <p>KSh {bookingData.selectedService?.price.toLocaleString()}</p>
+                <p>KSh {(bookingData.bookingType === 'personal' 
+                      ? bookingData.selectedService?.price 
+                      : bookingData.selectedEvent?.price)?.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -1290,7 +1351,9 @@ export default function BookAppointmentPage() {
               <div className="col-span-2 mt-2">
                 <span className="text-gray-500">Amount Paid:</span>
                 <p className="font-semibold text-sky-700">
-                  KSh {((bookingData.bookingType === 'personal' ? bookingData.selectedService?.price : bookingData.selectedEvent?.price) || 0).toLocaleString()}
+                  KSh {(bookingData.bookingType === 'personal' 
+                        ? bookingData.selectedService?.price 
+                        : bookingData.selectedEvent?.price)?.toLocaleString()}
                 </p>
               </div>
             </div>
