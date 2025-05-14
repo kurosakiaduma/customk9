@@ -534,7 +534,7 @@ export default function DogsPage() {
                 and your training goals. Without this information, we cannot create an effective training plan.
               </p>
               <Link 
-                href="/client-area/registration" 
+                href="/client-area/dashboard/intake" 
                 className="inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium text-base transition-colors shadow-md"
               >
                 Start Intake Process Now
