@@ -1,72 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
-// Sample data for appointments
-const dummyAppointments = [
-  {
-    id: 1,
-    title: "Group Obedience Training",
-    date: "2024-07-15",
-    time: "10:00 AM",
-    duration: "60 min",
-    location: "Central Park",
-    trainer: "Sarah Johnson",
-    dogName: "Luna",
-    dogImage: "/images/dog-03.jpg",
-    status: "confirmed",
-  },
-  {
-    id: 2,
-    title: "Private Behavior Consultation",
-    date: "2024-07-18", 
-    time: "2:00 PM",
-    duration: "90 min",
-    location: "Your Home",
-    trainer: "Michael Clark",
-    dogName: "Rocky",
-    dogImage: "/images/dog-04.jpg",
-    status: "confirmed",
-  },
-  {
-    id: 3,
-    title: "Advanced Training Session",
-    date: "2024-07-22",
-    time: "11:30 AM",
-    duration: "60 min",
-    location: "Training Center",
-    trainer: "Sarah Johnson",
-    dogName: "Luna",
-    dogImage: "/images/dog-03.jpg",
-    status: "pending",
-  },
-  {
-    id: 4,
-    title: "Socialization Class",
-    date: "2024-07-25",
-    time: "3:00 PM",
-    duration: "45 min",
-    location: "Dog Park",
-    trainer: "Emily Wilson",
-    dogName: "Rocky",
-    dogImage: "/images/dog-04.jpg",
-    status: "confirmed",
-  },
-  {
-    id: 5,
-    title: "Progress Assessment",
-    date: "2024-08-02",
-    time: "10:00 AM",
-    duration: "30 min",
-    location: "Training Center",
-    trainer: "Michael Clark",
-    dogName: "Luna",
-    dogImage: "/images/dog-03.jpg",
-    status: "pending",
-  },
-];
+import { useRouter } from "next/navigation";
+import { dummyAppointments, Appointment } from "@/app/data/appointmentsData";
 
 // Calendar Data
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -76,10 +14,26 @@ const monthsOfYear = [
 ];
 
 export default function CalendarPage() {
+  const router = useRouter();
   const [selectedView, setSelectedView] = useState("list"); // "upcoming", "calendar", "list"
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>(dummyAppointments);
+  
+  // Load appointments from localStorage on initial load
+  useEffect(() => {
+    try {
+      const storedAppointments = localStorage.getItem('appointments');
+      if (storedAppointments) {
+        const parsedAppointments = JSON.parse(storedAppointments);
+        // Combine with dummy appointments for demonstration
+        setAppointments([...parsedAppointments, ...dummyAppointments]);
+      }
+    } catch (error) {
+      console.error('Error loading appointments from localStorage:', error);
+    }
+  }, []);
   
   // Get current month and year
   const currentMonth = selectedDate.getMonth();
@@ -113,7 +67,7 @@ export default function CalendarPage() {
   const getAppointmentsForDate = (date: Date) => {
     if (!date) return [];
     const dateString = date.toISOString().split('T')[0];
-    return dummyAppointments.filter(apt => apt.date === dateString);
+    return appointments.filter(apt => apt.date === dateString);
   };
   
   // Change month
@@ -124,12 +78,12 @@ export default function CalendarPage() {
   };
   
   // Filter upcoming appointments
-  const upcomingAppointments = dummyAppointments.filter(apt => {
+  const upcomingAppointments = appointments.filter(apt => {
     return new Date(apt.date) >= new Date();
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
   // Handle appointment click
-  const handleAppointmentClick = (appointment: any) => {
+  const handleAppointmentClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowAppointmentModal(true);
   };
@@ -185,15 +139,15 @@ export default function CalendarPage() {
       
       {/* New Appointment Button */}
       <div className="flex justify-end">
-        <button
-          onClick={() => {}}
+        <Link
+          href="/client-area/dashboard/calendar/book"
           className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-sm font-medium transition-colors flex items-center"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"></path>
           </svg>
           Book New Appointment
-        </button>
+        </Link>
       </div>
       
       {/* Upcoming View */}
@@ -218,6 +172,9 @@ export default function CalendarPage() {
                           fill
                           sizes="48px"
                           style={{ objectFit: "cover" }}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://placedog.net/48/48"; // Fallback image
+                          }}
                         />
                       </div>
                       <div>
@@ -264,13 +221,13 @@ export default function CalendarPage() {
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-600 mb-2">No upcoming appointments.</p>
-              <button
-                onClick={() => {}}
+              <p className="text-gray-600 mb-4">You don't have any upcoming appointments.</p>
+              <Link
+                href="/client-area/dashboard/calendar/book"
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-sm font-medium transition-colors"
               >
                 Book New Appointment
-              </button>
+              </Link>
             </div>
           )}
         </div>
@@ -372,7 +329,7 @@ export default function CalendarPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {dummyAppointments.map(appointment => (
+                {appointments.map(appointment => (
                   <tr 
                     key={appointment.id} 
                     className="hover:bg-gray-50 cursor-pointer"
