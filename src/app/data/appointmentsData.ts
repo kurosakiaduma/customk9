@@ -9,11 +9,31 @@ export interface Appointment {
   trainer: string;
   dogName: string;
   dogImage: string;
+  dogNames?: string[];  // Array of dog names for group bookings
+  dogImages?: string[]; // Array of dog images for group bookings
+  isGroupEvent?: boolean; // Flag indicating if this is a group event
   status: 'confirmed' | 'pending' | 'cancelled';
   totalPrice?: number;
   paymentMethod?: string;
   createdAt?: string;
   notes?: string;
+}
+
+// Utility function to ensure appointment image properties are valid
+export function ensureValidAppointmentImage(appointment: Appointment): Appointment {
+  const validatedAppointment = {...appointment};
+  
+  // Ensure dogImage is never empty or undefined
+  if (!validatedAppointment.dogImage || validatedAppointment.dogImage === "") {
+    validatedAppointment.dogImage = "/images/dog-placeholder.jpg";
+  }
+  
+  // Ensure dogName is never empty or undefined
+  if (!validatedAppointment.dogName || validatedAppointment.dogName === "") {
+    validatedAppointment.dogName = "Unknown Dog";
+  }
+  
+  return validatedAppointment;
 }
 
 // Sample appointments data
@@ -82,22 +102,28 @@ export const dummyAppointments: Appointment[] = [
 
 // Function to get appointment by ID
 export function getAppointmentById(id: number): Appointment | undefined {
-  return dummyAppointments.find(appointment => appointment.id === id);
+  const appointment = dummyAppointments.find(appointment => appointment.id === id);
+  return appointment ? ensureValidAppointmentImage(appointment) : undefined;
 }
 
 // Function to get upcoming appointments
 export function getUpcomingAppointments(): Appointment[] {
   return dummyAppointments
     .filter(apt => new Date(apt.date) >= new Date())
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map(apt => ensureValidAppointmentImage(apt));
 }
 
 // Function to get appointments by status
 export function getAppointmentsByStatus(status: string): Appointment[] {
-  return dummyAppointments.filter(appointment => appointment.status === status);
+  return dummyAppointments
+    .filter(appointment => appointment.status === status)
+    .map(apt => ensureValidAppointmentImage(apt));
 }
 
 // Function to get appointments by date
 export function getAppointmentsByDate(date: string): Appointment[] {
-  return dummyAppointments.filter(appointment => appointment.date === date);
+  return dummyAppointments
+    .filter(appointment => appointment.date === date)
+    .map(apt => ensureValidAppointmentImage(apt));
 } 

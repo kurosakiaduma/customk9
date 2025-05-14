@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { dummyAppointments, Appointment } from "@/app/data/appointmentsData";
+import { dummyAppointments, Appointment, ensureValidAppointmentImage } from "@/app/data/appointmentsData";
 
 // Calendar Data
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -27,11 +27,17 @@ export default function CalendarPage() {
       const storedAppointments = localStorage.getItem('appointments');
       if (storedAppointments) {
         const parsedAppointments = JSON.parse(storedAppointments);
+        // Apply validation to ensure all image properties are valid
+        const validatedAppointments = parsedAppointments.map((apt: Appointment) => 
+          ensureValidAppointmentImage(apt)
+        );
         // Combine with dummy appointments for demonstration
-        setAppointments([...parsedAppointments, ...dummyAppointments]);
+        setAppointments([...validatedAppointments, ...dummyAppointments]);
       }
     } catch (error) {
       console.error('Error loading appointments from localStorage:', error);
+      // Fall back to dummy appointments if there's an error
+      setAppointments(dummyAppointments);
     }
   }, []);
   
@@ -167,8 +173,8 @@ export default function CalendarPage() {
                     <div className="flex items-start space-x-3">
                       <div className="relative h-12 w-12 rounded-full overflow-hidden flex-shrink-0">
                         <Image
-                          src={appointment.dogImage || "/images/dog-placeholder.jpg"}
-                          alt={appointment.dogName}
+                          src={appointment.dogImage && appointment.dogImage !== "" ? appointment.dogImage : "/images/dog-placeholder.jpg"}
+                          alt={appointment.dogName || "Dog"}
                           fill
                           sizes="48px"
                           style={{ objectFit: "cover" }}
@@ -352,8 +358,8 @@ export default function CalendarPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8 relative rounded-full overflow-hidden mr-2">
                           <Image
-                            src={appointment.dogImage || "/images/dog-placeholder.jpg"}
-                            alt={appointment.dogName}
+                            src={appointment.dogImage && appointment.dogImage !== "" ? appointment.dogImage : "/images/dog-placeholder.jpg"}
+                            alt={appointment.dogName || "Dog"}
                             fill
                             sizes="32px"
                             style={{ objectFit: "cover" }}
@@ -401,8 +407,8 @@ export default function CalendarPage() {
               <div className="flex items-center space-x-4 mb-4">
                 <div className="relative h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-sky-100">
                   <Image
-                    src={selectedAppointment.dogImage || "/images/dog-placeholder.jpg"}
-                    alt={selectedAppointment.dogName}
+                    src={selectedAppointment.dogImage && selectedAppointment.dogImage !== "" ? selectedAppointment.dogImage : "/images/dog-placeholder.jpg"}
+                    alt={selectedAppointment.dogName || "Dog"}
                     fill
                     sizes="64px"
                     style={{ objectFit: "cover" }}

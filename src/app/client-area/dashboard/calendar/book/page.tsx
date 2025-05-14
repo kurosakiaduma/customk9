@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
+import { ensureValidAppointmentImage, Appointment } from "@/app/data/appointmentsData";
 
 // Define interfaces for our data
 interface Service {
@@ -447,7 +448,7 @@ export default function BookAppointmentPage() {
     // Generate a random appointment ID
     const appointmentId = Math.floor(Math.random() * 10000);
     
-    // Get the first dog's image or use a default if none available
+    // Ensure we have at least one dog image and name, with proper fallbacks
     const dogImage = bookingData.selectedDogs.length > 0 
       ? (bookingData.selectedDogs[0].image || "/images/dog-placeholder.jpg") 
       : "/images/dog-placeholder.jpg";
@@ -457,54 +458,74 @@ export default function BookAppointmentPage() {
       ? bookingData.selectedDogs[0].name 
       : "Unknown Dog";
     
-    // Create new appointment object
+    // Create new appointment object with proper image handling and default values for required fields
     const newAppointment = bookingData.bookingType === 'personal' 
       ? {
           id: appointmentId,
-          title: bookingData.selectedService?.name,
+          title: bookingData.selectedService?.name || "Personal Training Session", // Provide default title
           date: bookingData.selectedDate,
           time: bookingData.selectedTime,
-          duration: bookingData.selectedService?.duration,
+          duration: bookingData.selectedService?.duration || "60 min", // Provide default duration
           location: 'CustomK9 Training Center',
           trainer: 'John Doe',
-          dogName: dogName, // Use single dog name for compatibility
-          dogImage: dogImage, // Use single dog image for compatibility
+          dogName: dogName,
+          dogImage: dogImage,
           dogNames: bookingData.selectedDogs.map(dog => dog.name),
           dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
-          status: 'confirmed',
-          totalPrice: bookingData.selectedService?.price,
-          paymentMethod: bookingData.paymentMethod,
+          status: 'confirmed' as const, // Use const assertion to match the union type
+          totalPrice: bookingData.selectedService?.price || 0,
+          paymentMethod: bookingData.paymentMethod || "Cash",
           createdAt: new Date().toISOString()
         }
       : {
           id: appointmentId,
-          title: bookingData.selectedEvent?.title,
-          date: bookingData.selectedEvent?.date,
-          time: bookingData.selectedEvent?.time,
-          duration: bookingData.selectedEvent?.duration,
-          location: bookingData.selectedEvent?.location,
-          trainer: bookingData.selectedEvent?.trainer,
-          dogName: dogName, // Use single dog name for compatibility
-          dogImage: dogImage, // Use single dog image for compatibility
+          title: bookingData.selectedEvent?.title || "Group Training Event", // Provide default title
+          date: bookingData.selectedEvent?.date || bookingData.selectedDate,
+          time: bookingData.selectedEvent?.time || bookingData.selectedTime,
+          duration: bookingData.selectedEvent?.duration || "60 min", // Provide default duration
+          location: bookingData.selectedEvent?.location || "CustomK9 Training Center",
+          trainer: bookingData.selectedEvent?.trainer || "John Doe",
+          dogName: dogName,
+          dogImage: dogImage,
           dogNames: bookingData.selectedDogs.map(dog => dog.name),
           dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
-          status: 'confirmed',
-          totalPrice: bookingData.selectedEvent?.price,
-          paymentMethod: bookingData.paymentMethod,
+          status: 'confirmed' as const, // Use const assertion to match the union type
+          totalPrice: bookingData.selectedEvent?.price || 0,
+          paymentMethod: bookingData.paymentMethod || "Cash",
           isGroupEvent: true,
           createdAt: new Date().toISOString()
         };
+    
+    // Ensure we never have empty properties that will be used as image sources
+    if (!newAppointment.dogImage || newAppointment.dogImage === "") {
+      newAppointment.dogImage = "/images/dog-placeholder.jpg";
+    }
+    
+    // Make sure all dogImages have values
+    if (newAppointment.dogImages) {
+      newAppointment.dogImages = newAppointment.dogImages.map(img => 
+        img && img !== "" ? img : "/images/dog-placeholder.jpg"
+      );
+    }
+    
+    // Apply the validation utility function - type cast to satisfy TypeScript
+    const validatedAppointment = ensureValidAppointmentImage(newAppointment as Appointment);
     
     // Save to localStorage
     try {
       // Get existing appointments or initialize empty array
       const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
       
+      // Validate existing appointments to ensure they have proper image properties
+      const validatedExistingAppointments = existingAppointments.map((apt: any) => 
+        ensureValidAppointmentImage(apt)
+      );
+      
       // Add new appointment to array
-      existingAppointments.push(newAppointment);
+      validatedExistingAppointments.push(validatedAppointment);
       
       // Save updated array back to localStorage
-      localStorage.setItem('appointments', JSON.stringify(existingAppointments));
+      localStorage.setItem('appointments', JSON.stringify(validatedExistingAppointments));
       
       // Update UI to show booking is complete
       setIsBookingComplete(true);
