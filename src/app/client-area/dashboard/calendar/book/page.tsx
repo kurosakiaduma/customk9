@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircleIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
 
 // Define interfaces for our data
@@ -47,7 +47,7 @@ interface BookingData {
   selectedEvent: PublicEvent | null;
   selectedDate: string;
   selectedTime: string;
-  selectedDog: Dog | null;
+  selectedDogs: Dog[];
   agreedToTerms: boolean;
   paymentMethod: string;
 }
@@ -85,6 +85,38 @@ const AVAILABLE_SERVICES: Service[] = [
     duration: '60 minutes per session',
     price: 18000,
     image: '/images/dog-04.jpg'
+  },
+  {
+    id: 5,
+    name: 'Agility Training',
+    description: 'Training for agility courses and competitions',
+    duration: '90 minutes',
+    price: 5500,
+    image: '/images/dog-05.jpg'
+  },
+  {
+    id: 6,
+    name: 'Scent Work Training',
+    description: 'Specialized training to develop your dog\'s scenting abilities',
+    duration: '75 minutes',
+    price: 5000,
+    image: '/images/dog-06.jpg'
+  },
+  {
+    id: 7,
+    name: 'Service Dog Training',
+    description: 'Specialized training for service and assistance dogs',
+    duration: '120 minutes',
+    price: 7500,
+    image: '/images/dog-07.jpg'
+  },
+  {
+    id: 8,
+    name: 'Reactive Dog Rehabilitation',
+    description: 'Specialized program for dogs with reactive behaviors',
+    duration: '90 minutes',
+    price: 6500,
+    image: '/images/dog-08.jpg'
   },
 ];
 
@@ -221,7 +253,7 @@ export default function BookAppointmentPage() {
     selectedEvent: null,
     selectedDate: '',
     selectedTime: '',
-    selectedDog: null,
+    selectedDogs: [],
     agreedToTerms: false,
     paymentMethod: ''
   });
@@ -295,11 +327,11 @@ export default function BookAppointmentPage() {
         if (bookingData.bookingType === 'personal') {
           return bookingData.selectedDate !== '' && bookingData.selectedTime !== '';
         } else {
-          return bookingData.selectedDog !== null;
+          return bookingData.selectedDogs.length > 0;
         }
       case 4: // Select dog (for personal) or terms (for public)
         if (bookingData.bookingType === 'personal') {
-          return bookingData.selectedDog !== null;
+          return bookingData.selectedDogs.length > 0;
         } else {
           // Always allow proceeding from terms page for public booking
           return true;
@@ -325,7 +357,7 @@ export default function BookAppointmentPage() {
         'Select Booking Type',
         'Select Service',
         'Choose Date & Time',
-        'Select Dog',
+        'Select Dogs',
         'Terms & Conditions',
         'Payment',
         'Confirmation'
@@ -334,8 +366,8 @@ export default function BookAppointmentPage() {
     } else {
       const publicSteps = [
         'Select Booking Type',
-        'Select Event',
-        'Select Dog',
+        'Select Class/Event',
+        'Select Dogs',
         'Terms & Conditions',
         'Payment',
         'Confirmation'
@@ -353,7 +385,8 @@ export default function BookAppointmentPage() {
       selectedService: null,
       selectedEvent: null,
       selectedDate: '',
-      selectedTime: ''
+      selectedTime: '',
+      selectedDogs: []
     });
   };
   
@@ -386,7 +419,17 @@ export default function BookAppointmentPage() {
   
   // Handle dog selection
   const selectDog = (dog: Dog) => {
-    setBookingData({ ...bookingData, selectedDog: dog });
+    // Check if dog is already selected
+    const isSelected = bookingData.selectedDogs.some(selectedDog => selectedDog.id === dog.id);
+    
+    if (isSelected) {
+      // If already selected, remove it
+      const updatedDogs = bookingData.selectedDogs.filter(selectedDog => selectedDog.id !== dog.id);
+      setBookingData({ ...bookingData, selectedDogs: updatedDogs });
+    } else {
+      // If not selected, add it
+      setBookingData({ ...bookingData, selectedDogs: [...bookingData.selectedDogs, dog] });
+    }
   };
   
   // Handle terms agreement
@@ -414,8 +457,8 @@ export default function BookAppointmentPage() {
           duration: bookingData.selectedService?.duration,
           location: 'CustomK9 Training Center',
           trainer: 'John Doe',
-          dogName: bookingData.selectedDog?.name,
-          dogImage: bookingData.selectedDog?.image,
+          dogNames: bookingData.selectedDogs.map(dog => dog.name),
+          dogImages: bookingData.selectedDogs.map(dog => dog.image),
           status: 'confirmed',
           totalPrice: bookingData.selectedService?.price,
           paymentMethod: bookingData.paymentMethod,
@@ -429,8 +472,8 @@ export default function BookAppointmentPage() {
           duration: bookingData.selectedEvent?.duration,
           location: bookingData.selectedEvent?.location,
           trainer: bookingData.selectedEvent?.trainer,
-          dogName: bookingData.selectedDog?.name,
-          dogImage: bookingData.selectedDog?.image,
+          dogNames: bookingData.selectedDogs.map(dog => dog.name),
+          dogImages: bookingData.selectedDogs.map(dog => dog.image),
           status: 'confirmed',
           totalPrice: bookingData.selectedEvent?.price,
           paymentMethod: bookingData.paymentMethod,
@@ -540,8 +583,8 @@ export default function BookAppointmentPage() {
                 <p className="font-medium">CustomK9 Training Center</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Dog</p>
-                <p className="font-medium">{bookingData.selectedDog?.name}</p>
+                <p className="text-sm text-gray-500">Dogs</p>
+                <p className="font-medium">{bookingData.selectedDogs.map(dog => dog.name).join(', ')}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Price</p>
@@ -611,7 +654,7 @@ export default function BookAppointmentPage() {
                   }`}>
                     {currentStep > 4 ? <CheckCircleIcon className="w-4 h-4" /> : 4}
                   </span>
-                  <span className="hidden sm:inline ml-2 text-sm">Dog</span>
+                  <span className="hidden sm:inline ml-2 text-sm">Dogs</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
                 <li className={`flex items-center ${currentStep > 5 ? 'text-sky-600' : 'text-gray-500'}`}>
@@ -654,7 +697,7 @@ export default function BookAppointmentPage() {
                   }`}>
                     {currentStep > 2 ? <CheckCircleIcon className="w-4 h-4" /> : 2}
                   </span>
-                  <span className="hidden sm:inline ml-2 text-sm">Event</span>
+                  <span className="hidden sm:inline ml-2 text-sm">Class/Event</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
                 <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-gray-500'}`}>
@@ -664,7 +707,7 @@ export default function BookAppointmentPage() {
                   }`}>
                     {currentStep > 3 ? <CheckCircleIcon className="w-4 h-4" /> : 3}
                   </span>
-                  <span className="hidden sm:inline ml-2 text-sm">Dog</span>
+                  <span className="hidden sm:inline ml-2 text-sm">Dogs</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
                 <li className={`flex items-center ${currentStep > 4 ? 'text-sky-600' : 'text-gray-500'}`}>
@@ -711,7 +754,7 @@ export default function BookAppointmentPage() {
               </div>
               <h3 className="text-lg font-medium mb-2">Personal Training</h3>
               <p className="text-center text-gray-500 text-sm">
-                Schedule a one-on-one session with our trainers tailored to your dog's needs.
+                Schedule a one-on-one session with our trainers tailored to your dogs' needs.
               </p>
               <ul className="mt-4 text-sm text-gray-600 space-y-2">
                 <li className="flex items-center">
@@ -740,7 +783,7 @@ export default function BookAppointmentPage() {
               <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
                 <UserGroupIcon className="h-8 w-8 text-indigo-600" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Public Event</h3>
+              <h3 className="text-lg font-medium mb-2">Class/Events</h3>
               <p className="text-center text-gray-500 text-sm">
                 Join one of our group classes or specialized training events with other dogs.
               </p>
@@ -769,7 +812,7 @@ export default function BookAppointmentPage() {
                 isStepComplete(1) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next: {bookingData.bookingType === 'personal' ? 'Select Service' : 'Select Event'}
+              Next: {bookingData.bookingType === 'personal' ? 'Select Service' : 'Select Class/Event'}
             </button>
           </div>
         </div>
@@ -820,7 +863,7 @@ export default function BookAppointmentPage() {
             </>
           ) : (
             <>
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Public Event</h2>
+              <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Class/Event</h2>
               
               {/* Calendar View for Public Events */}
               <div className="mb-8">
@@ -1019,7 +1062,7 @@ export default function BookAppointmentPage() {
                 isStepComplete(2) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next: {bookingData.bookingType === 'personal' ? 'Choose Date & Time' : 'Select Dog'}
+              Next: {bookingData.bookingType === 'personal' ? 'Choose Date & Time' : 'Select Dogs'}
             </button>
           </div>
         </div>
@@ -1084,55 +1127,69 @@ export default function BookAppointmentPage() {
                 isStepComplete(3) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next: Select Dog
+              Next: Select Dogs
             </button>
           </div>
         </div>
       )}
       
-      {/* Step 4: Select Dog */}
+      {/* Step 4: Select Dogs */}
       {((currentStep === 4 && bookingData.bookingType === 'personal') || 
         (currentStep === 3 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Select Your Dog</h2>
+          <h2 className="text-xl font-semibold mb-6 text-gray-800">Select Your Dogs</h2>
           
           {isLoading ? (
             <div className="text-center py-8">
               <p>Loading your dogs...</p>
             </div>
           ) : dogs.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {dogs.map((dog) => (
-                <div 
-                  key={dog.id}
-                  onClick={() => selectDog(dog)}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                    bookingData.selectedDog?.id === dog.id 
-                      ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500 ring-opacity-50' 
-                      : 'border-gray-200 hover:border-sky-200'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 relative h-16 w-16 rounded-full overflow-hidden mr-4">
-                      <Image
-                        src={dog.image}
-                        alt={dog.name}
-                        fill
-                        sizes="64px"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                          const imgElement = e.currentTarget as HTMLImageElement;
-                          imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{dog.name}</h3>
-                      <p className="text-sm text-gray-500">{dog.breed}, {dog.age} years old</p>
+            <div>
+              <p className="mb-4 text-gray-600">Select one or more dogs for this appointment by clicking on them:</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {dogs.map((dog) => (
+                  <div 
+                    key={dog.id}
+                    onClick={() => selectDog(dog)}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                      bookingData.selectedDogs.some(d => d.id === dog.id) 
+                        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500 ring-opacity-50' 
+                        : 'border-gray-200 hover:border-sky-200'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 relative h-16 w-16 rounded-full overflow-hidden mr-4">
+                        <Image
+                          src={dog.image}
+                          alt={dog.name}
+                          fill
+                          sizes="64px"
+                          style={{ objectFit: 'cover' }}
+                          onError={(e) => {
+                            const imgElement = e.currentTarget as HTMLImageElement;
+                            imgElement.src = "/images/dog-01.jpg"; // Fallback to a known existing image
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{dog.name}</h3>
+                        <p className="text-sm text-gray-500">{dog.breed}, {dog.age} years old</p>
+                      </div>
+                      <div className="ml-2">
+                        <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                          bookingData.selectedDogs.some(d => d.id === dog.id) 
+                            ? 'bg-sky-500 text-white' 
+                            : 'bg-gray-200 text-gray-500'
+                        }`}>
+                          {bookingData.selectedDogs.some(d => d.id === dog.id) ? (
+                            <CheckIcon className="w-4 h-4" />
+                          ) : null}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -1179,13 +1236,13 @@ export default function BookAppointmentPage() {
             </p>
             <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-2">
               <li>All dogs must be up-to-date on vaccinations and in good health to participate in training sessions.</li>
-              <li>Clients are responsible for their dog's behavior during sessions. CustomK9 reserves the right to refuse service to dogs exhibiting dangerous behavior.</li>
+              <li>Clients are responsible for their dogs' behavior during sessions. CustomK9 reserves the right to refuse service to dogs exhibiting dangerous behavior.</li>
               <li>Cancellations must be made at least 24 hours in advance to receive a full refund. Late cancellations may be subject to a cancellation fee.</li>
               <li>Appointments may be rescheduled subject to availability.</li>
               <li>Payment must be made at the time of booking to confirm your appointment.</li>
               <li>CustomK9 uses positive reinforcement methods. Clients are expected to continue these methods at home for best results.</li>
               <li>CustomK9 is not responsible for accidents or injuries that may occur during training sessions.</li>
-              <li>Results may vary based on consistent practice and the individual dog's temperament.</li>
+              <li>Results may vary based on consistent practice and the individual dogs' temperaments.</li>
             </ol>
           </div>
           
@@ -1318,22 +1375,30 @@ export default function BookAppointmentPage() {
           </p>
           
           <div className="bg-sky-50 border border-sky-100 rounded-lg p-6 mb-8 max-w-lg mx-auto">
-            <div className="flex items-center mb-4">
-              <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
-                <Image
-                  src={bookingData.selectedDog?.image || '/images/dog-01.jpg'}
-                  alt={bookingData.selectedDog?.name || 'Dog'}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  onError={(e) => {
-                    const imgElement = e.currentTarget as HTMLImageElement;
-                    imgElement.src = "/images/dog-01.jpg"; // Fallback to a default dog image
-                  }}
-                />
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">{bookingData.selectedDog?.name}</h3>
-                <p className="text-sm text-gray-500">{bookingData.selectedDog?.breed}</p>
+            <div className="mb-4">
+              <h3 className="font-medium text-gray-900 mb-2">Selected Dogs:</h3>
+              <div className="flex flex-wrap items-center gap-3">
+                {bookingData.selectedDogs.map(dog => (
+                  <div key={dog.id} className="flex items-center bg-white p-2 rounded-lg shadow-sm">
+                    <div className="relative h-10 w-10 rounded-full overflow-hidden mr-2">
+                      <Image
+                        src={dog.image}
+                        alt={dog.name}
+                        fill
+                        sizes="40px"
+                        style={{ objectFit: 'cover' }}
+                        onError={(e) => {
+                          const imgElement = e.currentTarget as HTMLImageElement;
+                          imgElement.src = "/images/dog-01.jpg"; // Fallback to a default dog image
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{dog.name}</p>
+                      <p className="text-xs text-gray-500">{dog.breed}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             
@@ -1358,14 +1423,18 @@ export default function BookAppointmentPage() {
               <div>
                 <span className="text-gray-500">Duration:</span>
                 <p className="font-medium text-gray-800">
-                  {bookingData.bookingType === 'personal' ? bookingData.selectedService?.duration : bookingData.selectedEvent?.duration}
+                  {bookingData.bookingType === 'personal' 
+                    ? bookingData.selectedService?.duration 
+                    : bookingData.selectedEvent?.duration}
                 </p>
               </div>
               
               <div>
                 <span className="text-gray-500">Location:</span>
                 <p className="font-medium text-gray-800">
-                  {bookingData.bookingType === 'personal' ? 'CustomK9 Training Center' : bookingData.selectedEvent?.location}
+                  {bookingData.bookingType === 'personal' 
+                    ? 'CustomK9 Training Center' 
+                    : bookingData.selectedEvent?.location}
                 </p>
               </div>
               
