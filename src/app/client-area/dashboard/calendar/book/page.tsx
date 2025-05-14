@@ -172,11 +172,19 @@ const TIME_SLOTS = [
   '9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
 ];
 
+// Calendar Data
+const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const monthsOfYear = [
+  "January", "February", "March", "April", "May", "June", 
+  "July", "August", "September", "October", "November", "December"
+];
+
 export default function BookAppointmentPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookingData, setBookingData] = useState<BookingData>({
     bookingType: null,
     selectedService: null,
@@ -432,6 +440,28 @@ export default function BookAppointmentPage() {
     }
     
     return dates;
+  };
+  
+  // Generate calendar days
+  const generateCalendarDays = (): (Date | null)[] => {
+    const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const lastDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    const days: (Date | null)[] = [];
+    
+    // Add empty cells for the days of the previous month
+    for (let i = 0; i < startingDay; i++) {
+      days.push(null);
+    }
+    
+    // Add days of the current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i));
+    }
+    
+    return days;
   };
   
   // Render booking completion screen
@@ -732,7 +762,7 @@ export default function BookAppointmentPage() {
                         <p className="text-gray-600 text-sm">{service.description}</p>
                         <div className="mt-2 flex justify-between items-center">
                           <span className="text-gray-600 text-sm">{service.duration}</span>
-                          <span className="font-medium">${(service.price / 100).toFixed(2)}</span>
+                          <span className="font-medium">KSh {service.price.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -743,73 +773,168 @@ export default function BookAppointmentPage() {
           ) : (
             <>
               <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Public Event</h2>
-              <div className="space-y-6">
-                {PUBLIC_EVENTS.map((event) => (
-                  <div 
-                    key={event.id}
-                    onClick={() => selectEvent(event)}
-                    className={`border p-4 rounded-lg cursor-pointer transition-all ${
-                      bookingData.selectedEvent?.id === event.id 
-                        ? 'border-sky-500 bg-sky-50 shadow-md' 
-                        : 'border-gray-200 hover:border-sky-300 hover:bg-gray-50'
-                    }`}
+              
+              {/* Calendar View for Public Events */}
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <button
+                    onClick={() => {
+                      const newDate = new Date(selectedDate);
+                      newDate.setMonth(newDate.getMonth() - 1);
+                      setSelectedDate(newDate);
+                    }}
+                    className="p-2 rounded-full hover:bg-gray-100"
                   >
-                    <div className="flex flex-col md:flex-row md:items-start">
-                      <div className="relative w-full md:w-32 h-32 md:mr-4 mb-4 md:mb-0 rounded-md overflow-hidden">
-                        <Image
-                          src={event.image}
-                          alt={event.title}
-                          fill
-                          style={{ objectFit: 'cover' }}
-                        />
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                  </button>
+                  
+                  <h2 className="text-lg font-semibold">
+                    {monthsOfYear[selectedDate.getMonth()]} {selectedDate.getFullYear()}
+                  </h2>
+                  
+                  <button
+                    onClick={() => {
+                      const newDate = new Date(selectedDate);
+                      newDate.setMonth(newDate.getMonth() + 1);
+                      setSelectedDate(newDate);
+                    }}
+                    className="p-2 rounded-full hover:bg-gray-100"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1">
+                  {/* Days of the week */}
+                  {daysOfWeek.map(day => (
+                    <div key={day} className="text-center font-medium text-gray-600 py-2">
+                      {day}
+                    </div>
+                  ))}
+                  
+                  {/* Calendar cells */}
+                  {generateCalendarDays().map((day: Date | null, index: number) => {
+                    const dateString = day ? day.toISOString().split('T')[0] : '';
+                    const eventsOnDay = PUBLIC_EVENTS.filter(event => event.date === dateString);
+                    const isToday = day && day.toDateString() === new Date().toDateString();
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`min-h-[80px] border rounded-md p-1 ${
+                          !day ? 'bg-gray-50' : 
+                          isToday ? 'bg-sky-50 border-sky-200' : 
+                          eventsOnDay.length > 0 ? 'hover:bg-sky-50 cursor-pointer' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {day && (
+                          <>
+                            <div className={`text-right mb-1 ${isToday ? 'font-bold text-sky-600' : ''}`}>
+                              {day.getDate()}
+                            </div>
+                            
+                            <div className="space-y-1">
+                              {eventsOnDay.slice(0, 2).map(event => (
+                                <div 
+                                  key={event.id}
+                                  className={`text-xs p-1 rounded ${
+                                    bookingData.selectedEvent?.id === event.id
+                                      ? 'bg-sky-600 text-white'
+                                      : 'bg-sky-100 text-sky-800'
+                                  } truncate cursor-pointer`}
+                                  onClick={() => selectEvent(event)}
+                                >
+                                  {event.time} - {event.title}
+                                </div>
+                              ))}
+                              
+                              {eventsOnDay.length > 2 && (
+                                <div className="text-xs text-gray-500 pl-1">
+                                  +{eventsOnDay.length - 2} more
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-                          <div>
-                            <h3 className="font-semibold text-lg">{event.title}</h3>
-                            <p className="text-gray-600 text-sm mb-2">{event.description}</p>
-                          </div>
-                          <div className="text-right mt-2 md:mt-0 md:ml-4 flex-shrink-0">
-                            <span className="font-medium block text-lg">${(event.price / 100).toFixed(2)}</span>
-                            <span className="text-gray-500 text-sm block">
-                              {event.enrolled}/{event.capacity} enrolled
-                            </span>
-                          </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Selected Event Details */}
+              {bookingData.selectedEvent && (
+                <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mt-4">
+                  <div className="flex flex-col md:flex-row md:items-start">
+                    <div className="relative w-full md:w-40 h-40 md:mr-4 mb-4 md:mb-0 rounded-md overflow-hidden">
+                      <Image
+                        src={bookingData.selectedEvent.image}
+                        alt={bookingData.selectedEvent.title}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-xl mb-2">{bookingData.selectedEvent.title}</h3>
+                      <p className="text-gray-700 mb-3">{bookingData.selectedEvent.description}</p>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                        <div>
+                          <span className="font-medium text-gray-600">Date:</span>
+                          <p>{new Date(bookingData.selectedEvent.date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}</p>
                         </div>
-                        
-                        <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                          <div className="flex items-center text-gray-600">
-                            <CalendarIcon className="h-4 w-4 mr-1" />
-                            <span>{new Date(event.date).toLocaleDateString('en-US', { 
-                              weekday: 'short', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })} at {event.time}</span>
-                          </div>
-                          <span className="mx-2 text-gray-400">•</span>
-                          <div className="text-gray-600">{event.duration}</div>
-                          <span className="mx-2 text-gray-400">•</span>
-                          <div className="text-gray-600">{event.location}</div>
+                        <div>
+                          <span className="font-medium text-gray-600">Time:</span>
+                          <p>{bookingData.selectedEvent.time}</p>
                         </div>
-                        
-                        <div className="mt-3">
-                          <div className="text-sm text-gray-700">
-                            <span className="font-medium">Trainer:</span> {event.trainer}
-                          </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Duration:</span>
+                          <p>{bookingData.selectedEvent.duration}</p>
                         </div>
-                        
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {event.tags.map((tag, index) => (
-                            <span key={index} className="px-2 py-1 text-xs font-medium rounded-full bg-sky-100 text-sky-800">
-                              {tag}
-                            </span>
-                          ))}
+                        <div>
+                          <span className="font-medium text-gray-600">Location:</span>
+                          <p>{bookingData.selectedEvent.location}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Trainer:</span>
+                          <p>{bookingData.selectedEvent.trainer}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Price:</span>
+                          <p className="font-semibold">KSh {bookingData.selectedEvent.price.toLocaleString()}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {bookingData.selectedEvent.tags.map((tag, index) => (
+                          <span key={index} className="px-2 py-1 text-xs font-medium rounded-full bg-sky-100 text-sky-800">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-3 text-sm">
+                        <span className="font-medium text-gray-600">Enrollment:</span>
+                        <p>{bookingData.selectedEvent.enrolled} of {bookingData.selectedEvent.capacity} spots filled</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className="bg-sky-600 h-2 rounded-full" 
+                            style={{ width: `${(bookingData.selectedEvent.enrolled / bookingData.selectedEvent.capacity) * 100}%` }}
+                          ></div>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </>
           )}
           
@@ -1019,9 +1144,9 @@ export default function BookAppointmentPage() {
             </button>
             <button
               onClick={goToNextStep}
-              disabled={!isStepComplete(5)}
+              disabled={!isStepComplete(bookingData.bookingType === 'personal' ? 5 : 4)}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
-                isStepComplete(5) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
+                isStepComplete(bookingData.bookingType === 'personal' ? 5 : 4) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
               Next: Payment
