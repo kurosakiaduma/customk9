@@ -204,6 +204,58 @@ export class OdooService {
     }
   }
 
+  async getDogs() {
+    try {
+      const response = await this.client.post('/web/dataset/call_kw/res.partner/search_read', {
+        jsonrpc: "2.0",
+        method: "call",
+        params: {
+          model: "res.partner",
+          method: "search_read",
+          args: [[["parent_id", "=", 3], ["function", "=", "Dog"]]],
+          kwargs: {
+            fields: ["name", "comment", "id"]
+          }
+        }
+      });
+      
+      // Parse the dogs from the response
+      const dogs = response.data.result.map((dog: any) => {
+        let dogInfo = { breed: "", age: "", gender: "", level: "Beginner", progress: 0 };
+        try {
+          // Parse the comment field which contains the JSON data
+          const commentData = JSON.parse(dog.comment.replace("<p>", "").replace("</p>", ""));
+          if (commentData.dogInfo) {
+            dogInfo = {
+              breed: commentData.dogInfo.breed || "",
+              age: commentData.dogInfo.age || "",
+              gender: commentData.dogInfo.gender || "",
+              level: commentData.dogInfo.trainingLevel || "Beginner",
+              progress: commentData.dogInfo.progress || 0
+            };
+          }
+        } catch (e) {
+          console.error("Error parsing dog comment data:", e);
+        }
+
+        return {
+          id: dog.id,
+          name: dog.name,
+          breed: dogInfo.breed,
+          age: dogInfo.age,
+          gender: dogInfo.gender,
+          level: dogInfo.level,
+          progress: dogInfo.progress,
+          image: "/images/dog-placeholder.jpg" // Default image
+        };
+      });
+
+      return dogs;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Training Plans
   async createTrainingPlan(planData: {
     name: string;

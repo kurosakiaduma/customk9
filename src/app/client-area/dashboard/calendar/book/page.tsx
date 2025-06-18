@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
 import { ensureValidAppointmentImage, Appointment } from "@/app/data/appointmentsData";
+import ServiceFactory from "@/services/ServiceFactory";
 
 // Define interfaces for our data
 interface Service {
@@ -247,6 +248,7 @@ export default function BookAppointmentPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookingData, setBookingData] = useState<BookingData>({
     bookingType: null,
@@ -260,37 +262,22 @@ export default function BookAppointmentPage() {
   });
   const [isBookingComplete, setIsBookingComplete] = useState(false);
   
-  // Load dogs from localStorage on initial load
+  // Load dogs from API on initial load
   useEffect(() => {
-    try {
-      // Check if there are dogs in localStorage
-      const storedDogs = localStorage.getItem('dogs');
-      if (storedDogs) {
-        setDogs(JSON.parse(storedDogs));
-      } else {
-        // Sample dog data if none in localStorage
-        setDogs([
-          {
-            id: 1,
-            name: 'Max',
-            breed: 'German Shepherd',
-            age: 3,
-            image: '/images/dog-01.jpg' // Using existing image instead of missing one
-          },
-          {
-            id: 2,
-            name: 'Bella',
-            breed: 'Labrador Retriever',
-            age: 2,
-            image: '/images/dog-02.jpg' // Using existing image instead of missing one
-          }
-        ]);
+    const fetchDogs = async () => {
+      try {
+        const odooService = ServiceFactory.getInstance().getOdooService();
+        const fetchedDogs = await odooService.getDogs();
+        setDogs(fetchedDogs);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching dogs:', err);
+        setError('Failed to load dogs. Please try again later.');
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error loading dogs:', error);
-      setIsLoading(false);
-    }
+    };
+
+    fetchDogs();
   }, []);
   
   // Move to next step if data for current step is valid

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { AuthUser } from "@/services/auth/AuthService";
+import ServiceFactory from "@/services/ServiceFactory";
 
 // Demo data for the dashboard
 const dummyUserData = {
@@ -311,21 +313,53 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 };
 
 export default function DashboardPage() {
-  const { name, dogs, upcomingSessions, trainingPlans } = dummyUserData;
+  const [dogs, setDogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hasFilledIntakeForm, setHasFilledIntakeForm] = useState<boolean>(false);
-  
-  // Check if the user has filled the intake form
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
+  const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
+
+  // Get current user on mount
   useEffect(() => {
-    // In a real app, this would check if the user has submitted an intake form
-    const intakeFormCompleted = localStorage.getItem("customk9_intake_completed");
-    if (intakeFormCompleted) {
-      setHasFilledIntakeForm(true);
-    }
+    const checkIntakeForm = async () => {
+      try {
+        const authService = ServiceFactory.getInstance().getAuthService();
+        const user = await authService.getCurrentUser();
+        if (user) {
+          setHasFilledIntakeForm(true);
+        }
+      } catch (error) {
+        console.error('Error checking intake form:', error);
+      }
+    };
+
+    checkIntakeForm();
   }, []);
+
+  useEffect(() => {
+    const fetchDogs = async () => {
+      try {
+        const odooService = ServiceFactory.getInstance().getOdooService();
+        const fetchedDogs = await odooService.getDogs();
+        setDogs(fetchedDogs);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching dogs:', err);
+        setError('Failed to load dogs. Please try again later.');
+        setIsLoading(false);
+      }
+    };
+
+    fetchDogs();
+  }, []);
+
+  // Filter out any undefined or null values from upcomingSessions
+  const validUpcomingSessions = upcomingSessions.filter(session => session);
   
   return (
     <div className="space-y-8">
-      <WelcomeSection name={name} />
+      <WelcomeSection name={dummyUserData.name} />
       
       {/* Intake Form Alert - always show but with different message depending on completed status */}
       <div className={hasFilledIntakeForm ? "bg-sky-50 border-2 border-sky-300 rounded-lg p-6 mb-8" : "bg-amber-50 border-2 border-amber-300 rounded-lg p-6 mb-8"}>
@@ -366,7 +400,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard 
           title="Upcoming Sessions" 
-          value={upcomingSessions.length}
+          value={validUpcomingSessions.length}
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -413,11 +447,49 @@ export default function DashboardPage() {
                 View All →
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dogs.map((dog: any) => (
-                <DogProfileCard key={dog.id} dog={dog} />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 animate-pulse">
+                  <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 animate-pulse">
+                  <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                {error}
+              </div>
+            ) : dogs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {dogs.map((dog: any) => (
+                  <DogProfileCard key={dog.id} dog={dog} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 bg-gray-50 rounded-lg">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No dogs found</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by registering your first dog.</p>
+                <div className="mt-6">
+                  <Link 
+                    href="/client-area/dashboard/intake" 
+                    className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium hover:bg-sky-700 transition-colors inline-flex items-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Register Your First Dog
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Training Plans Section */}
@@ -453,11 +525,11 @@ export default function DashboardPage() {
               </Link>
             </div>
             <div className="space-y-3">
-              {upcomingSessions.map((session: any) => (
+              {validUpcomingSessions.map((session: any) => (
                 <UpcomingSessionCard key={session.id} session={session} />
               ))}
               
-              {upcomingSessions.length === 0 && (
+              {validUpcomingSessions.length === 0 && (
                 <div className="p-4 bg-gray-50 rounded-lg text-center">
                   <p className="text-gray-600">No upcoming sessions.</p>
                   <Link 

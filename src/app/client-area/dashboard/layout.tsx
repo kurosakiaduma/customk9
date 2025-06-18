@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AuthUser } from "@/services/auth/AuthService";
+import ServiceFactory from "@/services/ServiceFactory";
 
 // Dashboard navigation links
 const dashboardNavLinks = [
@@ -88,7 +90,24 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const pathname = usePathname();
+
+  // Get current user on mount
+  useEffect(() => {
+    const authService = ServiceFactory.getInstance().getAuthService();
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
+
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
@@ -107,10 +126,10 @@ export default function DashboardLayout({
               {/* User Profile Summary */}
               <div className="flex items-center space-x-4">
                 <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-xl border-2 border-white">
-                  JD
+                  {currentUser ? getInitials(currentUser.name) : 'G'}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-lg">John Doe</h2>
+                  <h2 className="font-semibold text-lg">{currentUser?.name || 'Guest'}</h2>
                   <p className="text-sky-200 text-sm">Premium Member</p>
                 </div>
               </div>
@@ -162,10 +181,10 @@ export default function DashboardLayout({
               <div className="p-4 bg-sky-600 text-white">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-sm border-2 border-white">
-                    JD
+                    {currentUser ? getInitials(currentUser.name) : 'G'}
                   </div>
                   <div>
-                    <h2 className="font-semibold">John Doe</h2>
+                    <h2 className="font-semibold">{currentUser?.name || 'Guest'}</h2>
                     <p className="text-sky-200 text-xs">Premium Member</p>
                   </div>
                 </div>
