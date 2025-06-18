@@ -179,26 +179,116 @@ export class OdooService {
   async createDogProfile(dogData: {
     name: string;
     breed: string;
-    age: number;
-    ownerId: number;
-    trainingLevel: string;
-    notes?: string;
+    age: string;
+    gender: string;
+    sterilized: string;
+    dogSource: string;
+    timeWithDog: string;
+    medications: string;
+    currentDeworming: string;
+    tickFleaPreventative: string;
+    vetClinic: string;
+    vetName: string;
+    vetPhone: string;
+    medicalIssues: string;
+    lifestyle: {
+      homeAloneLocation: string;
+      sleepLocation: string;
+      hasCrate: string;
+      likesCrate: string;
+      crateLocation: string;
+      chewsCrate: string;
+      hoursAlone: string;
+      foodBrand: string;
+      feedingSchedule: string;
+      foodLeftOut: string;
+      allergies: string;
+      toyTypes: string;
+      toyPlayTime: string;
+      toyStorage: string;
+      walkFrequency: string;
+      walkPerson: string;
+      walkDuration: string;
+      otherExercise: string;
+      walkEquipment: string;
+      offLeash: string;
+      forestVisits: string;
+      pulling: string;
+      pullingPrevention: string;
+    };
+    history: {
+      previousTraining: string;
+      growled: string;
+      growlDetails: string;
+      bitten: string;
+      biteDetails: string;
+      fearful: string;
+      fearDetails: string;
+      newPeopleResponse: string;
+      groomingResponse: string;
+      ignoreReaction: string;
+      previousServices: string;
+      toolsUsed: string;
+    };
+    goals: {
+      trainingGoals: string;
+      idealDogBehavior: string;
+    };
+    behaviorChecklist: string[];
+    behaviorDetails: string;
+    undesirableBehavior: string;
+    fearDescription: string;
   }) {
     try {
-      const response = await this.client.post('/api/v1/customk9.dog', {
-        data: {
-          type: 'customk9.dog',
-          attributes: {
+      // Format the data as JSON for the comment field
+      const commentData = {
+        dogInfo: {
+          breed: dogData.breed,
+          age: dogData.age,
+          gender: dogData.gender,
+          sterilized: dogData.sterilized,
+          dogSource: dogData.dogSource,
+          timeWithDog: dogData.timeWithDog,
+          medications: dogData.medications,
+          currentDeworming: dogData.currentDeworming,
+          tickFleaPreventative: dogData.tickFleaPreventative,
+          vetClinic: dogData.vetClinic,
+          vetName: dogData.vetName,
+          vetPhone: dogData.vetPhone,
+          medicalIssues: dogData.medicalIssues
+        },
+        lifestyle: dogData.lifestyle,
+        history: dogData.history,
+        goals: dogData.goals,
+        behaviorChecklist: dogData.behaviorChecklist,
+        behaviorDetails: dogData.behaviorDetails,
+        undesirableBehavior: dogData.undesirableBehavior,
+        fearDescription: dogData.fearDescription
+      };
+
+      // Create the dog profile using the res.partner model
+      const response = await this.client.post('/web/dataset/call_kw/res.partner/create', {
+        jsonrpc: "2.0",
+        method: "call",
+        params: {
+          model: "res.partner",
+          method: "create",
+          args: [{
             name: dogData.name,
-            breed: dogData.breed,
-            age: dogData.age,
-            owner_id: dogData.ownerId,
-            training_level: dogData.trainingLevel,
-            notes: dogData.notes
-          }
+            parent_id: 3, // Owner's partner ID
+            type: "contact",
+            function: "Dog",
+            comment: JSON.stringify(commentData)
+          }],
+          kwargs: {}
         }
       });
-      return response.data;
+
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to create dog profile');
+      }
+
+      return response.data.result;
     } catch (error) {
       throw this.handleError(error);
     }
@@ -222,20 +312,25 @@ export class OdooService {
       // Parse the dogs from the response
       const dogs = response.data.result.map((dog: any) => {
         let dogInfo = { breed: "", age: "", gender: "", level: "Beginner", progress: 0 };
-        try {
-          // Parse the comment field which contains the JSON data
-          const commentData = JSON.parse(dog.comment.replace("<p>", "").replace("</p>", ""));
-          if (commentData.dogInfo) {
-            dogInfo = {
-              breed: commentData.dogInfo.breed || "",
-              age: commentData.dogInfo.age || "",
-              gender: commentData.dogInfo.gender || "",
-              level: commentData.dogInfo.trainingLevel || "Beginner",
-              progress: commentData.dogInfo.progress || 0
-            };
+        
+        if (typeof dog.comment === 'string' && dog.comment.trim()) {
+          try {
+            // Try to parse the comment field as JSON
+            const commentData = JSON.parse(dog.comment.trim());
+            if (commentData && typeof commentData === 'object' && commentData.dogInfo) {
+              dogInfo = {
+                breed: commentData.dogInfo.breed || "",
+                age: commentData.dogInfo.age || "",
+                gender: commentData.dogInfo.gender || "",
+                level: commentData.dogInfo.trainingLevel || "Beginner",
+                progress: commentData.dogInfo.progress || 0
+              };
+            }
+          } catch (e) {
+            // If JSON parsing fails, try to extract data from the string
+            console.warn("Failed to parse dog comment as JSON:", e);
+            // Keep default values set above
           }
-        } catch (e) {
-          console.error("Error parsing dog comment data:", e);
         }
 
         return {
@@ -252,6 +347,7 @@ export class OdooService {
 
       return dogs;
     } catch (error) {
+      console.error("Error fetching dogs:", error);
       throw this.handleError(error);
     }
   }

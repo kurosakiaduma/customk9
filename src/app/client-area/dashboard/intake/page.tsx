@@ -3,6 +3,7 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ServiceFactory from "@/services/ServiceFactory";
 
 // Type definitions for the form data
 interface OtherPet {
@@ -260,40 +261,99 @@ export default function IntakeFormPage() {
   };
   
   // Handle form submission
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Here you would send the form data to your backend
-    console.log("Form submitted:", formData);
-    
-    // In a real application, we would send this data to a backend API
-    // For now, we'll save it to localStorage to simulate persistence
     try {
-      // Store the intake form data
-      localStorage.setItem("customk9_intake_data", JSON.stringify(formData));
+      const odooService = ServiceFactory.getInstance().getOdooService();
       
-      // Mark the intake form as completed
-      localStorage.setItem("customk9_intake_completed", "true");
-      
+      // Create the dog profile
+      await odooService.createDogProfile({
+        name: formData.dogName,
+        breed: formData.breed,
+        age: formData.dogAge,
+        gender: formData.gender,
+        sterilized: formData.sterilized,
+        dogSource: formData.dogSource,
+        timeWithDog: formData.timeWithDog,
+        medications: formData.medications,
+        currentDeworming: formData.currentDeworming,
+        tickFleaPreventative: formData.tickFleaPreventative,
+        vetClinic: formData.vetClinic,
+        vetName: formData.vetName,
+        vetPhone: formData.vetPhone,
+        medicalIssues: formData.medicalIssues,
+        lifestyle: {
+          homeAloneLocation: formData.homeAloneLocation,
+          sleepLocation: formData.sleepLocation,
+          hasCrate: formData.hasCrate,
+          likesCrate: formData.likesCrate,
+          crateLocation: formData.crateLocation,
+          chewsCrate: formData.chewsCrate,
+          hoursAlone: formData.hoursAlone,
+          foodBrand: formData.foodBrand,
+          feedingSchedule: formData.feedingSchedule,
+          foodLeftOut: formData.foodLeftOut,
+          allergies: formData.allergies,
+          toyTypes: formData.toyTypes,
+          toyPlayTime: formData.toyPlayTime,
+          toyStorage: formData.toyStorage,
+          walkFrequency: formData.walkFrequency,
+          walkPerson: formData.walkPerson,
+          walkDuration: formData.walkDuration,
+          otherExercise: formData.otherExercise,
+          walkEquipment: formData.walkEquipment,
+          offLeash: formData.offLeash,
+          forestVisits: formData.forestVisits,
+          pulling: formData.pulling,
+          pullingPrevention: formData.pullingPrevention
+        },
+        history: {
+          previousTraining: formData.previousTraining,
+          growled: formData.growled,
+          growlDetails: formData.growlDetails,
+          bitten: formData.bitten,
+          biteDetails: formData.biteDetails,
+          fearful: formData.fearful,
+          fearDetails: formData.fearDetails,
+          newPeopleResponse: formData.newPeopleResponse,
+          groomingResponse: formData.groomingResponse,
+          ignoreReaction: formData.ignoreReaction,
+          previousServices: formData.previousServices,
+          toolsUsed: formData.toolsUsed
+        },
+        goals: {
+          trainingGoals: formData.trainingGoals,
+          idealDogBehavior: formData.idealDogBehavior
+        },
+        behaviorChecklist: formData.behaviorChecklist,
+        behaviorDetails: formData.behaviorDetails,
+        undesirableBehavior: formData.undesirableBehavior,
+        fearDescription: formData.fearDescription
+      });
+
       // Show success message
       setSubmissionStatus({
         success: true,
-        message: "Your intake form has been submitted successfully! You can update it anytime if needed."
+        message: "Your dog's profile has been created successfully! You will be redirected to the dashboard."
       });
       
-      // Set loading to false instead of redirecting
-      setIsLoading(false);
+      // Clear form data from localStorage
+      localStorage.removeItem("customk9_intake_data");
       
-      // Reset to first page to allow for reviewing/editing
-      setCurrentPage(1);
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        router.push('/client-area/dashboard');
+      }, 2000);
 
     } catch (error) {
-      console.error("Error saving form data:", error);
+      console.error("Error submitting form:", error);
       setSubmissionStatus({
         success: false,
-        message: "There was an error submitting your form. Please try again."
+        message: "There was an error creating your dog's profile. Please try again."
       });
+    } finally {
       setIsLoading(false);
     }
   };
