@@ -10,6 +10,18 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'training' | 'intake'>('overview');
   const [imageError, setImageError] = useState(false);
   
+  console.log("DogDetailCard rendering with data:", dog);
+
+  useEffect(() => {
+    console.log("DogDetailCard mounted/updated with data:", {
+      dogInfo: dog.dogInfo,
+      lifestyle: dog.lifestyle,
+      history: dog.history,
+      goals: dog.goals,
+      behaviorChecklist: dog.behaviorChecklist
+    });
+  }, [dog]);
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-md overflow-hidden">
       {/* Header with image and basic info */}
@@ -182,9 +194,9 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
               <div className="mt-4 bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Veterinary Information</h4>
                 <div className="space-y-2">
-                  <p><span className="text-gray-500">Clinic:</span> {dog.dogInfo?.vetClinic}</p>
-                  <p><span className="text-gray-500">Vet:</span> {dog.dogInfo?.vetName}</p>
-                  <p><span className="text-gray-500">Phone:</span> {dog.dogInfo?.vetPhone}</p>
+                  <p><span className="text-gray-500">Clinic:</span> {dog.dogInfo?.vetClinic || 'Not specified'}</p>
+                  <p><span className="text-gray-500">Vet:</span> {dog.dogInfo?.vetName || 'Not specified'}</p>
+                  <p><span className="text-gray-500">Phone:</span> {dog.dogInfo?.vetPhone || 'Not specified'}</p>
                 </div>
               </div>
             </div>
@@ -196,9 +208,9 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Home Environment</h4>
                   <div className="space-y-2">
-                    <p><span className="text-gray-500">Home Alone Location:</span> {dog.lifestyle?.homeAloneLocation}</p>
-                    <p><span className="text-gray-500">Sleep Location:</span> {dog.lifestyle?.sleepLocation}</p>
-                    <p><span className="text-gray-500">Hours Alone:</span> {dog.lifestyle?.hoursAlone}</p>
+                    <p><span className="text-gray-500">Home Alone Location:</span> {dog.lifestyle?.homeAloneLocation || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Sleep Location:</span> {dog.lifestyle?.sleepLocation || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Hours Alone:</span> {dog.lifestyle?.hoursAlone || 'Not specified'}</p>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -206,7 +218,7 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
                   <div className="space-y-2">
                     <p><span className="text-gray-500">Has Crate:</span> {dog.lifestyle?.hasCrate === 'Y' ? 'Yes' : 'No'}</p>
                     <p><span className="text-gray-500">Likes Crate:</span> {dog.lifestyle?.likesCrate === 'Y' ? 'Yes' : 'No'}</p>
-                    <p><span className="text-gray-500">Crate Location:</span> {dog.lifestyle?.crateLocation}</p>
+                    <p><span className="text-gray-500">Crate Location:</span> {dog.lifestyle?.crateLocation || 'Not specified'}</p>
                     <p><span className="text-gray-500">Chews Crate:</span> {dog.lifestyle?.chewsCrate === 'Y' ? 'Yes' : 'No'}</p>
                   </div>
                 </div>
@@ -216,18 +228,25 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Feeding</h4>
                   <div className="space-y-2">
-                    <p><span className="text-gray-500">Food Brand:</span> {dog.lifestyle?.foodBrand}</p>
-                    <p><span className="text-gray-500">Schedule:</span> {dog.lifestyle?.feedingSchedule}</p>
+                    <p><span className="text-gray-500">Food Brand:</span> {dog.lifestyle?.foodBrand || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Schedule:</span> {dog.lifestyle?.feedingSchedule || 'Not specified'}</p>
                     <p><span className="text-gray-500">Food Left Out:</span> {dog.lifestyle?.foodLeftOut === 'Y' ? 'Yes' : 'No'}</p>
-                    <p><span className="text-gray-500">Allergies:</span> {dog.lifestyle?.allergies}</p>
+                    <p><span className="text-gray-500">Allergies:</span> {dog.lifestyle?.allergies || 'None'}</p>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Exercise & Play</h4>
                   <div className="space-y-2">
-                    <p><span className="text-gray-500">Walk Frequency:</span> {dog.lifestyle?.walkFrequency}</p>
-                    <p><span className="text-gray-500">Walk Duration:</span> {dog.lifestyle?.walkDuration}</p>
-                    <p><span className="text-gray-500">Other Exercise:</span> {dog.lifestyle?.otherExercise}</p>
+                    <p><span className="text-gray-500">Walk Frequency:</span> {dog.lifestyle?.walkFrequency || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Walk Duration:</span> {dog.lifestyle?.walkDuration || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Other Exercise:</span> {dog.lifestyle?.otherExercise || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Walk Equipment:</span> {dog.lifestyle?.walkEquipment || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Off Leash:</span> {dog.lifestyle?.offLeash === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-gray-500">Forest Visits:</span> {dog.lifestyle?.forestVisits || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Pulling:</span> {dog.lifestyle?.pulling === 'Y' ? 'Yes' : 'No'}</p>
+                    {dog.lifestyle?.pulling === 'Y' && (
+                      <p><span className="text-gray-500">Pulling Prevention:</span> {dog.lifestyle?.pullingPrevention || 'Not specified'}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -239,18 +258,27 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Previous Training</h4>
-                  <p>{dog.history?.previousTraining}</p>
-                  <p className="mt-2"><span className="text-gray-500">Tools Used:</span> {dog.history?.toolsUsed}</p>
+                  <p>{dog.history?.previousTraining || 'No previous training'}</p>
+                  <p className="mt-2"><span className="text-gray-500">Tools Used:</span> {dog.history?.toolsUsed || 'None'}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Behavior History</h4>
                   <div className="space-y-2">
                     <p><span className="text-gray-500">Has Growled:</span> {dog.history?.growled === 'Y' ? 'Yes' : 'No'}</p>
-                    <p><span className="text-gray-500">Has Bitten:</span> {dog.history?.bitten === 'Y' ? 'Yes' : 'No'}</p>
-                    <p><span className="text-gray-500">Is Fearful:</span> {dog.history?.fearful === 'Y' ? 'Yes' : 'No'}</p>
-                    {dog.history?.fearDetails && (
-                      <p><span className="text-gray-500">Fear Details:</span> {dog.history.fearDetails}</p>
+                    {dog.history?.growled === 'Y' && (
+                      <p><span className="text-gray-500">Growl Details:</span> {dog.history?.growlDetails}</p>
                     )}
+                    <p><span className="text-gray-500">Has Bitten:</span> {dog.history?.bitten === 'Y' ? 'Yes' : 'No'}</p>
+                    {dog.history?.bitten === 'Y' && (
+                      <p><span className="text-gray-500">Bite Details:</span> {dog.history?.biteDetails}</p>
+                    )}
+                    <p><span className="text-gray-500">Is Fearful:</span> {dog.history?.fearful === 'Y' ? 'Yes' : 'No'}</p>
+                    {dog.history?.fearful === 'Y' && (
+                      <p><span className="text-gray-500">Fear Details:</span> {dog.history?.fearDetails}</p>
+                    )}
+                    <p><span className="text-gray-500">Response to New People:</span> {dog.history?.newPeopleResponse || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Grooming Response:</span> {dog.history?.groomingResponse || 'Not specified'}</p>
+                    <p><span className="text-gray-500">Ignore Reaction:</span> {dog.history?.ignoreReaction || 'Not specified'}</p>
                   </div>
                 </div>
               </div>
@@ -263,18 +291,18 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-medium mb-2">Training Goals</h4>
-                    <p>{dog.goals?.trainingGoals}</p>
+                    <p>{dog.goals?.trainingGoals || 'Not specified'}</p>
                   </div>
                   <div>
                     <h4 className="font-medium mb-2">Ideal Dog Behavior</h4>
-                    <p>{dog.goals?.idealDogBehavior}</p>
+                    <p>{dog.goals?.idealDogBehavior || 'Not specified'}</p>
                   </div>
                   {dog.behaviorChecklist && dog.behaviorChecklist.length > 0 && (
                     <div>
-                      <h4 className="font-medium mb-2">Behavior Checklist</h4>
+                      <h4 className="font-medium mb-2">Current Behavior Checklist</h4>
                       <ul className="list-disc list-inside">
                         {dog.behaviorChecklist.map((behavior: string, index: number) => (
-                          <li key={index}>{behavior}</li>
+                          <li key={index} className="text-gray-700">{behavior}</li>
                         ))}
                       </ul>
                     </div>
@@ -300,6 +328,7 @@ export default function DogsPage() {
       try {
         const odooService = ServiceFactory.getInstance().getOdooService();
         const fetchedDogs = await odooService.getDogs();
+        console.log("Fetched dogs in DogsPage:", fetchedDogs);
         setDogs(fetchedDogs);
         setIsLoading(false);
       } catch (err) {

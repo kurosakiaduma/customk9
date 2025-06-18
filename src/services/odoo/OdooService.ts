@@ -376,6 +376,7 @@ export class OdooService {
 
   async getDogs(): Promise<Dog[]> {
     try {
+      console.log("Fetching dogs from Odoo...");
       const response = await this.client.post('/web/dataset/call_kw/res.partner/search_read', {
         jsonrpc: "2.0",
         method: "call",
@@ -389,8 +390,12 @@ export class OdooService {
         }
       });
       
+      console.log("Raw response from Odoo:", response.data.result);
+      
       // Parse the dogs from the response
       const dogs = response.data.result.map((dog: any) => {
+        console.log(`Processing dog ${dog.name}, comment:`, dog.comment);
+        
         const defaultDogInfo: DogInfo = {
           breed: "",
           age: "",
@@ -417,11 +422,33 @@ export class OdooService {
         
         if (typeof dog.comment === 'string' && dog.comment.trim()) {
           try {
+            // Clean up the comment field - remove HTML tags and decode HTML entities
+            let cleanComment = dog.comment.trim()
+              .replace(/<[^>]*>/g, '') // Remove HTML tags
+              .replace(/&quot;/g, '"')  // Replace HTML quotes
+              .replace(/&amp;/g, '&')   // Replace HTML ampersands
+              .replace(/&lt;/g, '<')    // Replace HTML less than
+              .replace(/&gt;/g, '>')    // Replace HTML greater than
+              .replace(/\\"/g, '"')     // Replace escaped quotes
+              .replace(/\\/g, '')      // Remove remaining backslashes
+              .trim();
+
+            // Try to find the start of the JSON object
+            const jsonStart = cleanComment.indexOf('{');
+            if (jsonStart !== -1) {
+              cleanComment = cleanComment.substring(jsonStart);
+            }
+
+            console.log("Cleaned comment:", cleanComment);
+
             // Try to parse the comment field as JSON
-            const commentData = JSON.parse(dog.comment.trim());
+            const commentData = JSON.parse(cleanComment);
+            console.log("Successfully parsed comment JSON:", commentData);
+            
             if (commentData && typeof commentData === 'object') {
               // Extract dogInfo
               if (commentData.dogInfo) {
+                console.log("Found dogInfo:", commentData.dogInfo);
                 dogInfo = {
                   ...defaultDogInfo,
                   ...commentData.dogInfo,
@@ -432,6 +459,7 @@ export class OdooService {
 
               // Extract lifestyle data
               if (commentData.lifestyle) {
+                console.log("Found lifestyle data:", commentData.lifestyle);
                 lifestyle = {
                   homeAloneLocation: commentData.lifestyle.homeAloneLocation || "",
                   sleepLocation: commentData.lifestyle.sleepLocation || "",
@@ -461,6 +489,7 @@ export class OdooService {
 
               // Extract history data
               if (commentData.history) {
+                console.log("Found history data:", commentData.history);
                 history = {
                   previousTraining: commentData.history.previousTraining || "",
                   growled: commentData.history.growled || "N",
@@ -479,6 +508,7 @@ export class OdooService {
 
               // Extract goals and behavior data
               if (commentData.goals) {
+                console.log("Found goals data:", commentData.goals);
                 goals = {
                   trainingGoals: commentData.goals.trainingGoals || "",
                   idealDogBehavior: commentData.goals.idealDogBehavior || ""
@@ -486,13 +516,16 @@ export class OdooService {
               }
 
               if (Array.isArray(commentData.behaviorChecklist)) {
+                console.log("Found behavior checklist:", commentData.behaviorChecklist);
                 behaviorChecklist = commentData.behaviorChecklist;
               }
             }
           } catch (e) {
             // If JSON parsing fails, log warning and keep default values
-            console.warn("Failed to parse dog comment as JSON:", e);
+            console.error("Failed to parse dog comment as JSON:", e, "\nRaw comment:", dog.comment);
           }
+        } else {
+          console.warn("Dog comment is empty or not a string:", dog.comment);
         }
 
         const dogData: Dog = {
@@ -511,6 +544,7 @@ export class OdooService {
           behaviorChecklist
         };
 
+        console.log("Final processed dog data:", dogData);
         return dogData;
       });
 

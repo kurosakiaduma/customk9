@@ -8,6 +8,7 @@ import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/2
 import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
 import { ensureValidAppointmentImage, Appointment } from "@/app/data/appointmentsData";
 import ServiceFactory from "@/services/ServiceFactory";
+import { Dog } from '@/services/odoo/types';
 
 // Define interfaces for our data
 interface Service {
@@ -33,14 +34,6 @@ interface PublicEvent {
   enrolled: number;
   image: string;
   tags: string[];
-}
-
-interface Dog {
-  id: number;
-  name: string;
-  breed: string;
-  age: number;
-  image: string;
 }
 
 interface BookingData {
