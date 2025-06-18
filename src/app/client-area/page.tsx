@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
 import Link from "next/link";
+import ServiceFactory from "@/services/ServiceFactory";
+import { AuthUser } from "@/services/auth/AuthService";
 
 export default function ClientAreaPage() {
   const [activeTab, setActiveTab] = useState("login");
@@ -18,16 +20,17 @@ export default function ClientAreaPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const router = useRouter();
+  const authService = ServiceFactory.getInstance().getAuthService();
   
   // Check if user is already authenticated
   useEffect(() => {
-    // In a real app, this would check a token in localStorage or cookies
-    const hasAuthToken = localStorage.getItem("customk9_auth_token");
-    if (hasAuthToken) {
+    const isAuth = authService.isAuthenticated();
+    if (isAuth) {
       setIsAuthenticated(true);
     }
     
@@ -42,74 +45,82 @@ export default function ClientAreaPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
     setIsLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
+    try {
       // Simple validation
       if (!email || !password) {
-        setFormError("Please fill in all fields");
-        setIsLoading(false);
-        return;
+        throw new Error("Please fill in all fields");
       }
       
-      // Demo login - Accept any valid-looking email with any password
-      if (email.includes('@') && email.includes('.') && password.length >= 6) {
-        // Store fake auth token
-        localStorage.setItem("customk9_auth_token", "demo_token_12345");
-        localStorage.setItem("customk9_user_name", "John");
-        
-        setIsAuthenticated(true);
-        setIsLoading(false);
-      } else {
-        setFormError("Invalid email or password");
-        setIsLoading(false);
-      }
-    }, 1000);
+      const user = await authService.login(email, password);
+      setIsAuthenticated(true);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
     setIsLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
+    try {
       // Simple validation
       if (!email || !password || !firstName || !lastName || !phone) {
-        setFormError("Please fill in all required fields");
-        setIsLoading(false);
-        return;
+        throw new Error("Please fill in all required fields");
       }
       
       if (password !== confirmPassword) {
-        setFormError("Passwords do not match");
-        setIsLoading(false);
-        return;
+        throw new Error("Passwords do not match");
       }
       
       if (!termsAccepted) {
-        setFormError("You must accept the terms and conditions");
-        setIsLoading(false);
-        return;
+        throw new Error("You must accept the terms and conditions");
       }
       
       if (password.length < 8) {
-        setFormError("Password must be at least 8 characters long");
-        setIsLoading(false);
-        return;
+        throw new Error("Password must be at least 8 characters long");
       }
       
-      // Store fake auth token
-      localStorage.setItem("customk9_auth_token", "demo_token_12345");
-      localStorage.setItem("customk9_user_name", firstName);
+      // Create user
+      const user = await authService.register({
+        name: `${firstName} ${lastName}`,
+        email,
+        phone,
+        password
+      });
       
-      setIsAuthenticated(true);
+      // Show success message
+      setFormError("");
+      setSuccessMessage("Account created successfully! Please log in with your email and password.");
+      
+      // Clear form
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setConfirmPassword("");
+      setTermsAccepted(false);
+      
+      // Switch to login tab after 2 seconds
+      setTimeout(() => {
+        setActiveTab("login");
+        setSuccessMessage("");
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      setFormError(error instanceof Error ? error.message : "Registration failed");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const simulateGuestLogin = () => {
@@ -226,6 +237,16 @@ export default function ClientAreaPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <span>{formError}</span>
+                </div>
+              )}
+              
+              {/* Success Message */}
+              {successMessage && (
+                <div className="bg-green-50 text-green-700 p-3 rounded-md mb-6 flex items-start">
+                  <svg className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span>{successMessage}</span>
                 </div>
               )}
               

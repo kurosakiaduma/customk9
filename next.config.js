@@ -14,6 +14,14 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/odoo/:path*',
+        destination: 'https://erp.vuna.io/:path*',
+      },
+    ]
+  }
 };
 
 module.exports = nextConfig; 

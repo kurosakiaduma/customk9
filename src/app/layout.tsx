@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import ServiceProvider from "@/providers/ServiceProvider";
 
 // Import Swiper CSS
 import 'swiper/css';
@@ -8,32 +9,24 @@ import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CustomK9 Kenya | Dog Education & Welfare Services",
-  description: "Providing education about dogs and their welfare to residents of Kenya through consultations, training, kennel inspection, and rehoming services.",
+  title: "CustomK9 - Professional Dog Training",
+  description: "Expert dog training services tailored to your needs",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={inter.className}>
+        <ServiceProvider>
+          {children}
+        </ServiceProvider>
       </body>
     </html>
   );
