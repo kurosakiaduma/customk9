@@ -87,6 +87,24 @@ interface Dog {
   behaviorChecklist: string[];
 }
 
+interface TrainingPlan {
+  id: number;
+  name: string;
+  partner_id: number;
+  date_start: string;
+  date: string;
+  description: string;
+  progress: number;
+  task_ids: number[];
+  tasks: Array<{
+    id: number;
+    name: string;
+    description: string;
+    stage_id: number;
+    date_end?: string;
+  }>;
+}
+
 export class OdooService {
   private client: AxiosInstance;
   private config: OdooConfig;
@@ -556,43 +574,117 @@ export class OdooService {
   }
 
   // Training Plans
+  async getTrainingPlans(): Promise<TrainingPlan[]> {
+    try {
+      // Get all training plans (projects)
+      const response = await this.client.post('/web/dataset/call_kw', {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'project.project',
+          method: 'search_read',
+          args: [[['partner_id', '!=', false]]],
+          kwargs: {
+            fields: ['id', 'name', 'partner_id', 'date_start', 'date', 'description', 'task_ids']
+          }
+        }
+      });
+
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to fetch training plans');
+      }
+
+      const plans = response.data.result;
+
+      // Get tasks for each plan
+      const plansWithTasks = await Promise.all(plans.map(async (plan: any) => {
+        const taskResponse = await this.client.post('/web/dataset/call_kw', {
+          jsonrpc: '2.0',
+          method: 'call',
+          params: {
+            model: 'project.task',
+            method: 'search_read',
+            args: [[['id', 'in', plan.task_ids]]],
+            kwargs: {
+              fields: ['id', 'name', 'description', 'stage_id', 'date_end']
+            }
+          }
+        });
+
+        return {
+          ...plan,
+          tasks: taskResponse.data.result || []
+        };
+      }));
+
+      return plansWithTasks;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async createTrainingPlan(planData: {
     name: string;
     dogId: number;
     startDate: string;
     endDate: string;
-    objectives: string;
-    exercises: Array<{
+    description: string;
+    tasks: Array<{
       name: string;
       description: string;
     }>;
-  }) {
+  }): Promise<number> {
     try {
-      const response = await this.client.post('/api/v1/customk9.training.plan', {
-        data: {
-          type: 'customk9.training.plan',
-          attributes: {
+      const response = await this.client.post('/web/dataset/call_kw', {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'project.project',
+          method: 'create',
+          args: [{
             name: planData.name,
-            dog_id: planData.dogId,
-            start_date: planData.startDate,
-            end_date: planData.endDate,
-            objectives: planData.objectives
-          },
-          relationships: {
-            exercises: {
-              data: planData.exercises.map(exercise => ({
-                type: 'customk9.training.exercise',
-                attributes: {
-                  name: exercise.name,
-                  description: exercise.description,
-                  completed: false
-                }
-              }))
-            }
-          }
+            partner_id: planData.dogId,
+            date_start: planData.startDate,
+            date: planData.endDate,
+            description: planData.description,
+            task_ids: planData.tasks.map(task => [0, 0, {
+              name: task.name,
+              description: task.description
+            }])
+          }],
+          kwargs: {}
         }
       });
-      return response.data;
+
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to create training plan');
+      }
+
+      return response.data.result;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateTaskStatus(taskId: number, completed: boolean): Promise<void> {
+    try {
+      const response = await this.client.post('/web/dataset/call_kw', {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'project.task',
+          method: 'write',
+          args: [[taskId], {
+            stage_id: completed ? 4 : 1, // 4 = Done, 1 = To Do
+            date_end: completed ? new Date().toISOString().split('T')[0] : false
+          }],
+          kwargs: {}
+        }
+      });
+
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to update task status');
+      }
     } catch (error) {
       throw this.handleError(error);
     }

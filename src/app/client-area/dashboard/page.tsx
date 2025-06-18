@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import ServiceFactory from "@/services/ServiceFactory";
+import { OdooService } from "@/services/odoo/OdooService";
+
+// Initialize OdooService
+const odooService = new OdooService({
+  baseUrl: process.env.NEXT_PUBLIC_ODOO_URL || '',
+  database: 'Merican'
+});
 
 // Demo data for the dashboard
 const dummyUserData = {
@@ -243,60 +249,40 @@ const UpcomingSessionCard = ({ session }: { session: any }) => (
   </div>
 );
 
+const calculateProgress = (tasks: any[]) => {
+  if (!tasks || tasks.length === 0) return 0;
+  const completedTasks = tasks.filter(task => task.stage_id[0] === 4).length;
+  return Math.round((completedTasks / tasks.length) * 100);
+};
+
 const TrainingPlanCard = ({ plan }: { plan: any }) => {
-  // Count completed milestones
-  const completedCount = plan.milestones.filter((m: any) => m.completed).length;
-  const totalCount = plan.milestones.length;
+  const progress = calculateProgress(plan.tasks);
   
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-semibold text-gray-800">{plan.title}</h3>
+          <h3 className="font-semibold text-gray-800">{plan.name}</h3>
           <p className="text-sm text-gray-600">
-            {plan.dog} • Next session: {plan.nextSession}
+            {new Date(plan.date_start).toLocaleDateString()} - {new Date(plan.date).toLocaleDateString()}
           </p>
         </div>
         <span className="px-2 py-1 bg-sky-100 text-sky-700 rounded-full text-xs">
-          {completedCount}/{totalCount} complete
+          {plan.tasks.length} tasks
         </span>
       </div>
       
       <div className="mb-3">
         <div className="flex justify-between text-sm mb-1">
           <span className="text-gray-600">Overall Progress</span>
-          <span className="font-medium">{plan.progress}%</span>
+          <span className="font-medium">{progress}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className="bg-sky-600 h-2 rounded-full" 
-            style={{ width: `${plan.progress}%` }}
+            style={{ width: `${progress}%` }}
           ></div>
         </div>
-      </div>
-      
-      <div className="space-y-2 mt-4">
-        <h4 className="text-sm font-medium text-gray-700">Current Milestones:</h4>
-        {plan.milestones.map((milestone: any, index: number) => (
-          <div key={index} className="flex items-center">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
-              milestone.completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-            }`}>
-              {milestone.completed ? (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                </svg>
-              ) : (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              )}
-            </div>
-            <span className={`text-sm ${milestone.completed ? 'text-gray-700' : 'text-gray-500'}`}>
-              {milestone.name}
-            </span>
-          </div>
-        ))}
       </div>
       
       <div className="mt-4">
@@ -313,31 +299,58 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 
 export default function DashboardPage() {
   const [dogs, setDogs] = useState<any[]>([]);
+  const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
+  const [validUpcomingSessions, setValidUpcomingSessions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
-  const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDogs = async () => {
+    const fetchData = async () => {
       try {
-        const odooService = ServiceFactory.getInstance().getOdooService();
-        const fetchedDogs = await odooService.getDogs();
-        setDogs(fetchedDogs);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching dogs:', err);
-        setError('Failed to load dogs. Please try again later.');
+        setIsLoading(true);
+        const [dogsData, trainingPlansData] = await Promise.all([
+          odooService.getDogs(),
+          odooService.getTrainingPlans()
+        ]);
+        
+        setDogs(dogsData);
+        setTrainingPlans(trainingPlansData);
+        // TODO: Implement sessions fetching when available
+        setValidUpcomingSessions([]);
+        
+      } catch (err: any) {
+        console.error('Failed to fetch dashboard data:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDogs();
+    fetchData();
   }, []);
 
-  // Filter out any undefined or null values from upcomingSessions
-  const validUpcomingSessions = upcomingSessions.filter(session => session);
-  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium hover:bg-sky-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <WelcomeSection name={dummyUserData.name} />
