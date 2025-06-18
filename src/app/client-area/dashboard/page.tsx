@@ -385,7 +385,33 @@ export default function DashboardPage() {
           <p className="text-gray-600">Active training companions</p>
         </Link>
 
-        {/* Rest of the cards... */}
+        {/* Training Plans Card */}
+        <Link href="/client-area/dashboard/training" className="bg-white rounded-xl border border-gray-100 shadow-md p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+              </svg>
+            </div>
+            <span className="text-3xl font-bold text-gray-700">{trainingPlans.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">Training Plans</h3>
+          <p className="text-gray-600">Active training programs</p>
+        </Link>
+
+        {/* Appointments Card */}
+        <Link href="/client-area/dashboard/calendar" className="bg-white rounded-xl border border-gray-100 shadow-md p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <span className="text-3xl font-bold text-gray-700">{validUpcomingSessions.length}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">Appointments</h3>
+          <p className="text-gray-600">Upcoming training sessions</p>
+        </Link>
       </div>
       
       {/* Two Column Layout for Main Content */}

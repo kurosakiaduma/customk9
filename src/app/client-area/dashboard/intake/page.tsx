@@ -260,12 +260,35 @@ export default function IntakeFormPage() {
     }
   };
   
-  // Handle form submission
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  // Navigation between form pages
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      // Save form data to localStorage before navigating
+      localStorage.setItem("customk9_intake_data", JSON.stringify(formData));
+      setCurrentPage(currentPage + 1);
+      window.scrollTo(0, 0);
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      window.scrollTo(0, 0);
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    // Only allow submission from the last page
+    if (currentPage !== totalPages) {
+      nextPage();
+      return;
+    }
     
     try {
+      setIsLoading(true);
+      
       const odooService = ServiceFactory.getInstance().getOdooService();
       
       // Create the dog profile
@@ -355,21 +378,6 @@ export default function IntakeFormPage() {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-  
-  // Navigation between form pages
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-      window.scrollTo(0, 0);
-    }
-  };
-  
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-      window.scrollTo(0, 0);
     }
   };
   
@@ -1464,54 +1472,41 @@ export default function IntakeFormPage() {
           </div>
         )}
         
-        {/* Form navigation buttons */}
+        {/* Navigation buttons */}
         <div className="flex justify-between mt-8">
-          {currentPage > 1 ? (
+          {currentPage > 1 && (
             <button
               type="button"
               onClick={prevPage}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-              disabled={isLoading}
+              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors"
             >
               Previous
             </button>
-          ) : (
-            <Link 
-              href="/client-area/dashboard" 
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-            >
-              Cancel
-            </Link>
           )}
           
-          {currentPage < totalPages ? (
-            <button
-              type="button"
-              onClick={nextPage}
-              className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors"
-              disabled={isLoading}
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors flex items-center"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Submitting...
-                </>
-              ) : (
-                "Submit"
-              )}
-            </button>
-          )}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={`px-6 py-2 ${
+              currentPage === totalPages
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-sky-600 hover:bg-sky-700'
+            } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors`}
+          >
+            {isLoading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </span>
+            ) : currentPage === totalPages ? (
+              'Submit'
+            ) : (
+              'Next'
+            )}
+          </button>
         </div>
       </form>
     </div>
