@@ -134,6 +134,156 @@ const DogDetailCard = ({ dog }: { dog: any }) => {
             </div>
           </div>
         )}
+
+        {/* Intake Form Tab */}
+        {activeTab === 'intake' && (
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-sky-800">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Source</p>
+                  <p className="font-medium">{dog.dogInfo?.dogSource || 'Not specified'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Time with Dog</p>
+                  <p className="font-medium">{dog.dogInfo?.timeWithDog || 'Not specified'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Sterilized</p>
+                  <p className="font-medium">{dog.dogInfo?.sterilized === 'Y' ? 'Yes' : 'No'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Medical Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-sky-800">Medical Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Medications</p>
+                  <p className="font-medium">{dog.dogInfo?.medications || 'None'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Current Deworming</p>
+                  <p className="font-medium">{dog.dogInfo?.currentDeworming === 'Y' ? 'Yes' : 'No'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Tick/Flea Preventative</p>
+                  <p className="font-medium">{dog.dogInfo?.tickFleaPreventative || 'None'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 text-sm">Medical Issues</p>
+                  <p className="font-medium">{dog.dogInfo?.medicalIssues || 'None'}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Veterinary Information</h4>
+                <div className="space-y-2">
+                  <p><span className="text-gray-500">Clinic:</span> {dog.dogInfo?.vetClinic}</p>
+                  <p><span className="text-gray-500">Vet:</span> {dog.dogInfo?.vetName}</p>
+                  <p><span className="text-gray-500">Phone:</span> {dog.dogInfo?.vetPhone}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lifestyle */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-sky-800">Lifestyle</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Home Environment</h4>
+                  <div className="space-y-2">
+                    <p><span className="text-gray-500">Home Alone Location:</span> {dog.lifestyle?.homeAloneLocation}</p>
+                    <p><span className="text-gray-500">Sleep Location:</span> {dog.lifestyle?.sleepLocation}</p>
+                    <p><span className="text-gray-500">Hours Alone:</span> {dog.lifestyle?.hoursAlone}</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Crate Information</h4>
+                  <div className="space-y-2">
+                    <p><span className="text-gray-500">Has Crate:</span> {dog.lifestyle?.hasCrate === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-gray-500">Likes Crate:</span> {dog.lifestyle?.likesCrate === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-gray-500">Crate Location:</span> {dog.lifestyle?.crateLocation}</p>
+                    <p><span className="text-gray-500">Chews Crate:</span> {dog.lifestyle?.chewsCrate === 'Y' ? 'Yes' : 'No'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Feeding</h4>
+                  <div className="space-y-2">
+                    <p><span className="text-gray-500">Food Brand:</span> {dog.lifestyle?.foodBrand}</p>
+                    <p><span className="text-gray-500">Schedule:</span> {dog.lifestyle?.feedingSchedule}</p>
+                    <p><span className="text-gray-500">Food Left Out:</span> {dog.lifestyle?.foodLeftOut === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-gray-500">Allergies:</span> {dog.lifestyle?.allergies}</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Exercise & Play</h4>
+                  <div className="space-y-2">
+                    <p><span className="text-gray-500">Walk Frequency:</span> {dog.lifestyle?.walkFrequency}</p>
+                    <p><span className="text-gray-500">Walk Duration:</span> {dog.lifestyle?.walkDuration}</p>
+                    <p><span className="text-gray-500">Other Exercise:</span> {dog.lifestyle?.otherExercise}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Training History */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-sky-800">Training History</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Previous Training</h4>
+                  <p>{dog.history?.previousTraining}</p>
+                  <p className="mt-2"><span className="text-gray-500">Tools Used:</span> {dog.history?.toolsUsed}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Behavior History</h4>
+                  <div className="space-y-2">
+                    <p><span className="text-gray-500">Has Growled:</span> {dog.history?.growled === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-gray-500">Has Bitten:</span> {dog.history?.bitten === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-gray-500">Is Fearful:</span> {dog.history?.fearful === 'Y' ? 'Yes' : 'No'}</p>
+                    {dog.history?.fearDetails && (
+                      <p><span className="text-gray-500">Fear Details:</span> {dog.history.fearDetails}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Training Goals */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-sky-800">Training Goals</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Training Goals</h4>
+                    <p>{dog.goals?.trainingGoals}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">Ideal Dog Behavior</h4>
+                    <p>{dog.goals?.idealDogBehavior}</p>
+                  </div>
+                  {dog.behaviorChecklist && dog.behaviorChecklist.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Behavior Checklist</h4>
+                      <ul className="list-disc list-inside">
+                        {dog.behaviorChecklist.map((behavior: string, index: number) => (
+                          <li key={index}>{behavior}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

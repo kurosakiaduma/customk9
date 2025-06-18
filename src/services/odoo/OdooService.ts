@@ -7,6 +7,86 @@ interface OdooConfig {
   defaultPassword?: string;
 }
 
+interface DogInfo {
+  breed: string;
+  age: string;
+  gender: string;
+  level: string;
+  progress: number;
+  sterilized: string;
+  dogSource: string;
+  timeWithDog: string;
+  medications: string;
+  currentDeworming: string;
+  tickFleaPreventative: string;
+  vetClinic: string;
+  vetName: string;
+  vetPhone: string;
+  medicalIssues: string;
+}
+
+interface DogLifestyle {
+  homeAloneLocation: string;
+  sleepLocation: string;
+  hasCrate: string;
+  likesCrate: string;
+  crateLocation: string;
+  chewsCrate: string;
+  hoursAlone: string;
+  foodBrand: string;
+  feedingSchedule: string;
+  foodLeftOut: string;
+  allergies: string;
+  toyTypes: string;
+  toyPlayTime: string;
+  toyStorage: string;
+  walkFrequency: string;
+  walkPerson: string;
+  walkDuration: string;
+  otherExercise: string;
+  walkEquipment: string;
+  offLeash: string;
+  forestVisits: string;
+  pulling: string;
+  pullingPrevention: string;
+}
+
+interface DogHistory {
+  previousTraining: string;
+  growled: string;
+  growlDetails: string;
+  bitten: string;
+  biteDetails: string;
+  fearful: string;
+  fearDetails: string;
+  newPeopleResponse: string;
+  groomingResponse: string;
+  ignoreReaction: string;
+  previousServices: string;
+  toolsUsed: string;
+}
+
+interface DogGoals {
+  trainingGoals: string;
+  idealDogBehavior: string;
+}
+
+interface Dog {
+  id: number;
+  name: string;
+  breed: string;
+  age: string;
+  gender: string;
+  level: string;
+  progress: number;
+  image: string;
+  dogInfo: DogInfo;
+  lifestyle: Partial<DogLifestyle>;
+  history: Partial<DogHistory>;
+  goals: Partial<DogGoals>;
+  behaviorChecklist: string[];
+}
+
 export class OdooService {
   private client: AxiosInstance;
   private config: OdooConfig;
@@ -294,7 +374,7 @@ export class OdooService {
     }
   }
 
-  async getDogs() {
+  async getDogs(): Promise<Dog[]> {
     try {
       const response = await this.client.post('/web/dataset/call_kw/res.partner/search_read', {
         jsonrpc: "2.0",
@@ -311,29 +391,111 @@ export class OdooService {
       
       // Parse the dogs from the response
       const dogs = response.data.result.map((dog: any) => {
-        let dogInfo = { breed: "", age: "", gender: "", level: "Beginner", progress: 0 };
+        const defaultDogInfo: DogInfo = {
+          breed: "",
+          age: "",
+          gender: "",
+          level: "Beginner",
+          progress: 0,
+          sterilized: "N",
+          dogSource: "",
+          timeWithDog: "",
+          medications: "",
+          currentDeworming: "N",
+          tickFleaPreventative: "",
+          vetClinic: "",
+          vetName: "",
+          vetPhone: "",
+          medicalIssues: ""
+        };
+        
+        let dogInfo: DogInfo = { ...defaultDogInfo };
+        let lifestyle: Partial<DogLifestyle> = {};
+        let history: Partial<DogHistory> = {};
+        let goals: Partial<DogGoals> = {};
+        let behaviorChecklist: string[] = [];
         
         if (typeof dog.comment === 'string' && dog.comment.trim()) {
           try {
             // Try to parse the comment field as JSON
             const commentData = JSON.parse(dog.comment.trim());
-            if (commentData && typeof commentData === 'object' && commentData.dogInfo) {
-              dogInfo = {
-                breed: commentData.dogInfo.breed || "",
-                age: commentData.dogInfo.age || "",
-                gender: commentData.dogInfo.gender || "",
-                level: commentData.dogInfo.trainingLevel || "Beginner",
-                progress: commentData.dogInfo.progress || 0
-              };
+            if (commentData && typeof commentData === 'object') {
+              // Extract dogInfo
+              if (commentData.dogInfo) {
+                dogInfo = {
+                  ...defaultDogInfo,
+                  ...commentData.dogInfo,
+                  level: commentData.dogInfo.trainingLevel || "Beginner",
+                  progress: commentData.dogInfo.progress || 0
+                };
+              }
+
+              // Extract lifestyle data
+              if (commentData.lifestyle) {
+                lifestyle = {
+                  homeAloneLocation: commentData.lifestyle.homeAloneLocation || "",
+                  sleepLocation: commentData.lifestyle.sleepLocation || "",
+                  hasCrate: commentData.lifestyle.hasCrate || "N",
+                  likesCrate: commentData.lifestyle.likesCrate || "N",
+                  crateLocation: commentData.lifestyle.crateLocation || "",
+                  chewsCrate: commentData.lifestyle.chewsCrate || "N",
+                  hoursAlone: commentData.lifestyle.hoursAlone || "",
+                  foodBrand: commentData.lifestyle.foodBrand || "",
+                  feedingSchedule: commentData.lifestyle.feedingSchedule || "",
+                  foodLeftOut: commentData.lifestyle.foodLeftOut || "N",
+                  allergies: commentData.lifestyle.allergies || "",
+                  toyTypes: commentData.lifestyle.toyTypes || "",
+                  toyPlayTime: commentData.lifestyle.toyPlayTime || "",
+                  toyStorage: commentData.lifestyle.toyStorage || "",
+                  walkFrequency: commentData.lifestyle.walkFrequency || "",
+                  walkPerson: commentData.lifestyle.walkPerson || "",
+                  walkDuration: commentData.lifestyle.walkDuration || "",
+                  otherExercise: commentData.lifestyle.otherExercise || "",
+                  walkEquipment: commentData.lifestyle.walkEquipment || "",
+                  offLeash: commentData.lifestyle.offLeash || "N",
+                  forestVisits: commentData.lifestyle.forestVisits || "",
+                  pulling: commentData.lifestyle.pulling || "N",
+                  pullingPrevention: commentData.lifestyle.pullingPrevention || ""
+                };
+              }
+
+              // Extract history data
+              if (commentData.history) {
+                history = {
+                  previousTraining: commentData.history.previousTraining || "",
+                  growled: commentData.history.growled || "N",
+                  growlDetails: commentData.history.growlDetails || "",
+                  bitten: commentData.history.bitten || "N",
+                  biteDetails: commentData.history.biteDetails || "",
+                  fearful: commentData.history.fearful || "N",
+                  fearDetails: commentData.history.fearDetails || "",
+                  newPeopleResponse: commentData.history.newPeopleResponse || "",
+                  groomingResponse: commentData.history.groomingResponse || "",
+                  ignoreReaction: commentData.history.ignoreReaction || "",
+                  previousServices: commentData.history.previousServices || "",
+                  toolsUsed: commentData.history.toolsUsed || ""
+                };
+              }
+
+              // Extract goals and behavior data
+              if (commentData.goals) {
+                goals = {
+                  trainingGoals: commentData.goals.trainingGoals || "",
+                  idealDogBehavior: commentData.goals.idealDogBehavior || ""
+                };
+              }
+
+              if (Array.isArray(commentData.behaviorChecklist)) {
+                behaviorChecklist = commentData.behaviorChecklist;
+              }
             }
           } catch (e) {
-            // If JSON parsing fails, try to extract data from the string
+            // If JSON parsing fails, log warning and keep default values
             console.warn("Failed to parse dog comment as JSON:", e);
-            // Keep default values set above
           }
         }
 
-        return {
+        const dogData: Dog = {
           id: dog.id,
           name: dog.name,
           breed: dogInfo.breed,
@@ -341,8 +503,15 @@ export class OdooService {
           gender: dogInfo.gender,
           level: dogInfo.level,
           progress: dogInfo.progress,
-          image: "/images/dog-placeholder.jpg" // Default image
+          image: "/images/dog-placeholder.jpg",
+          dogInfo,
+          lifestyle,
+          history,
+          goals,
+          behaviorChecklist
         };
+
+        return dogData;
       });
 
       return dogs;
