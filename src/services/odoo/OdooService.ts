@@ -177,18 +177,18 @@ export class OdooService {
 
       // Create partner first
       console.log('Creating partner...');
-      const partner = await this.client.post('/web/dataset/call_kw/res.partner/create', {
+      const partner = await this.client.post('/web/dataset/call_kw', {
         jsonrpc: '2.0',
         method: 'call',
         params: {
+          model: 'res.partner',
+          method: 'create',
           args: [{
             name: userData.name,
             email: userData.email,
             phone: userData.phone,
             customer_rank: 1
           }],
-          model: 'res.partner',
-          method: 'create',
           kwargs: {}
         }
       });
@@ -202,10 +202,12 @@ export class OdooService {
 
       // Create portal user directly using res.users model
       console.log('Creating portal user...');
-      const user = await this.client.post('/web/dataset/call_kw/res.users/create', {
+      const user = await this.client.post('/web/dataset/call_kw', {
         jsonrpc: '2.0',
         method: 'call',
         params: {
+          model: 'res.users',
+          method: 'create',
           args: [{
             login: userData.email,
             password: userData.password,
@@ -215,8 +217,6 @@ export class OdooService {
             action_id: false,
             active: true
           }],
-          model: 'res.users',
-          method: 'create',
           kwargs: {}
         }
       });
@@ -248,7 +248,7 @@ export class OdooService {
   // Helper method to get portal group ID
   private async getPortalGroupId(): Promise<number> {
     try {
-      const response = await this.client.post('/web/dataset/call_kw/res.groups/search_read', {
+      const response = await this.client.post('/web/dataset/call_kw', {
         jsonrpc: '2.0',
         method: 'call',
         params: {
@@ -365,7 +365,7 @@ export class OdooService {
       };
 
       // Create the dog profile using the res.partner model
-      const response = await this.client.post('/web/dataset/call_kw/res.partner/create', {
+      const response = await this.client.post('/web/dataset/call_kw', {
         jsonrpc: "2.0",
         method: "call",
         params: {
@@ -395,7 +395,7 @@ export class OdooService {
   async getDogs(): Promise<Dog[]> {
     try {
       console.log("Fetching dogs from Odoo...");
-      const response = await this.client.post('/web/dataset/call_kw/res.partner/search_read', {
+      const response = await this.client.post('/web/dataset/call_kw', {
         jsonrpc: "2.0",
         method: "call",
         params: {
