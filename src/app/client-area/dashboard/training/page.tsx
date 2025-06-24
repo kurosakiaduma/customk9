@@ -6,11 +6,12 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { OdooService } from "@/services/odoo/OdooService";
 import { format } from "date-fns";
+import { config } from "@/config/config";
 
 // Initialize OdooService
 const odooService = new OdooService({
-  baseUrl: process.env.NEXT_PUBLIC_ODOO_URL || '',
-  database: 'Merican'
+  baseUrl: config.odoo.baseUrl,
+  database: config.odoo.database
 });
 
 const calculateProgress = (tasks: any[]) => {

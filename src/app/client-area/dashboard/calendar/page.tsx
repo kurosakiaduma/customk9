@@ -422,6 +422,7 @@ export default function CalendarPage() {
                   <h4 className="font-medium text-lg">{selectedAppointment.dogName}</h4>
                   <p className="text-gray-600 text-sm">Training Session</p>
                 </div>
+
               </div>
             
               <div>

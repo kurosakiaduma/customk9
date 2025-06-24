@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { OdooService } from "@/services/odoo/OdooService";
+import { config } from "@/config/config";
 
 // Initialize OdooService
 const odooService = new OdooService({
-  baseUrl: process.env.NEXT_PUBLIC_ODOO_URL || '',
-  database: 'Merican'
+  baseUrl: config.odoo.baseUrl,
+  database: config.odoo.database
 });
 
 interface Dog {
