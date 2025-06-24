@@ -4,15 +4,9 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { OdooService } from "@/services/odoo/OdooService";
+import ServiceFactory from "@/services/ServiceFactory";
 import { format } from "date-fns";
-import { config } from "@/config/config";
-
-// Initialize OdooService
-const odooService = new OdooService({
-  baseUrl: config.odoo.baseUrl,
-  database: config.odoo.database
-});
+import { TrainingPlan } from "@/types/odoo";
 
 const calculateProgress = (tasks: any[]) => {
   if (!tasks || tasks.length === 0) return 0;
@@ -31,7 +25,7 @@ const sanitizeHtml = (html: string) => {
 };
 
 // Components
-const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: any; isSelected: boolean; onClick: () => void }) => {
+const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; isSelected: boolean; onClick: () => void }) => {
   const progress = calculateProgress(plan.tasks);
   
   return (
@@ -91,7 +85,7 @@ const TaskStatus = ({ status }: { status: number }) => {
 };
 
 // Component for the detailed view of a training plan
-const TrainingPlanDetail = ({ plan }: { plan: any }) => {
+const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
   const progress = calculateProgress(plan.tasks);
 
   return (
@@ -147,16 +141,18 @@ const TrainingPlanDetail = ({ plan }: { plan: any }) => {
 
 // TrainingContent is a client component that uses useSearchParams
 const TrainingContent = () => {
-  const [plans, setPlans] = useState<any[]>([]);
+  const [plans, setPlans] = useState<TrainingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
 
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        const trainingPlans = await odooService.getTrainingPlans();
+        const trainingPlans = await odooClientService.getTrainingPlans();
         setPlans(trainingPlans);
         if (trainingPlans.length > 0 && !selectedPlanId) {
           setSelectedPlanId(trainingPlans[0].id);
@@ -169,7 +165,7 @@ const TrainingContent = () => {
     };
 
     fetchPlans();
-  }, []);
+  }, [odooClientService, selectedPlanId]);
 
   if (loading) {
     return <div className="p-4">Loading training plans...</div>;
@@ -199,31 +195,29 @@ const TrainingContent = () => {
             <TrainingPlanCard
               key={plan.id}
               plan={plan}
-              isSelected={plan.id === selectedPlanId}
+              isSelected={selectedPlanId === plan.id}
               onClick={() => setSelectedPlanId(plan.id)}
             />
           ))}
         </div>
-        
         <div className="lg:col-span-2">
-          {selectedPlan && <TrainingPlanDetail plan={selectedPlan} />}
+          {selectedPlan ? (
+            <TrainingPlanDetail plan={selectedPlan} />
+          ) : (
+            <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+              Select a training plan to view details.
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-// Main page component that wraps the client component in a Suspense boundary
+// Export the page component directly. Suspense is handled internally if needed.
 export default function TrainingPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-sky-800">Training Plans</h1>
-        <div className="h-96 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-600"></div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<div>Loading...</div>}> 
       <TrainingContent />
     </Suspense>
   );

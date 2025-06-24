@@ -14,7 +14,12 @@ export default function ServiceProvider({ children }: ServiceProviderProps) {
   useEffect(() => {
     try {
       // Initialize services if not already initialized
-      ServiceFactory.initialize(config);
+      ServiceFactory.initialize({
+        odoo: config.odoo, // Pass the existing Odoo server config
+        odooClient: { // Add the client-side Odoo service config
+          baseUrl: '/api/odoo', // Points to your Next.js API proxy
+        },
+      });
       setIsInitialized(true);
     } catch (error) {
       console.error('Failed to initialize services:', error);

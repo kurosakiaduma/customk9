@@ -1,8 +1,9 @@
 interface TermsAcceptanceProps {
     onAccept: (accepted: boolean) => void;
+    isAccepted: boolean;
 }
 
-export default function TermsAcceptance({ onAccept }: TermsAcceptanceProps) {
+export default function TermsAcceptance({ onAccept, isAccepted }: TermsAcceptanceProps) {
     return (
         <div className="space-y-6">
             <div>
@@ -45,6 +46,7 @@ export default function TermsAcceptance({ onAccept }: TermsAcceptanceProps) {
                             type="checkbox"
                             className="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             onChange={(e) => onAccept(e.target.checked)}
+                            checked={isAccepted}
                         />
                         <span className="ml-3 text-sm text-gray-600">
                             I have read and agree to the terms and conditions, including the cancellation policy and health requirements.

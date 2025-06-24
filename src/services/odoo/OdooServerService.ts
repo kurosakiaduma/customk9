@@ -105,24 +105,21 @@ interface TrainingPlan {
   }>;
 }
 
-export class OdooService {
+export class OdooServerService {
   private client: AxiosInstance;
   private config: OdooConfig;
   private sessionId: string | null = null;
 
   constructor(config: OdooConfig) {
     this.config = config;
-    // Use relative URL that will work with the proxy
-    const baseURL = process.env.NODE_ENV === 'development' 
-      ? '/odoo'  // This will be proxied through Next.js
-      : config.baseUrl;
-      
+    
     this.client = axios.create({
-      baseURL,
+      baseURL: config.baseUrl,
       headers: {
         'Content-Type': 'application/json',
       },
-      withCredentials: true // Important for session cookie handling
+      // withCredentials is not typically needed for server-to-server calls
+      // as cookies will be managed manually via the session_id
     });
   }
 
@@ -145,9 +142,30 @@ export class OdooService {
 
       this.sessionId = response.data.result.session_id;
       
-      // Update client headers with session id
-      this.client.defaults.headers.common['X-Openerp-Session-Id'] = this.sessionId;
+      // Odoo's default session cookie will be managed by axios if withCredentials is true,
+      // but for server-side, it's safer to explicitly handle it.
+      // For /web/dataset/call_kw, the session_id is often sufficient in X-Openerp-Session-Id header.
+      this.client.defaults.headers.common['X-Openerp-Session-Id'] = this.sessionId; // Set for subsequent requests
 
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // New method for making generic Odoo JSON-RPC calls from the server side
+  async callOdoo(path: string, payload: any, sessionId: string | null = null) {
+    try {
+      const headers: { [key: string]: string } = {
+        'Content-Type': 'application/json',
+      };
+      if (sessionId) {
+        // For server-side calls, Odoo typically expects the session ID in this header
+        // if not relying on direct cookie management (which is harder server-side)
+        headers['X-Openerp-Session-Id'] = sessionId;
+      }
+
+      const response = await this.client.post(path, payload, { headers });
       return response.data;
     } catch (error) {
       throw this.handleError(error);

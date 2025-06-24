@@ -4,6 +4,7 @@ import ServiceSelection from './ServiceSelection';
 import DateTimeSelection from './DateTimeSelection';
 import DogSelection from './DogSelection';
 import TermsAcceptance from './TermsAcceptance';
+import ServiceFactory from '@/services/ServiceFactory';
 
 const steps = [
     { id: 1, name: 'Booking Type' },
@@ -29,7 +30,8 @@ export default function BookingForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const calendarService = new OdooCalendarService();
+    const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+    const calendarService = new OdooCalendarService(odooClientService);
 
     const handleDateTimeSelect = (date: string, time: string) => {
         setSelectedDate(date);
@@ -150,7 +152,7 @@ export default function BookingForm() {
                     >
                         <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
                             <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
                         <h3 className="text-lg font-semibold mb-2">Class/Events</h3>
@@ -206,41 +208,40 @@ export default function BookingForm() {
 
             {/* Step 5: Terms Acceptance */}
             {currentStep === 5 && (
-                <TermsAcceptance onAccept={setTermsAccepted} />
+                <TermsAcceptance
+                    onAccept={setTermsAccepted}
+                    isAccepted={termsAccepted}
+                />
             )}
 
-            {/* Navigation */}
-            <div className="mt-8 flex justify-end">
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8">
                 {currentStep > 1 && (
                     <button
+                        type="button"
                         onClick={() => setCurrentStep(currentStep - 1)}
-                        className="px-4 py-2 text-gray-600 mr-4"
-                        disabled={isSubmitting}
+                        className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
                     >
-                        Back
+                        Previous
                     </button>
                 )}
-                {currentStep < steps.length ? (
+                {currentStep < steps.length && (
                     <button
+                        type="button"
                         onClick={() => setCurrentStep(currentStep + 1)}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                        disabled={
-                            isSubmitting ||
-                            (currentStep === 1 && !bookingType) ||
-                            (currentStep === 2 && !service) ||
-                            (currentStep === 3 && (!selectedDate || !selectedTime)) ||
-                            (currentStep === 4 && (!dogs.length || !dogs[0].name))
-                        }
+                        className="ml-auto px-6 py-3 bg-sky-600 text-white rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
                     >
-                        Next: {steps[currentStep].name}
+                        Next
                     </button>
-                ) : (
+                )}
+                {currentStep === steps.length && (
                     <button
+                        type="button"
                         onClick={handleSubmit}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                        disabled={isSubmitting || !termsAccepted}
+                        disabled={isSubmitting}
+                        className="ml-auto px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? 'Creating Booking...' : 'Complete Booking'}
+                        {isSubmitting ? 'Submitting...' : 'Confirm Booking'}
                     </button>
                 )}
             </div>

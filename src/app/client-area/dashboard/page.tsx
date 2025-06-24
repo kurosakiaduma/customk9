@@ -3,14 +3,8 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { OdooService } from "@/services/odoo/OdooService";
-import { config } from "@/config/config";
-
-// Initialize OdooService
-const odooService = new OdooService({
-  baseUrl: config.odoo.baseUrl,
-  database: config.odoo.database
-});
+import ServiceFactory from "@/services/ServiceFactory";
+import { Dog, TrainingPlan } from "@/types/odoo";
 
 // Demo data for the dashboard
 const dummyUserData = {
@@ -299,36 +293,50 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 };
 
 export default function DashboardPage() {
-  const [dogs, setDogs] = useState<any[]>([]);
-  const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
-  const [validUpcomingSessions, setValidUpcomingSessions] = useState<any[]>([]);
+  const [userName, setUserName] = useState("Guest");
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
+  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Get the OdooClientService from the ServiceFactory
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        setIsLoading(true);
-        const [dogsData, trainingPlansData] = await Promise.all([
-          odooService.getDogs(),
-          odooService.getTrainingPlans()
-        ]);
-        
-        setDogs(dogsData);
-        setTrainingPlans(trainingPlansData);
-        // TODO: Implement sessions fetching when available
-        setValidUpcomingSessions([]);
-        
-      } catch (err: any) {
-        console.error('Failed to fetch dashboard data:', err);
-        setError(err.message || 'Failed to load dashboard data');
+        // Fetch dogs
+        const fetchedDogs = await odooClientService.getDogs();
+        setDogs(fetchedDogs);
+
+        // Fetch training plans
+        const fetchedPlans = await odooClientService.getTrainingPlans();
+        setTrainingPlans(fetchedPlans);
+
+        // Fetch upcoming appointments (using OdooCalendarService via ServiceFactory)
+        // Need to update OdooCalendarService to be gotten from ServiceFactory
+        // For now, use a dummy or skip if OdooCalendarService isn't ready for client-side use yet.
+        // If OdooCalendarService is only for server-side, this part needs careful thought.
+        // Assuming for now that DashboardPage makes direct Odoo calls for Dogs/Plans
+        // and Appointments might be handled by another component or client service.
+
+        // For this page, we'll keep the direct calls using the updated odooClientService
+        // Dummy data for upcomingSessions for now if not fetched via OdooClientService
+        setUpcomingSessions(dummyUserData.upcomingSessions);
+
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError(`Server error: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [odooClientService]);
 
   if (isLoading) {
     return (
@@ -421,7 +429,7 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
             </div>
-            <span className="text-3xl font-bold text-gray-700">{validUpcomingSessions.length}</span>
+            <span className="text-3xl font-bold text-gray-700">{upcomingSessions.length}</span>
           </div>
           <h3 className="text-lg font-semibold text-gray-800 mb-1">Appointments</h3>
           <p className="text-gray-600">Upcoming training sessions</p>
@@ -510,8 +518,8 @@ export default function DashboardPage() {
               </Link>
             </div>
             <div className="space-y-3">
-              {validUpcomingSessions.length > 0 ? (
-                validUpcomingSessions.map((session: any) => (
+              {upcomingSessions.length > 0 ? (
+                upcomingSessions.map((session: any) => (
                   <UpcomingSessionCard key={session.id} session={session} />
                 ))
               ) : (

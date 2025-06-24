@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarEvent, OdooCalendarService } from '@/services/OdooCalendarService';
 import { format } from 'date-fns';
+import ServiceFactory from "@/services/ServiceFactory";
 
 export default function AppointmentsList() {
     const [appointments, setAppointments] = useState<CalendarEvent[]>([]);
@@ -13,7 +14,8 @@ export default function AppointmentsList() {
 
     const loadAppointments = async () => {
         try {
-            const service = new OdooCalendarService();
+            const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+            const service = new OdooCalendarService(odooClientService);
             const data = await service.getUpcomingAppointments();
             setAppointments(data);
         } catch (err) {

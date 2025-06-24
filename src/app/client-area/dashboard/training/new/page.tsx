@@ -2,27 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { OdooService } from "@/services/odoo/OdooService";
-import { config } from "@/config/config";
+import ServiceFactory from "@/services/ServiceFactory";
+import { Dog } from "@/types/odoo";
 
-// Initialize OdooService
-const odooService = new OdooService({
-  baseUrl: config.odoo.baseUrl,
-  database: config.odoo.database
-});
-
-interface Dog {
+// Define a specific type for dog options in the dropdown
+interface DogOption {
   id: number;
   name: string;
 }
 
 export default function NewTrainingPlanPage() {
   const router = useRouter();
-  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [dogs, setDogs] = useState<DogOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+
   const [formData, setFormData] = useState({
     name: '',
     dogId: '',
@@ -41,18 +38,18 @@ export default function NewTrainingPlanPage() {
   useEffect(() => {
     const fetchDogs = async () => {
       try {
-        const dogsData = await odooService.getDogs();
+        const dogsData = await odooClientService.getDogs();
         setDogs(dogsData.map(dog => ({ id: dog.id, name: dog.name })));
         setIsLoading(false);
-      } catch (error) {
-        console.error('Failed to fetch dogs:', error);
+      } catch (err: any) {
+        console.error('Failed to fetch dogs:', err);
         setError('Failed to load dogs. Please try again later.');
         setIsLoading(false);
       }
     };
     
     fetchDogs();
-  }, []);
+  }, [odooClientService]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +62,7 @@ export default function NewTrainingPlanPage() {
     setIsSubmitting(true);
     
     try {
-      await odooService.createTrainingPlan({
+      await odooClientService.createTrainingPlan({
         name: formData.name,
         dogId: parseInt(formData.dogId),
         startDate: formData.startDate,
@@ -75,9 +72,9 @@ export default function NewTrainingPlanPage() {
       });
       
       router.push('/client-area/dashboard/training');
-    } catch (error) {
-      console.error('Failed to create training plan:', error);
-      alert('Failed to create training plan. Please try again.');
+    } catch (err: any) {
+      console.error('Failed to create training plan:', err);
+      alert(`Failed to create training plan. Please try again: ${err.message || 'Unknown error'}`);
       setIsSubmitting(false);
     }
   };
@@ -258,19 +255,17 @@ export default function NewTrainingPlanPage() {
         <div className="flex justify-end space-x-4">
           <button
             type="button"
-            onClick={() => router.back()}
-            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+            onClick={() => router.push('/client-area/dashboard/training')}
+            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`px-6 py-2 bg-sky-600 text-white rounded-md text-sm font-medium transition-colors ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-sky-700'
-            }`}
+            className="px-6 py-2 bg-sky-600 text-white rounded-md font-medium hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Creating...' : 'Create Training Plan'}
+            {isSubmitting ? 'Creating...' : 'Create Plan'}
           </button>
         </div>
       </form>

@@ -1,4 +1,5 @@
-import { OdooService } from '../odoo/OdooService';
+import { OdooClientService } from '../odoo/OdooClientService';
+import { config } from '@/config/config';
 
 export interface AuthUser {
   id: number;
@@ -10,20 +11,20 @@ export interface AuthUser {
 export class AuthService {
   private static readonly TOKEN_KEY = 'customk9_auth_token';
   private static readonly USER_KEY = 'customk9_user';
-  private odooService: OdooService;
+  private odooClientService: OdooClientService;
 
-  constructor(odooService: OdooService) {
-    this.odooService = odooService;
+  constructor(odooClientService: OdooClientService) {
+    this.odooClientService = odooClientService;
   }
 
   async login(email: string, password: string): Promise<AuthUser> {
     try {
-      const response = await this.odooService.authenticate(email, password);
+      const response = await this.odooClientService.authenticate(email, password, config.odoo.database);
       const user: AuthUser = {
-        id: response.result.uid,
-        name: response.result.name,
+        id: response.uid,
+        name: response.name,
         email: email,
-        token: response.result.session_id
+        token: response.session_id
       };
       
       this.setAuthData(user);
@@ -41,7 +42,7 @@ export class AuthService {
   }): Promise<AuthUser> {
     try {
       console.log('Starting registration process for:', userData.email);
-      const response = await this.odooService.createUser(userData);
+      const response = await this.odooClientService.registerUser(userData);
       console.log('Registration successful:', response);
       
       const user: AuthUser = {

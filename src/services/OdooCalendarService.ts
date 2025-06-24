@@ -1,4 +1,5 @@
-import axios from 'axios';
+import { OdooClientService } from './odoo/OdooClientService';
+import { config } from '@/config/config'; // Needed for db in client service calls, if any
 
 export interface CalendarEvent {
     id: number;
@@ -28,86 +29,40 @@ export interface BookingDetails {
 }
 
 export class OdooCalendarService {
-    private baseUrl = 'https://erp.vuna.io';
-    private sessionCookie: string = '';
-    private readonly credentials = {
-        db: 'Merican',
-        login: 'sales@mericanltd.com',
-        password: 'Qwerty@254'
-    };
+    private odooClientService: OdooClientService;
 
-    constructor() {
-        this.authenticate();
-    }
-
-    private async authenticate(): Promise<void> {
-        try {
-            const response = await axios.post(`${this.baseUrl}/web/session/authenticate`, {
-                jsonrpc: '2.0',
-                method: 'call',
-                params: this.credentials
-            });
-
-            if (response.headers['set-cookie']) {
-                this.sessionCookie = response.headers['set-cookie'][0];
-            }
-        } catch (error) {
-            console.error('Authentication failed:', error);
-            throw new Error('Failed to authenticate with Odoo');
-        }
-    }
-
-    private async makeOdooRequest(method: string, params: any): Promise<any> {
-        if (!this.sessionCookie) {
-            await this.authenticate();
-        }
-
-        try {
-            const response = await axios.post(`${this.baseUrl}/web/dataset/call_kw`, {
-                jsonrpc: '2.0',
-                method: 'call',
-                params: {
-                    model: 'calendar.event',
-                    method,
-                    args: [],
-                    kwargs: params
-                }
-            }, {
-                headers: {
-                    Cookie: this.sessionCookie
-                }
-            });
-
-            return response.data.result;
-        } catch (error) {
-            console.error(`Odoo request failed (${method}):`, error);
-            throw error;
-        }
+    constructor(odooClientService: OdooClientService) {
+        this.odooClientService = odooClientService;
     }
 
     async getUpcomingAppointments(): Promise<CalendarEvent[]> {
         const today = new Date().toISOString().split('T')[0];
         
         try {
-            const result = await this.makeOdooRequest('search_read', {
-                fields: [
-                    'id', 
-                    'name', 
-                    'start', 
-                    'stop', 
-                    'duration',
-                    'location',
-                    'partner_ids',
-                    'description',
-                    'allday',
-                    'attendee_ids',
-                    'current_status'
-                ],
-                domain: [
-                    ['start', '>=', today]
-                ],
-                order: 'start asc'
-            });
+            const result = await this.odooClientService.callOdooMethod(
+                'calendar.event', 
+                'search_read', 
+                [],
+                {
+                    fields: [
+                        'id', 
+                        'name', 
+                        'start', 
+                        'stop', 
+                        'duration',
+                        'location',
+                        'partner_ids',
+                        'description',
+                        'allday',
+                        'attendee_ids',
+                        'current_status'
+                    ],
+                    domain: [
+                        ['start', '>=', today]
+                    ],
+                    order: 'start asc'
+                }
+            );
 
             // Transform the data to match our interface
             return result.map((event: any) => ({
@@ -158,9 +113,11 @@ export class OdooCalendarService {
         const eventData = this.convertBookingToEvent(details);
         
         try {
-            const result = await this.makeOdooRequest('create', {
-                args: [eventData]
-            });
+            const result = await this.odooClientService.callOdooMethod(
+                'calendar.event',
+                'create',
+                [eventData]
+            );
             return result;
         } catch (error) {
             console.error('Failed to create booking:', error);
@@ -172,12 +129,7 @@ export class OdooCalendarService {
         const duration = booking.type === 'individual' ? 1.0 : 1.5;
         const location = booking.type === 'individual' ? 'Training Room' : 'Training Hall';
         
-        const description = `
-Service: ${booking.service}
-Dogs: ${booking.dogs.map(dog => `${dog.name}${dog.breed ? ` (${dog.breed})` : ''}`).join(', ')}
-Training Focus: ${booking.service}
-Terms Accepted: ${booking.termsAccepted ? 'Yes' : 'No'}
-        `.trim();
+        const description = `\nService: ${booking.service}\nDogs: ${booking.dogs.map(dog => `${dog.name}${dog.breed ? ` (${dog.breed})` : ''}`).join(', ')}\nTraining Focus: ${booking.service}\nTerms Accepted: ${booking.termsAccepted ? 'Yes' : 'No'}\n        `.trim();
 
         return {
             name: `${booking.type === 'individual' ? 'Individual' : 'Group'} Training - ${booking.service}`,
@@ -192,14 +144,19 @@ Terms Accepted: ${booking.termsAccepted ? 'Yes' : 'No'}
     }
 
     async getAvailableSlots(date: string, type: 'individual' | 'group'): Promise<string[]> {
-        const events = await this.makeOdooRequest('search_read', {
-            fields: ['start', 'stop'],
-            domain: [
-                ['start', '>=', `${date} 00:00:00`],
-                ['start', '<=', `${date} 23:59:59`]
-            ]
-        });
-
+        const events = await this.odooClientService.callOdooMethod(
+            'calendar.event',
+            'search_read',
+            [],
+            {
+                fields: ['start', 'stop'],
+                domain: [
+                    ['start', '>=', `${date} 00:00:00`],
+                    ['start', '<=', `${date} 23:59:59`]
+                ]
+            }
+        );
+        
         // Generate available slots
         const workingHours = {
             start: 9, // 9 AM

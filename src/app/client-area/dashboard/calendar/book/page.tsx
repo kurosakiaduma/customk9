@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
 import { ensureValidAppointmentImage, Appointment } from "@/app/data/appointmentsData";
 import ServiceFactory from "@/services/ServiceFactory";
-import { Dog } from '@/services/odoo/types';
+import { OdooCalendarService } from "@/services/OdooCalendarService";
+import { Dog } from '@/types/odoo';
 
 // Define interfaces for our data
 interface Service {
@@ -238,13 +239,16 @@ const monthsOfYear = [
 
 export default function BookAppointmentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get('type');
+
   const [currentStep, setCurrentStep] = useState(1);
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookingData, setBookingData] = useState<BookingData>({
-    bookingType: null,
+    bookingType: typeParam === 'personal' ? 'personal' : typeParam === 'public' ? 'public' : null,
     selectedService: null,
     selectedEvent: null,
     selectedDate: '',
@@ -255,15 +259,18 @@ export default function BookAppointmentPage() {
   });
   const [isBookingComplete, setIsBookingComplete] = useState(false);
   
+  // Get the OdooClientService and OdooCalendarService from the ServiceFactory
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+  const odooCalendarService = new OdooCalendarService(odooClientService);
+
   // Load dogs from API on initial load
   useEffect(() => {
     const fetchDogs = async () => {
       try {
-        const odooService = ServiceFactory.getInstance().getOdooService();
-        const fetchedDogs = await odooService.getDogs();
+        const fetchedDogs = await odooClientService.getDogs();
         setDogs(fetchedDogs);
         setIsLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching dogs:', err);
         setError('Failed to load dogs. Please try again later.');
         setIsLoading(false);
@@ -271,15 +278,40 @@ export default function BookAppointmentPage() {
     };
 
     fetchDogs();
-  }, []);
+  }, [odooClientService]);
   
   // Move to next step if data for current step is valid
-  const goToNextStep = () => {
+  const goToNextStep = async () => {
     console.log('Current step:', currentStep);
     console.log('Step complete?', isStepComplete(currentStep));
     console.log('Booking data:', bookingData);
     
-    if (isStepComplete(currentStep)) {
+    if (currentStep === 6 && isStepComplete(currentStep)) {
+      try {
+        setIsLoading(true);
+
+        // Map bookingType from 'personal'/'public' to 'individual'/'group'
+        const mappedBookingType: 'individual' | 'group' = 
+          bookingData.bookingType === 'personal' ? 'individual' : 'group';
+
+        // Call OdooCalendarService to create the appointment
+        await odooCalendarService.createBooking({
+          type: mappedBookingType,
+          service: bookingData.selectedService?.name || bookingData.selectedEvent?.title || 'Unknown Service',
+          dateTime: {
+            start: bookingData.selectedDate + ' ' + bookingData.selectedTime,
+            stop: bookingData.selectedDate + ' ' + (new Date(new Date(`2000-01-01T${bookingData.selectedTime}`).getTime() + (bookingData.selectedService?.duration ? parseFloat(bookingData.selectedService.duration) : 1) * 60 * 60 * 1000).toTimeString().substring(0, 5)),
+          },
+          dogs: bookingData.selectedDogs.map(dog => ({ name: dog.name, breed: dog.breed })),
+          termsAccepted: bookingData.agreedToTerms
+        });
+        setIsBookingComplete(true);
+      } catch (err: any) {
+        console.error('Booking failed:', err);
+        setError(`Booking failed: ${err.message || 'An unknown error occurred.'}`);
+        setIsLoading(false);
+      }
+    } else if (isStepComplete(currentStep)) {
       setCurrentStep(currentStep + 1);
       window.scrollTo(0, 0);
     } else {

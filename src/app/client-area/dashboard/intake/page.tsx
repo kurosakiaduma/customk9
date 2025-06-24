@@ -289,7 +289,7 @@ export default function IntakeFormPage() {
     try {
       setIsLoading(true);
       
-      const odooService = ServiceFactory.getInstance().getOdooService();
+      const odooService = ServiceFactory.getInstance().getOdooClientService();
       
       // Create the dog profile
       await odooService.createDogProfile({
