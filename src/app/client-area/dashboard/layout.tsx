@@ -126,7 +126,7 @@ export default function DashboardLayout({
               {/* User Profile Summary */}
               <div className="flex items-center space-x-4">
                 <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-xl border-2 border-white">
-                  {currentUser ? getInitials(currentUser.name) : 'G'}
+                  {currentUser ? getInitials(currentUser.name || '') : 'G'}
                 </div>
                 <div>
                   <h2 className="font-semibold text-lg">{currentUser?.name || 'Guest'}</h2>
@@ -181,7 +181,7 @@ export default function DashboardLayout({
               <div className="p-4 bg-sky-600 text-white">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-sm border-2 border-white">
-                    {currentUser ? getInitials(currentUser.name) : 'G'}
+                    {currentUser ? getInitials(currentUser.name || '') : 'G'}
                   </div>
                   <div>
                     <h2 className="font-semibold">{currentUser?.name || 'Guest'}</h2>
