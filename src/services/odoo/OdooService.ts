@@ -700,19 +700,26 @@ export class OdooService {
     description?: string;
   }) {
     try {
-      const response = await this.client.post('/api/v1/calendar.event', {
-        data: {
-          type: 'calendar.event',
-          attributes: {
+      const response = await this.client.post('/web/dataset/call_kw', {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'calendar.event',
+          method: 'create',
+          args: [{
             name: appointmentData.name,
             start: appointmentData.startTime,
             stop: appointmentData.endTime,
-            partner_ids: [appointmentData.clientId, appointmentData.trainerId],
+            partner_ids: [[6, 0, [appointmentData.clientId, appointmentData.trainerId]]], // Many2many record command
             description: appointmentData.description
-          }
+          }],
+          kwargs: {}
         }
       });
-      return response.data;
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to create appointment');
+      }
+      return response.data.result;
     } catch (error) {
       throw this.handleError(error);
     }
@@ -726,18 +733,25 @@ export class OdooService {
     rating: number;
   }) {
     try {
-      const response = await this.client.post('/api/v1/customk9.progress.note', {
-        data: {
-          type: 'customk9.progress.note',
-          attributes: {
+      const response = await this.client.post('/web/dataset/call_kw', {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'customk9.progress.note',
+          method: 'create',
+          args: [{
             dog_id: noteData.dogId,
             date: noteData.date,
             note: noteData.note,
             rating: noteData.rating
-          }
+          }],
+          kwargs: {}
         }
       });
-      return response.data;
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to create progress note');
+      }
+      return response.data.result;
     } catch (error) {
       throw this.handleError(error);
     }
