@@ -314,12 +314,10 @@ export default function DashboardPage() {
         
         if (!sessionInfo || !sessionInfo.uid) {
           throw new Error("No valid session found. Please log in again.");
-        }
-
-        // Session is valid, set user info
-        setUserName(sessionInfo.name || sessionInfo.username || "User");
+        }        // Session is valid, set user info
+        setUserName(sessionInfo.username || "User");
         setIsAuthenticated(true);
-        console.log("✅ Dashboard: Session valid for user:", sessionInfo.name || sessionInfo.username);
+        console.log("✅ Dashboard: Session valid for user:", sessionInfo.username);
 
         // Try to fetch dogs directly
         console.log("🐕 Dashboard: About to call getDogs()...");
