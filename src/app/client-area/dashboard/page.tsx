@@ -4,106 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ServiceFactory from "@/services/ServiceFactory";
+import { OdooCalendarService } from "@/services/OdooCalendarService";
 import { Dog, TrainingPlan } from "@/types/odoo";
-
-// Demo data for the dashboard
-const dummyUserData = {
-  name: "John",
-  dogs: [
-    {
-      id: 1,
-      name: "Max",
-      breed: "German Shepherd",
-      age: "2 years",
-      image: "/images/dog-01.jpg",
-      level: "Intermediate",
-      progress: 65,
-      // Additional details from intake form
-      intakeDetails: {
-        dogSource: "Rescue Shelter",
-        timeWithDog: "1 year 5 months",
-        medicalIssues: "None",
-        vetClinic: "Central Vet Hospital",
-        vetName: "Dr. Amanda Williams",
-        vetPhone: "+254 712 345 678",
-        previousTraining: "Basic obedience class at local pet store",
-        behaviorNotes: "Some reactivity to loud noises, good with other dogs",
-        sleepLocation: "Dog bed in bedroom",
-        feedingSchedule: "Twice daily - morning and evening",
-        walkFrequency: "Twice daily - 30 minutes each",
-        walkEquipment: ["harness", "flat-collar"],
-      }
-    },
-    {
-      id: 2,
-      name: "Bella",
-      breed: "Labrador Retriever",
-      age: "1 year",
-      image: "/images/dog-02.jpg",
-      level: "Beginner",
-      progress: 30,
-      // Additional details from intake form
-      intakeDetails: {
-        dogSource: "Reputable Breeder",
-        timeWithDog: "10 months",
-        medicalIssues: "Mild hip dysplasia - monitored by vet",
-        vetClinic: "PetCare Veterinary Center",
-        vetName: "Dr. James Peterson",
-        vetPhone: "+254 723 456 789", 
-        previousTraining: "Puppy socialization classes",
-        behaviorNotes: "Very food motivated, some excitability with guests",
-        sleepLocation: "Crate in the living room",
-        feedingSchedule: "Three times daily - small portions",
-        walkFrequency: "Three times daily - short walks",
-        walkEquipment: ["head-halter", "harness"],
-      }
-    },
-  ],
-  upcomingSessions: [
-    {
-      id: 1,
-      title: "Group Obedience Training",
-      date: "Tomorrow, 10:00 AM",
-      location: "Central Park",
-      trainer: "Sarah Johnson"
-    },
-    {
-      id: 2,
-      title: "Private Behavior Consultation",
-      date: "Friday, 2:00 PM",
-      location: "Your Home",
-      trainer: "Michael Clark"
-    }
-  ],
-  trainingPlans: [
-    {
-      id: 1,
-      title: "Basic Obedience",
-      dog: "Max",
-      progress: 65,
-      nextSession: "Tomorrow",
-      milestones: [
-        { name: "Sit", completed: true },
-        { name: "Stay", completed: true },
-        { name: "Come", completed: false },
-        { name: "Heel", completed: false },
-      ]
-    },
-    {
-      id: 2,
-      title: "Puppy Socialization",
-      dog: "Bella",
-      progress: 30,
-      nextSession: "Friday",
-      milestones: [
-        { name: "Meeting new dogs", completed: true },
-        { name: "Handling exercises", completed: false },
-        { name: "Environmental exposure", completed: false },
-        { name: "Play behavior", completed: false },
-      ]
-    }
-  ]
-};
 
 // Components
 const WelcomeSection = ({ name }: { name: string }) => (
@@ -339,10 +241,33 @@ export default function DashboardPage() {
         } catch (planError) {
           console.error("❌ Dashboard: Error fetching training plans:", planError);
           // Continue with other data even if plans fail
+        }        // Try to fetch upcoming calendar sessions
+        console.log("📅 Dashboard: About to fetch upcoming sessions...");
+        try {
+          const odooCalendarService = new OdooCalendarService(odooClientService);
+          const calendarEvents = await odooCalendarService.getUpcomingAppointments();
+          
+          // Convert calendar events to session format
+          const sessions = calendarEvents.slice(0, 3).map(event => ({
+            id: event.id,
+            title: event.name,
+            date: new Date(event.start).toLocaleDateString('en-US', { 
+              weekday: 'long',
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            location: event.location,
+            trainer: event.trainer_name
+          }));
+          
+          setUpcomingSessions(sessions);
+          console.log("📅 Dashboard: Upcoming sessions loaded:", sessions);
+        } catch (sessionError) {
+          console.error("❌ Dashboard: Error fetching upcoming sessions:", sessionError);
+          setUpcomingSessions([]); // Empty array instead of dummy data
         }
-
-        // For now, use dummy data for upcoming sessions
-        setUpcomingSessions(dummyUserData.upcomingSessions);
       } catch (err) {
         console.error("❌ Dashboard: Error fetching dashboard data:", err);
         console.error("❌ Dashboard: Error stack:", err instanceof Error ? err.stack : 'No stack trace');
