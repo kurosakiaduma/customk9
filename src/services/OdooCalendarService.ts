@@ -56,12 +56,11 @@ export class OdooCalendarService {
         
         try {
             console.log('🔍 Fetching calendar events from:', today);
-            
-            // First test if we have access
+              // First test if we have access
             const hasAccess = await this.testCalendarConnection();
             if (!hasAccess) {
-                console.log('⚠️ Calendar access failed, returning mock events');
-                return this.getMockEvents();
+                console.log('⚠️ Calendar access failed, returning empty array');
+                return [];
             }
 
             const result = await this.odooClientService.callOdooMethod(
@@ -99,48 +98,12 @@ export class OdooCalendarService {
                 dog_name: this.getDogNameFromDescription(event.description),
                 dog_image: '/images/dog-placeholder.jpg',
                 state: 'confirmed' as const
-            }));
-        } catch (error) {
+            }));        } catch (error) {
             console.error('❌ Failed to fetch appointments:', error);
-            // Return mock events instead of throwing to prevent app crashes
-            return this.getMockEvents();
+            // Return empty array instead of mock data
+            return [];
         }
-    }
-
-    private getMockEvents(): CalendarEvent[] {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        
-        return [
-            {
-                id: 1,
-                name: "Basic Obedience Session",
-                start: tomorrow.toISOString().split('T')[0] + ' 10:00:00',
-                stop: tomorrow.toISOString().split('T')[0] + ' 11:00:00',
-                duration: 1.0,
-                location: "Training Room 1",
-                trainer_name: "Sarah Johnson",
-                dog_name: "Max",
-                dog_image: "/images/dog-placeholder.jpg",
-                state: "confirmed"
-            },
-            {
-                id: 2,
-                name: "Group Training Class",
-                start: tomorrow.toISOString().split('T')[0] + ' 14:00:00',
-                stop: tomorrow.toISOString().split('T')[0] + ' 15:30:00',
-                duration: 1.5,
-                location: "Training Hall",
-                trainer_name: "Mike Chen",
-                dog_name: "Multiple Dogs",
-                dog_image: "/images/dog-placeholder.jpg",
-                state: "confirmed"
-            }
-        ];
-    }
-
-    private getTrainerName(partnerIds: number[]): string {
+    }    private getTrainerName(partnerIds: number[]): string {
         // For now return a default name, in a real implementation we would fetch the partner name
         return 'Assigned Trainer';
     }
@@ -211,12 +174,11 @@ export class OdooCalendarService {
     async getAvailableSlots(date: string, type: 'individual' | 'group'): Promise<string[]> {
         try {
             console.log('🔍 Fetching available slots for:', date, type);
-            
-            // Check calendar access first
+              // Check calendar access first
             const hasAccess = await this.testCalendarConnection();
             if (!hasAccess) {
-                console.log('⚠️ Calendar not accessible, returning mock slots');
-                return this.getMockSlots(date, type);
+                console.log('⚠️ Calendar not accessible, returning default slots');
+                return this.getDefaultSlots(type);
             }
             
             const events = await this.odooClientService.callOdooMethod(
@@ -247,20 +209,18 @@ export class OdooCalendarService {
             }
 
             console.log('✅ Available slots:', slots);
-            return slots;
-        } catch (error) {
+            return slots;        } catch (error) {
             console.error('❌ Error fetching available slots:', error);
-            return this.getMockSlots(date, type);
+            return this.getDefaultSlots(type);
         }
-    }
-
-    private getMockSlots(date: string, type: 'individual' | 'group'): string[] {
+    }    private getDefaultSlots(type: 'individual' | 'group'): string[] {
         const slots: string[] = [];
         const duration = type === 'individual' ? 1 : 1.5;
         
+        // Generate time slots for standard working hours
         for (let hour = 9; hour < 17; hour += duration) {
-            const slotTime = `${date} ${String(Math.floor(hour)).padStart(2, '0')}:${String((hour % 1) * 60).padStart(2, '0')}:00`;
-            slots.push(slotTime);
+            const timeString = `${String(Math.floor(hour)).padStart(2, '0')}:${String((hour % 1) * 60).padStart(2, '0')}`;
+            slots.push(timeString);
         }
         
         return slots;
