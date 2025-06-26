@@ -6,15 +6,43 @@ import Link from 'next/link';
 import Navigation from '../components/layout/Navigation';
 import Footer from '../components/layout/Footer';
 import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon, FunnelIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { getUpcomingEvents, getFeaturedEvents, getEventsByCategory } from '../data/eventsData';
-import { Event } from '../data/eventsData';
+import { OdooEventService, Event } from '@/services/OdooEventService';
+import ServiceFactory from '@/services/ServiceFactory';
 
 export default function EventsPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [displayEvents, setDisplayEvents] = useState<Event[]>([]);
-  const featuredEvents = getFeaturedEvents();
-  const allEvents = getUpcomingEvents();
-  const categories = [...new Set(allEvents.map(event => event.category))];
+  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // Load events data on component mount
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+        const eventService = new OdooEventService(odooClientService);
+        
+        const [upcoming, featured] = await Promise.all([
+          eventService.getUpcomingEvents(),
+          eventService.getFeaturedEvents()
+        ]);
+        
+        setAllEvents(upcoming);
+        setFeaturedEvents(featured);
+        setCategories([...new Set(upcoming.map(event => event.category))]);
+        setDisplayEvents(upcoming);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to load events');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   // Scroll to top on page load
   useEffect(() => {
@@ -26,7 +54,7 @@ export default function EventsPage() {
     if (activeCategory === "all") {
       setDisplayEvents(allEvents);
     } else {
-      setDisplayEvents(getEventsByCategory(activeCategory));
+      setDisplayEvents(allEvents.filter(event => event.category === activeCategory));
     }
   }, [activeCategory, allEvents]);
 
