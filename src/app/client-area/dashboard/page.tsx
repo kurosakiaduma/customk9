@@ -299,42 +299,74 @@ export default function DashboardPage() {
   const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Get the OdooClientService from the ServiceFactory
-  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-
-  useEffect(() => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Get services from the ServiceFactory
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();  useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
+      
       try {
-        // Fetch dogs
-        const fetchedDogs = await odooClientService.getDogs();
-        setDogs(fetchedDogs);
+        // Check if we have a valid Odoo session
+        console.log("🔍 Dashboard: Checking session info...");
+        const sessionInfo = await odooClientService.getSessionInfo();
+        console.log("✅ Dashboard: Session info received:", sessionInfo);
+        
+        if (!sessionInfo || !sessionInfo.uid) {
+          throw new Error("No valid session found. Please log in again.");
+        }
 
-        // Fetch training plans
-        const fetchedPlans = await odooClientService.getTrainingPlans();
-        setTrainingPlans(fetchedPlans);
+        // Session is valid, set user info
+        setUserName(sessionInfo.name || sessionInfo.username || "User");
+        setIsAuthenticated(true);
+        console.log("✅ Dashboard: Session valid for user:", sessionInfo.name || sessionInfo.username);
 
-        // Fetch upcoming appointments (using OdooCalendarService via ServiceFactory)
-        // Need to update OdooCalendarService to be gotten from ServiceFactory
-        // For now, use a dummy or skip if OdooCalendarService isn't ready for client-side use yet.
-        // If OdooCalendarService is only for server-side, this part needs careful thought.
-        // Assuming for now that DashboardPage makes direct Odoo calls for Dogs/Plans
-        // and Appointments might be handled by another component or client service.
+        // Try to fetch dogs directly
+        console.log("🐕 Dashboard: About to call getDogs()...");
+        try {
+          const fetchedDogs = await odooClientService.getDogs();
+          console.log("🐕 Dashboard: Dogs fetched successfully:", fetchedDogs);
+          setDogs(fetchedDogs);
+        } catch (dogError) {
+          console.error("❌ Dashboard: Error fetching dogs:", dogError);
+          // Continue with other data even if dogs fail
+        }
 
-        // For this page, we'll keep the direct calls using the updated odooClientService
-        // Dummy data for upcomingSessions for now if not fetched via OdooClientService
+        // Try to fetch training plans
+        console.log("📋 Dashboard: About to call getTrainingPlans()...");
+        try {
+          const fetchedPlans = await odooClientService.getTrainingPlans();
+          console.log("📋 Dashboard: Training plans fetched successfully:", fetchedPlans);
+          setTrainingPlans(fetchedPlans);
+        } catch (planError) {
+          console.error("❌ Dashboard: Error fetching training plans:", planError);
+          // Continue with other data even if plans fail
+        }
+
+        // For now, use dummy data for upcoming sessions
         setUpcomingSessions(dummyUserData.upcomingSessions);
-
       } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError(`Server error: ${err instanceof Error ? err.message : String(err)}`);
+        console.error("❌ Dashboard: Error fetching dashboard data:", err);
+        console.error("❌ Dashboard: Error stack:", err instanceof Error ? err.stack : 'No stack trace');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        
+        // Check if it's an authentication error
+        if (errorMessage.includes("No valid session") || 
+            errorMessage.includes("Authentication required") || 
+            errorMessage.includes("Session expired") ||
+            errorMessage.includes("not authenticated")) {
+          // Clear any stored auth data and redirect to login
+          console.log("Authentication error detected, redirecting to login...");
+          window.location.href = "/client-area";
+          return;
+        }
+        
+        setError(`Error loading dashboard: ${errorMessage}`);
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchData();
   }, [odooClientService]);
 
@@ -359,10 +391,9 @@ export default function DashboardPage() {
       </div>
     );
   }
-
   return (
     <div className="space-y-8">
-      <WelcomeSection name={dummyUserData.name} />
+      <WelcomeSection name={userName} />
       
       {/* Notification for Client Intake Form - only show if no dogs */}
       {!isLoading && dogs.length === 0 && (
