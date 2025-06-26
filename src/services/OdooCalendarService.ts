@@ -49,24 +49,38 @@ export class OdooCalendarService {
             console.error('❌ Calendar model not accessible:', error);
             return false;
         }
-    }
-
-    async getUpcomingAppointments(): Promise<CalendarEvent[]> {
+    }    async getUpcomingAppointments(): Promise<CalendarEvent[]> {
         const today = new Date().toISOString().split('T')[0];
         
         try {
             console.log('🔍 Fetching calendar events from:', today);
-              // First test if we have access
+            
+            // Check if user is authenticated
+            const currentUser = this.odooClientService.getCurrentUser();
+            if (!currentUser) {
+                console.log('⚠️ User not authenticated');
+                return [];
+            }
+            
+            // First test if we have access
             const hasAccess = await this.testCalendarConnection();
             if (!hasAccess) {
                 console.log('⚠️ Calendar access failed, returning empty array');
                 return [];
+            }            // Build user-specific filter
+            const domainFilter = [['start', '>=', today]];
+            
+            // If not admin, filter by user's events only
+            if (!currentUser.isAdmin && currentUser.partnerId) {
+                domainFilter.push(['partner_ids', 'in', [currentUser.partnerId]]);
             }
+            
+            console.log('🔍 Calendar domain filter:', domainFilter);
 
             const result = await this.odooClientService.callOdooMethod(
                 'calendar.event', 
                 'search_read', 
-                [[['start', '>=', today]]], // Fix: domain should be in array
+                [domainFilter],
                 {
                     fields: [
                         'id', 
@@ -85,6 +99,7 @@ export class OdooCalendarService {
             );
 
             console.log('📅 Calendar events fetched:', result);
+            console.log(`📅 Found ${(result as any[]).length} events for user ${currentUser.username}`);
 
             // Transform the data to match our interface
             return (result as any[]).map((event: any) => ({
@@ -98,7 +113,7 @@ export class OdooCalendarService {
                 dog_name: this.getDogNameFromDescription(event.description),
                 dog_image: '/images/dog-placeholder.jpg',
                 state: 'confirmed' as const
-            }));        } catch (error) {
+            }));} catch (error) {
             console.error('❌ Failed to fetch appointments:', error);
             // Return empty array instead of mock data
             return [];
