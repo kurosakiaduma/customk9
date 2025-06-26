@@ -340,8 +340,7 @@ export class OdooClientService {
             history: commentData.history || {},
             goals: commentData.goals || {},
             behaviorChecklist: commentData.behaviorChecklist || [],
-          } as Dog;
-        } catch (parseError: unknown) {
+          } as Dog;        } catch (parseError: unknown) {
           console.warn('Failed to parse dog comment data:', parseError);
           return {
             id: typeof dog.id === 'number' ? dog.id : 0,
@@ -352,7 +351,23 @@ export class OdooClientService {
             level: 'Beginner',
             progress: 0,
             image: '/images/dog-placeholder.jpg',
-            dogInfo: {},
+            dogInfo: {
+              breed: 'Unknown',
+              age: 'Unknown',
+              gender: 'Unknown',
+              level: 'Beginner',
+              progress: 0,
+              sterilized: 'N',
+              dogSource: '',
+              timeWithDog: '',
+              medications: '',
+              currentDeworming: 'N',
+              tickFleaPreventative: '',
+              vetClinic: '',
+              vetName: '',
+              vetPhone: '',
+              medicalIssues: ''
+            },
             lifestyle: {},
             history: {},
             goals: {},
