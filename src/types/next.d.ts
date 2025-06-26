@@ -2,8 +2,8 @@ import { ReactNode } from 'react';
 
 declare module 'next' {
   export interface PageProps {
-    params: Record<string, string>;
-    searchParams?: Record<string, string | string[] | undefined>;
+    params: Promise<Record<string, string>>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
     children?: ReactNode;
   }
-} 
+}
