@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { dummyAppointments, Appointment, ensureValidAppointmentImage } from "@/app/data/appointmentsData";
+import { Appointment, ensureValidAppointmentImage } from "@/app/data/appointmentsData";
+import { OdooCalendarService, CalendarEvent } from "@/services/OdooCalendarService";
+import { OdooClientService } from "@/services/odoo/OdooClientService";
 
 // Calendar Data
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -13,32 +14,82 @@ const monthsOfYear = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+// Convert CalendarEvent to Appointment interface
+const convertCalendarEventToAppointment = (event: CalendarEvent): Appointment => {
+  const startDate = new Date(event.start);
+  
+  return {
+    id: event.id,
+    title: event.name,
+    date: startDate.toISOString().split('T')[0],
+    time: startDate.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    }),
+    duration: `${event.duration} hours`,
+    location: event.location,
+    trainer: event.trainer_name,
+    dogName: event.dog_name,
+    dogImage: event.dog_image || "/images/dog-placeholder.jpg",
+    status: event.state
+  };
+};
+
 export default function CalendarPage() {
-  const router = useRouter();
   const [selectedView, setSelectedView] = useState("list"); // "upcoming", "calendar", "list"
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>(dummyAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Load appointments from localStorage on initial load
+  // Load appointments from Odoo Calendar on initial load
   useEffect(() => {
-    try {
-      const storedAppointments = localStorage.getItem('appointments');
-      if (storedAppointments) {
-        const parsedAppointments = JSON.parse(storedAppointments);
-        // Apply validation to ensure all image properties are valid
-        const validatedAppointments = parsedAppointments.map((apt: Appointment) => 
-          ensureValidAppointmentImage(apt)
-        );
-        // Combine with dummy appointments for demonstration
-        setAppointments([...validatedAppointments, ...dummyAppointments]);
+    const loadAppointments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+          // Initialize Odoo services
+        const odooClient = new OdooClientService({ baseUrl: '/api/odoo' });
+        const calendarService = new OdooCalendarService(odooClient);
+        
+        // Fetch real calendar events
+        const calendarEvents = await calendarService.getUpcomingAppointments();
+        console.log('📅 Loaded calendar events:', calendarEvents);
+        
+        // Convert to Appointment format
+        const convertedAppointments = calendarEvents.map(convertCalendarEventToAppointment);
+        
+        // Also check for any locally stored appointments
+        try {
+          const storedAppointments = localStorage.getItem('appointments');
+          if (storedAppointments) {
+            const parsedAppointments = JSON.parse(storedAppointments);
+            const validatedAppointments = parsedAppointments.map((apt: Appointment) => 
+              ensureValidAppointmentImage(apt)
+            );
+            // Combine real Odoo events with local appointments
+            setAppointments([...convertedAppointments, ...validatedAppointments]);
+          } else {
+            setAppointments(convertedAppointments);
+          }
+        } catch (localError) {
+          console.error('Error loading local appointments:', localError);
+          setAppointments(convertedAppointments);
+        }
+        
+      } catch (error) {
+        console.error('❌ Error loading appointments:', error);
+        setError('Failed to load appointments. Please try again later.');
+        setAppointments([]); // Start with empty array instead of dummy data
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading appointments from localStorage:', error);
-      // Fall back to dummy appointments if there's an error
-      setAppointments(dummyAppointments);
-    }
+    };
+    
+    loadAppointments();
   }, []);
   
   // Get current month and year
@@ -142,8 +193,7 @@ export default function CalendarPage() {
           </button>
         </div>
       </div>
-      
-      {/* New Appointment Button */}
+        {/* New Appointment Button */}
       <div className="flex justify-end">
         <Link
           href="/client-area/dashboard/calendar/book"
@@ -155,13 +205,39 @@ export default function CalendarPage() {
           Book New Appointment
         </Link>
       </div>
-      
-      {/* Upcoming View */}
-      {selectedView === "upcoming" && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800">Upcoming Appointments</h2>
-          
-          {upcomingAppointments.length > 0 ? (
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+          <span className="ml-3 text-gray-600">Loading appointments...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <svg className="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <h3 className="text-red-800 font-medium">Error Loading Appointments</h3>
+              <p className="text-red-700 text-sm mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content - only show when not loading */}
+      {!loading && (
+        <>
+          {/* Upcoming View */}
+          {selectedView === "upcoming" && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Upcoming Appointments</h2>
+              
+              {upcomingAppointments.length > 0 ? (
             <div className="space-y-4">
               {upcomingAppointments.map(appointment => (
                 <div 
@@ -471,13 +547,14 @@ export default function CalendarPage() {
                   alert("This would reschedule the appointment in a real app");
                   setShowAppointmentModal(false);
                 }}
-              >
-                Reschedule
+              >                Reschedule
               </button>
             </div>
           </div>
         </div>
       )}
+        </>
+      )}
     </div>
   );
-} 
+}
