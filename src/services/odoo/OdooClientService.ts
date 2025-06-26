@@ -191,10 +191,11 @@ export class OdooClientService {
     this.isAuthenticated = false;
     return result;
   }  // Get session info with caching to avoid redundant authentication calls
+  // This method should ONLY return admin sessions for API operations
   async getSessionInfo(): Promise<SessionInfo> {
-    // If we already have cached session info and are authenticated, return it
-    if (this.isAuthenticated && this.sessionInfo) {
-      console.log('🟢 Using cached session info:', {
+    // If we already have cached ADMIN session info, return it
+    if (this.isAuthenticated && this.sessionInfo && this.isUsingAdminCredentials) {
+      console.log('🟢 Using cached ADMIN session info:', {
         uid: this.sessionInfo.uid,
         username: this.sessionInfo.username,
         session_id: this.sessionInfo.session_id?.substring(0, 10) + '...' || 'MISSING'
@@ -202,14 +203,21 @@ export class OdooClientService {
       return this.sessionInfo;
     }
 
+    // Clear any cached user session since we need admin session
+    if (this.sessionInfo && !this.isUsingAdminCredentials) {
+      console.log('🔄 Clearing user session to get admin session');
+      this.sessionInfo = null;
+      this.isAuthenticated = false;
+    }
+
     // If there's already an authentication in progress, wait for it
     if (this.authenticationPromise) {
-      console.log('⏳ Authentication already in progress, waiting...');
+      console.log('⏳ Admin authentication already in progress, waiting...');
       return await this.authenticationPromise;
     }
 
-    // Start new authentication
-    console.log('🔄 Starting new authentication...');
+    // Start new ADMIN authentication
+    console.log('🔄 Starting new ADMIN authentication...');
     this.authenticationPromise = this.performAuthentication();
     
     try {
@@ -220,10 +228,10 @@ export class OdooClientService {
       this.authenticationPromise = null;
     }
   }
-
   private async performAuthentication(): Promise<SessionInfo> {
     try {
-      console.log('🔍 OdooClientService: Starting performAuthentication()...');
+      // ALWAYS use admin credentials for this service - never user credentials
+      console.log('🔍 OdooClientService: Starting ADMIN authentication...');
       
       // Route all calls through our Next.js API proxy with detailed logging
       const apiPath = `/api/odoo/web/session/authenticate`;
@@ -236,8 +244,15 @@ export class OdooClientService {
         }
       };
       
-      console.log('🔍 OdooClientService: Making authentication request to:', apiPath);
-      console.log('🔍 OdooClientService: Payload:', { ...payload, params: { ...payload.params, password: '***' } });
+      console.log('🔍 OdooClientService: Making ADMIN authentication request to:', apiPath);
+      console.log('🔍 OdooClientService: Payload:', { 
+        ...payload, 
+        params: { 
+          ...payload.params, 
+          password: '***',
+          login: config.odoo.adminUsername 
+        } 
+      });
       
       const response = await this.client.post(apiPath, payload);
       
@@ -262,14 +277,15 @@ export class OdooClientService {
       
       // Check for errors in response
       if (response.data.error) {
-        console.error('❌ OdooClientService: Authentication error in response:', response.data.error);
+        console.error('❌ OdooClientService: ADMIN authentication error in response:', response.data.error);
         throw new Error(response.data.error.message || response.data.error.data?.message || 'Odoo Server Error');
       }
       
       // Check for uid in the auth result to confirm successful authentication
       if (authResult && authResult.uid) {
-        console.log('✅ OdooClientService: Authentication successful, uid:', authResult.uid);
+        console.log('✅ OdooClientService: ADMIN authentication successful, uid:', authResult.uid);
         this.isAuthenticated = true;
+        this.isUsingAdminCredentials = true; // Mark that we're using admin credentials
         
         const sessionInfo: SessionInfo = {
           uid: authResult.uid,
@@ -282,23 +298,25 @@ export class OdooClientService {
         // Cache the session info
         this.sessionInfo = sessionInfo;
         
-        console.log('✅ OdooClientService: Session info created and cached:', { 
+        console.log('✅ OdooClientService: ADMIN session info created and cached:', { 
           ...sessionInfo, 
-          session_id: sessionInfo.session_id ? 'PRESENT' : 'MISSING' 
+          session_id: sessionInfo.session_id ? 'PRESENT' : 'MISSING',
+          isAdminUID: sessionInfo.uid === 2 // UID 2 is typically admin
         });
         return sessionInfo;
       } else {
-        console.error('❌ OdooClientService: No uid found in authentication response');
+        console.error('❌ OdooClientService: No uid found in ADMIN authentication response');
         console.error('❌ OdooClientService: AuthResult:', authResult);
-        throw new Error('Authentication failed: No user ID returned');
+        throw new Error('Admin authentication failed: No user ID returned');
       }
     } catch (error: unknown) {
-      console.error('❌ OdooClientService: Session authentication failed:', error);
+      console.error('❌ OdooClientService: ADMIN authentication failed:', error);
       this.isAuthenticated = false;
+      this.isUsingAdminCredentials = false;
       this.sessionInfo = null;
       throw error;
     }
-  }  // Core Odoo method calling - with intelligent credential management
+  }// Core Odoo method calling - with intelligent credential management
   async callOdooMethod(model: string, method: string, args: unknown[] = [], kwargs: Record<string, unknown> = {}): Promise<unknown> {
     try {
       console.log(`🔍 OdooClientService: Calling ${model}.${method} with args:`, args, 'kwargs:', kwargs);
@@ -605,13 +623,13 @@ export class OdooClientService {
       return [];
     }
   }
-
   // Clear session cache and force re-authentication
   clearSessionCache(): void {
-        this.isAuthenticated = false;
+    this.isAuthenticated = false;
     this.sessionInfo = null;
     this.authenticationPromise = null;
     this.currentUser = null;
+    this.isUsingAdminCredentials = false; // Reset admin credentials flag
     if (typeof window !== 'undefined') {
       localStorage.removeItem('customk9_user_session');
     }
@@ -648,14 +666,14 @@ export class OdooClientService {
       console.warn(`Model ${modelName} not accessible:`, error);
       return false;
     }
-  }
-  // Dog Profile Management
+  }  // Dog Profile Management
   async getDogs(): Promise<Dog[]> {
     try {
       console.log("🐕 OdooClientService.getDogs(): Starting...");
       
       if (!this.isAuthenticated || !this.currentUser) {
-        throw new Error('User not authenticated');
+        console.warn("🐕 User not authenticated, returning empty array");
+        return [];
       }
 
       // Use base dog filter only - user filtering will be applied automatically in callOdooMethod
@@ -668,9 +686,22 @@ export class OdooClientService {
         { fields: ["name", "comment", "id", "parent_id"] });
       
       console.log("🐕 OdooClientService.getDogs(): Raw response:", response);
-      console.log(`🐕 Found ${(response as Record<string, unknown>[]).length} dogs for user ${this.currentUser.username}`);
+      
+      // Handle empty response gracefully
+      if (!Array.isArray(response)) {
+        console.warn("🐕 Unexpected response format, returning empty array");
+        return [];
+      }
+      
+      if (response.length === 0) {
+        console.log("🐕 No dogs found for user, returning empty array");
+        return [];
+      }
+      
+      console.log(`🐕 Found ${response.length} dogs for user ${this.currentUser.username}`);
         
-      return (response as Record<string, unknown>[]).map((dog: Record<string, unknown>) => {try {
+      const processedDogs = (response as Record<string, unknown>[]).map((dog: Record<string, unknown>) => {
+        try {
           // Clean HTML encoding from comment field and extract JSON
           let cleanComment = dog.comment && typeof dog.comment === 'string' ? dog.comment : '';
           cleanComment = cleanComment.replace(/<\/?p>/g, '').replace(/\\u003c/g, '<').replace(/\\u003e/g, '>');
@@ -689,7 +720,8 @@ export class OdooClientService {
             history: commentData.history || {},
             goals: commentData.goals || {},
             behaviorChecklist: commentData.behaviorChecklist || [],
-          } as Dog;        } catch (parseError: unknown) {
+          } as Dog;
+        } catch (parseError: unknown) {
           console.warn('Failed to parse dog comment data:', parseError);
           return {
             id: typeof dog.id === 'number' ? dog.id : 0,
@@ -722,11 +754,22 @@ export class OdooClientService {
             goals: {},
             behaviorChecklist: [],
           } as Dog;
-        }      });
-      console.log("🐕 OdooClientService.getDogs(): Final processed dogs:", (response as Record<string, unknown>[]));
+        }
+      });
+      
+      console.log("🐕 OdooClientService.getDogs(): Final processed dogs:", processedDogs);
+      return processedDogs;
     } catch (error: unknown) {
       console.error("❌ OdooClientService.getDogs(): Error:", error);
-      throw this.handleError(error);
+      
+      // Return empty array for network/connection issues to allow graceful empty state handling
+      // Only throw for authentication errors
+      if (error instanceof Error && error.message.includes('authentication')) {
+        throw this.handleError(error);
+      }
+      
+      console.warn("🐕 Returning empty array due to error:", error);
+      return [];
     }
   }  // Training Plan Management
   async getTrainingPlans(): Promise<TrainingPlan[]> {
@@ -734,7 +777,8 @@ export class OdooClientService {
       console.log("📋 OdooClientService.getTrainingPlans(): Starting...");
       
       if (!this.isAuthenticated || !this.currentUser) {
-        throw new Error('User not authenticated');
+        console.warn("📋 User not authenticated, returning empty array");
+        return [];
       }
 
       // Use empty filter - user filtering will be applied automatically in callOdooMethod
@@ -746,9 +790,21 @@ export class OdooClientService {
         });
 
       console.log("📋 OdooClientService.getTrainingPlans(): Raw response:", response);
-      console.log(`📋 Found ${(response as Record<string, unknown>[]).length} training plans for user ${this.currentUser.username}`);
+      
+      // Handle empty response gracefully
+      if (!Array.isArray(response)) {
+        console.warn("📋 Unexpected response format, returning empty array");
+        return [];
+      }
+      
+      if (response.length === 0) {
+        console.log("📋 No training plans found for user, returning empty array");
+        return [];
+      }
+      
+      console.log(`📋 Found ${response.length} training plans for user ${this.currentUser.username}`);
 
-      return (response as Record<string, unknown>[]).map((plan: Record<string, unknown>) => ({
+      const processedPlans = (response as Record<string, unknown>[]).map((plan: Record<string, unknown>) => ({
         id: typeof plan.id === 'number' ? plan.id : 0,
         name: typeof plan.name === 'string' ? plan.name : '',
         partner_id: Array.isArray(plan.partner_id) && plan.partner_id.length > 0 ? plan.partner_id[0] : null,
@@ -758,10 +814,23 @@ export class OdooClientService {
         progress: 0, // Project model doesn't have progress by default
         task_ids: Array.isArray(plan.task_ids) ? plan.task_ids : [],
         tasks: [],
-      })) as TrainingPlan[];} catch (error: unknown) {
+      })) as TrainingPlan[];
+      
+      console.log("📋 OdooClientService.getTrainingPlans(): Final processed plans:", processedPlans);
+      return processedPlans;
+    } catch (error: unknown) {
       console.error("❌ OdooClientService.getTrainingPlans(): Error:", error);
+      
+      // Return empty array for most errors to allow graceful empty state handling
+      // Only throw for critical authentication errors
+      if (error instanceof Error && error.message.includes('authentication')) {
+        throw this.handleError(error);
+      }
+      
+      console.warn("📋 Returning empty array due to error:", error);
       return [];
-    }  }
+    }
+  }
 
   async createTrainingPlan(planData: {
     name: string;
