@@ -284,10 +284,9 @@ export default function DogsPage() {
           ))
         ) : dogs.length === 0 && !searchTerm ? (
           // No dogs registered yet - friendly empty state
-          <div className="text-center py-12 bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl border border-sky-100">
-            <div className="mx-auto w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+          <div className="text-center py-12 bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl border border-sky-100">            <div className="mx-auto w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
               <svg className="w-10 h-10 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 6.5h15a2 2 0 012 2v7a2 2 0 01-2 2h-15a2 2 0 01-2-2v-7a2 2 0 012-2zm8.25 4.5c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25-.56 1.25-1.25 1.25-1.25-.56-1.25-1.25zm-4.5 0c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25-.56 1.25-1.25 1.25-1.25-.56-1.25-1.25zm1.5-6.5s-1.5 3-3 3 3-3 3-3zm6 0s1.5 3 3 3-3-3-3-3z"></path>
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CustomK9!</h3>
