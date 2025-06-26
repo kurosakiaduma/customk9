@@ -6,14 +6,25 @@ import { OdooEventService, Event } from '@/services/OdooEventService';
 import ServiceFactory from '@/services/ServiceFactory';
 import EventDetails from '../../components/events/EventDetails';
 
-export default function EventPage({ params }: { params: { id: string } }) {
+export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const eventId = parseInt(params.id, 10);
+  const [eventId, setEventId] = useState<number | null>(null);
 
   useEffect(() => {
+    const initializeParams = async () => {
+      const resolvedParams = await params;
+      const id = parseInt(resolvedParams.id, 10);
+      setEventId(id);
+    };
+
+    initializeParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (eventId === null) return;
+
     const fetchEvent = async () => {
       try {
         const odooClientService = ServiceFactory.getInstance().getOdooClientService();
@@ -31,8 +42,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
         setError('Failed to load event');
       } finally {
         setLoading(false);
-      }
-    };
+      }    };
 
     fetchEvent();
   }, [eventId]);
