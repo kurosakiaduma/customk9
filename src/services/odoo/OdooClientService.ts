@@ -387,10 +387,9 @@ export class OdooClientService {
       // First check if the project model is available
       const hasProjectAccess = await this.checkModelAccess('project.project');
       console.log("📋 Project model access:", hasProjectAccess);
-      
-      if (!hasProjectAccess) {
-        console.log("⚠️ Project model not accessible, returning mock training plans");
-        return this.getMockTrainingPlans();
+        if (!hasProjectAccess) {
+        console.log("⚠️ Project model not accessible, returning empty array");
+        return [];
       }
 
       const response = await this.callOdooMethod('project.project', 'search_read', 
@@ -412,39 +411,11 @@ export class OdooClientService {
         progress: 0, // Project model doesn't have progress by default
         task_ids: Array.isArray(plan.task_ids) ? plan.task_ids : [],
         tasks: [],
-      })) as TrainingPlan[];
-    } catch (error: unknown) {
+      })) as TrainingPlan[];    } catch (error: unknown) {
       console.error("❌ OdooClientService.getTrainingPlans(): Error:", error);
-      return this.getMockTrainingPlans();
-    }
-  }
+      return [];
+    }  }
 
-  private getMockTrainingPlans(): TrainingPlan[] {
-    return [
-      {
-        id: 1,
-        name: "Basic Obedience Training",
-        partner_id: 3,
-        date_start: "2024-01-15",
-        date: "2024-03-15", 
-        description: "Fundamental commands and behaviors for new dogs",
-        progress: 65,
-        task_ids: [1, 2, 3],
-        tasks: []
-      },
-      {
-        id: 2,
-        name: "Advanced Behavioral Training", 
-        partner_id: 3,
-        date_start: "2024-02-01",
-        date: "2024-04-01",
-        description: "Advanced commands and problem behavior correction",
-        progress: 45,
-        task_ids: [4, 5, 6],
-        tasks: []
-      }
-    ] as TrainingPlan[];
-  }
   async createTrainingPlan(planData: {
     name: string;
     dogId: number;
