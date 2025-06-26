@@ -199,17 +199,23 @@ export default function DogsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-
   useEffect(() => {
     const fetchDogs = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
         const fetchedDogs = await odooClientService.getDogs();
         console.log("Fetched dogs in DogsPage:", fetchedDogs);
         setDogs(fetchedDogs);
-        setIsLoading(false);
       } catch (err: any) {
         console.error('Error fetching dogs:', err);
-        setError('Failed to load dogs. Please try again later.');
+        // Only show error for authentication issues, not for empty results
+        if (err.message?.includes('authentication') || err.message?.includes('Access Denied')) {
+          setError('Unable to access dog data. Please try logging in again.');
+        } else {
+          setError('Unable to connect to server. Please check your connection and try again.');
+        }
+      } finally {
         setIsLoading(false);
       }
     };
@@ -272,33 +278,48 @@ export default function DogsPage() {
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
             {error}
-          </div>
-        ) : filteredDogs.length > 0 ? (
+          </div>        ) : filteredDogs.length > 0 ? (
           filteredDogs.map((dog) => (
             <DogDetailCard key={dog.id} dog={dog} />
           ))
+        ) : dogs.length === 0 && !searchTerm ? (
+          // No dogs registered yet - friendly empty state
+          <div className="text-center py-12 bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl border border-sky-100">
+            <div className="mx-auto w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-10 h-10 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CustomK9!</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              You haven't registered any dogs yet. Start your training journey by registering your first furry friend!
+            </p>
+            <Link 
+              href="/client-area/dashboard/intake" 
+              className="px-6 py-3 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-all duration-200 hover:shadow-lg inline-flex items-center"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Register Your First Dog
+            </Link>
+          </div>
         ) : (
+          // Search returned no results
           <div className="text-center py-10 bg-gray-50 rounded-lg">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No dogs found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Try a different search term or clear the search.' : 'You haven\'t registered any dogs yet.'}
+              No dogs match "{searchTerm}". Try a different search term or clear the search.
             </p>
-            {!searchTerm && (
-              <div className="mt-6">
-                <Link 
-                  href="/client-area/dashboard/intake" 
-                  className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium hover:bg-sky-700 transition-colors inline-flex items-center"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"></path>
-                  </svg>
-                  Register Your First Dog
-                </Link>
-              </div>
-            )}
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors"
+            >
+              Clear Search
+            </button>
           </div>
         )}
       </div>
