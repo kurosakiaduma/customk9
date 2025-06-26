@@ -122,10 +122,16 @@ export class OdooServerService {
       // as cookies will be managed manually via the session_id
     });
   }
-
   // Authentication
   async authenticate(login: string = this.config.defaultUsername || '', password: string = this.config.defaultPassword || '') {
     try {
+      console.log('OdooServerService: Attempting authentication with:', {
+        baseUrl: this.config.baseUrl,
+        database: this.config.database,
+        login: login,
+        passwordLength: password.length
+      });
+
       const response = await this.client.post('/web/session/authenticate', {
         jsonrpc: '2.0',
         method: 'call',
@@ -134,6 +140,14 @@ export class OdooServerService {
           login,
           password
         }
+      });
+
+      console.log('OdooServerService: Authentication response:', {
+        status: response.status,
+        hasError: !!response.data.error,
+        hasResult: !!response.data.result,
+        error: response.data.error,
+        result: response.data.result ? { ...response.data.result, session_id: 'REDACTED' } : null
       });
 
       if (response.data.error) {
@@ -773,22 +787,53 @@ export class OdooServerService {
     } catch (error) {
       throw this.handleError(error);
     }
-  }
+  }  // Error handling
+  private handleError(error: unknown) {
+    const err = error as {
+      message?: string;
+      response?: {
+        status?: number;
+        statusText?: string;
+        data?: unknown;
+        headers?: unknown;
+      };
+      request?: unknown;
+      config?: {
+        url?: string;
+        method?: string;
+        baseURL?: string;
+      };
+      code?: string;
+    };
 
-  // Error handling
-  private handleError(error: any) {
-    if (error.response?.data?.error) {
-      // Odoo error response
-      return new Error(error.response.data.error.data.message || 'Odoo server error');
-    } else if (error.response) {
+    console.error('OdooServerService Error Details:', {
+      message: err.message,
+      response: {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        headers: err.response?.headers
+      },
+      request: {
+        url: err.config?.url,
+        method: err.config?.method,
+        baseURL: err.config?.baseURL
+      },
+      code: err.code
+    });
+
+    if (err.response?.data && typeof err.response.data === 'object' && err.response.data !== null && 'error' in err.response.data) {
+      const odooError = err.response.data as { error: { data: { message?: string } } };
+      return new Error(odooError.error.data.message || 'Odoo server error');
+    } else if (err.response) {
       // HTTP error response
-      return new Error(`Server error: ${error.response.status}`);
-    } else if (error.request) {
+      return new Error(`Server error: ${err.response.status} - ${err.response.statusText}`);
+    } else if (err.request) {
       // Request made but no response
       return new Error('No response from server');
     } else {
       // Request setup error
-      return new Error(error.message || 'Error setting up request');
+      return new Error(err.message || 'Error setting up request');
     }
   }
 
