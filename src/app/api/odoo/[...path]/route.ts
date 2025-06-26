@@ -7,22 +7,20 @@ import { config } from '@/config/config';
 // and sends back the response.
 export async function POST(req: NextRequest) {
   const path = req.nextUrl.pathname.replace('/api/odoo', ''); // Get the original Odoo path
-  const payload = await req.json();
-  console.log('🔍 API Route Debug:', {
+  const payload = await req.json();  console.log('🔍 API Route Debug:', {
     path,
     baseUrl: config.odoo.baseUrl,
     database: config.odoo.database,
-    username: config.odoo.defaultUsername,
-    hasPassword: !!config.odoo.defaultPassword
+    username: config.odoo.adminUsername,
+    hasPassword: !!config.odoo.adminPassword
   });
 
-  try {
-    // Initialize OdooServerService here to ensure it uses the full Odoo URL
+  try {    // Initialize OdooServerService here to ensure it uses the full Odoo URL
     const odooServerService = new OdooServerService({
       baseUrl: config.odoo.baseUrl,
       database: config.odoo.database,
-      defaultUsername: config.odoo.defaultUsername,
-      defaultPassword: config.odoo.defaultPassword,
+      defaultUsername: config.odoo.adminUsername,
+      defaultPassword: config.odoo.adminPassword,
     });
 
     // Forward cookies from the client request to Odoo if available (for session)
@@ -66,8 +64,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(odooResponse);
     }
   } catch (error: unknown) {
-    const err = error as { message?: string; response?: { data?: unknown; status?: number } };
-    console.error('❌ API Proxy Error:', {
+    const err = error as { message?: string; response?: { data?: unknown; status?: number } };    console.error('❌ API Proxy Error:', {
       message: err.message,
       response: err.response?.data,
       status: err.response?.status,
@@ -75,7 +72,7 @@ export async function POST(req: NextRequest) {
       config: {
         baseUrl: config.odoo.baseUrl,
         database: config.odoo.database,
-        username: config.odoo.defaultUsername
+        username: config.odoo.adminUsername
       }
     });
     
