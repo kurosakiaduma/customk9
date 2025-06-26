@@ -147,18 +147,24 @@ const TrainingContent = () => {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         setLoading(true);
+        setError(null);
         const trainingPlans = await odooClientService.getTrainingPlans();
         setPlans(trainingPlans);
         if (trainingPlans.length > 0 && !selectedPlanId) {
           setSelectedPlanId(trainingPlans[0].id);
         }
       } catch (err: any) {
-        setError(err.message || 'Failed to load training plans');
+        console.error('Error fetching training plans:', err);
+        // Only show error for authentication issues, not for empty results
+        if (err.message?.includes('authentication') || err.message?.includes('Access Denied')) {
+          setError('Unable to access training plans. Please try logging in again.');
+        } else {
+          setError('Unable to connect to server. Please check your connection and try again.');
+        }
       } finally {
         setLoading(false);
       }
