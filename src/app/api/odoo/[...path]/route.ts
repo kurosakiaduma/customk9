@@ -9,6 +9,13 @@ export async function POST(req: NextRequest) {
   const path = req.nextUrl.pathname.replace('/api/odoo', ''); // Get the original Odoo path
   const payload = await req.json();
 
+  console.log('API Route Debug:', {
+    path,
+    baseUrl: config.odoo.baseUrl,
+    database: config.odoo.database,
+    username: config.odoo.defaultUsername
+  });
+
   try {
     // Initialize OdooServerService here to ensure it uses the full Odoo URL
     const odooServerService = new OdooServerService({
@@ -50,21 +57,36 @@ export async function POST(req: NextRequest) {
         } else if (typeof odooSetCookie === 'string') {
             response.headers.append('Set-Cookie', odooSetCookie);
         }
-      }
-      return response;
+      }      return response;
 
     } else {
       // For other Odoo calls, just forward the request payload and current session
       const odooResponse = await odooServerService.callOdoo(path, payload, sessionId);
       return NextResponse.json(odooResponse);
     }
-  } catch (error: any) {
-    console.error('API Proxy Error:', error);
+  } catch (error: unknown) {
+    const err = error as { message?: string; response?: { data?: unknown; status?: number } };
+    console.error('API Proxy Error:', {
+      message: err.message,
+      response: err.response?.data,
+      status: err.response?.status,
+      config: {
+        baseUrl: config.odoo.baseUrl,
+        path: path
+      }
+    });
+    
     // Forward Odoo-specific error messages if available
-    const errorMessage = error.message || 'An unknown error occurred';
-    const statusCode = error.response?.status || 500;
+    const errorMessage = err.message || 'An unknown error occurred';
+    const statusCode = err.response?.status || 500;
 
-    return NextResponse.json({ error: { message: errorMessage, code: statusCode } }, { status: statusCode });
+    return NextResponse.json({ 
+      error: { 
+        message: errorMessage, 
+        code: statusCode,
+        details: err.response?.data || 'No additional details'
+      } 
+    }, { status: statusCode });
   }
 }
 
