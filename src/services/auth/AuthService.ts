@@ -16,20 +16,22 @@ export class AuthService {
   constructor(odooClientService: OdooClientService) {
     this.odooClientService = odooClientService;
   }
-
   async login(email: string, password: string): Promise<AuthUser> {
     try {
-      const response = await this.odooClientService.authenticate(email, password, config.odoo.database);
+      // Use the OdooClientService's authenticateUser method which creates the proper session
+      const sessionInfo = await this.odooClientService.authenticateUser(email, password);
+      
       const user: AuthUser = {
-        id: response.uid,
-        name: response.name,
+        id: sessionInfo.uid,
+        name: sessionInfo.username,
         email: email,
-        token: response.session_id
+        token: sessionInfo.session_id
       };
       
       this.setAuthData(user);
       return user;
     } catch (error) {
+      console.error('Authentication failed:', error);
       throw new Error('Authentication failed');
     }
   }
@@ -62,15 +64,37 @@ export class AuthService {
         throw new Error('Registration failed: An unexpected error occurred');
       }
     }
+  }  async logout(): Promise<void> {
+    try {
+      // Clear Odoo session
+      await this.odooClientService.logoutUser();
+      console.log('✅ Odoo session cleared');
+    } catch (error) {
+      console.error('❌ Error during Odoo logout:', error);
+    }
+    
+    // Always clear local storage - be thorough
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(AuthService.TOKEN_KEY);
+      localStorage.removeItem(AuthService.USER_KEY);
+      localStorage.removeItem('customk9_user_session');
+      localStorage.removeItem('customk9_user_name');
+      
+      // Clear any other potential auth-related storage
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.startsWith('customk9_') || key.includes('auth') || key.includes('session')
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      console.log('✅ All local storage cleared');
+    }
   }
-
-  logout(): void {
-    localStorage.removeItem(AuthService.TOKEN_KEY);
-    localStorage.removeItem(AuthService.USER_KEY);
-  }
-
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    // Check both the old token-based auth and the new Odoo session
+    const hasToken = !!this.getToken();
+    const hasOdooSession = !!this.odooClientService.getCurrentUser();
+    
+    return hasToken || hasOdooSession;
   }
 
   getToken(): string | null {
