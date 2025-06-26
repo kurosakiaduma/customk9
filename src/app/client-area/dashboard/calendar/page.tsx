@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Appointment, ensureValidAppointmentImage } from "@/app/data/appointmentsData";
+import { Appointment, ensureValidAppointmentImage } from "@/types/appointment";
 import { OdooCalendarService, CalendarEvent } from "@/services/OdooCalendarService";
 import { OdooClientService } from "@/services/odoo/OdooClientService";
 
