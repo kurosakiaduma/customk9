@@ -8,12 +8,12 @@ import { config } from '@/config/config';
 export async function POST(req: NextRequest) {
   const path = req.nextUrl.pathname.replace('/api/odoo', ''); // Get the original Odoo path
   const payload = await req.json();
-
-  console.log('API Route Debug:', {
+  console.log('🔍 API Route Debug:', {
     path,
     baseUrl: config.odoo.baseUrl,
     database: config.odoo.database,
-    username: config.odoo.defaultUsername
+    username: config.odoo.defaultUsername,
+    hasPassword: !!config.odoo.defaultPassword
   });
 
   try {
@@ -38,41 +38,44 @@ export async function POST(req: NextRequest) {
 
     // Note: The callOdoo method in OdooServerService will handle setting X-Openerp-Session-Id
     // based on this sessionId if provided, or manage its own if authenticate is called.
-    // For /web/dataset/call_kw, the session_id is typically managed by Odoo itself once logged in.
-
-    // If the call is for authentication, we need to handle the session ID specifically
+    // For /web/dataset/call_kw, the session_id is typically managed by Odoo itself once logged in.    // If the call is for authentication, we need to handle the session ID specifically
     if (path === '/web/session/authenticate') {
+      console.log('🔍 API Route: Handling authentication request');
       const authResponse = await odooServerService.authenticate(payload.params.login, payload.params.password);
-      // Odoo will set the session_id cookie itself when authenticate is called
-
+      console.log('✅ API Route: Authentication successful');
+      
       const response = NextResponse.json({ result: authResponse });
 
       // Forward set-cookie headers from Odoo to the client
-      const odooSetCookie = authResponse.headers ? authResponse.headers['set-cookie'] : null; // Check for headers property
+      const odooSetCookie = authResponse.headers ? authResponse.headers['set-cookie'] : null;
 
       if (odooSetCookie) {
-        // Odoo's set-cookie might be an array or string. Handle based on actual response.
         if (Array.isArray(odooSetCookie)) {
             odooSetCookie.forEach(cookie => response.headers.append('Set-Cookie', cookie));
         } else if (typeof odooSetCookie === 'string') {
             response.headers.append('Set-Cookie', odooSetCookie);
         }
-      }      return response;
+      }
+
+      return response;
 
     } else {
-      // For other Odoo calls, just forward the request payload and current session
+      console.log('🔍 API Route: Handling regular Odoo call:', path);
       const odooResponse = await odooServerService.callOdoo(path, payload, sessionId);
+      console.log('✅ API Route: Odoo call successful');
       return NextResponse.json(odooResponse);
     }
   } catch (error: unknown) {
     const err = error as { message?: string; response?: { data?: unknown; status?: number } };
-    console.error('API Proxy Error:', {
+    console.error('❌ API Proxy Error:', {
       message: err.message,
       response: err.response?.data,
       status: err.response?.status,
+      path: path,
       config: {
         baseUrl: config.odoo.baseUrl,
-        path: path
+        database: config.odoo.database,
+        username: config.odoo.defaultUsername
       }
     });
     
