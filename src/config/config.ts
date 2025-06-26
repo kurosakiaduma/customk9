@@ -5,4 +5,4 @@ export const config = {
     defaultUsername: process.env.NEXT_PUBLIC_ODOO_USERNAME || 'sales@mericanltd.com',
     defaultPassword: process.env.NEXT_PUBLIC_ODOO_PASSWORD || 'Qwerty@254'
   }
-}; 
+};
