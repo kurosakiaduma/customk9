@@ -19,31 +19,67 @@ export default function ClientAreaPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [formError, setFormError] = useState("");  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   
   const router = useRouter();
   const authService = ServiceFactory.getInstance().getAuthService();
-  
-  // Check if user is already authenticated
+    // Check if user is already authenticated
   useEffect(() => {
-    const isAuth = authService.isAuthenticated();
-    if (isAuth) {
-      setIsAuthenticated(true);
-    }
+    const checkAuth = async () => {
+      setCheckingAuth(true);
+      
+      try {
+        // Check URL parameters for logout
+        const urlParams = new URLSearchParams(window.location.search);
+        const loggedOut = urlParams.get('logout') === 'true';
+        
+        if (loggedOut) {
+          // User just logged out, don't redirect
+          console.log('User just logged out, staying on login page');
+          setIsAuthenticated(false);
+          setCheckingAuth(false);
+          return;
+        }
+        
+        // First check the old token-based auth (for backward compatibility)
+        const hasToken = authService.isAuthenticated();
+        if (hasToken) {
+          setIsAuthenticated(true);
+          setCheckingAuth(false);
+          return;
+        }
+        
+        // Then check for Odoo session
+        const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+        const currentUser = await odooClientService.checkUserSession();
+        if (currentUser) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    
+    checkAuth();
     
     // Scroll to top on page load
     window.scrollTo(0, 0);
-  }, []);
+  }, [authService]);
 
-  // Redirect to dashboard if authenticated
+  // Redirect to dashboard if authenticated (but not if just logged out)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !checkingAuth) {
       router.push("/client-area/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, checkingAuth, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,8 +91,8 @@ export default function ClientAreaPage() {
       if (!email || !password) {
         throw new Error("Please fill in all fields");
       }
-      
-      const user = await authService.login(email, password);
+        const user = await authService.login(email, password);
+      console.log('Login successful for user:', user.email);
       setIsAuthenticated(true);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Login failed");
@@ -87,14 +123,15 @@ export default function ClientAreaPage() {
       if (password.length < 8) {
         throw new Error("Password must be at least 8 characters long");
       }
-      
-      // Create user
+        // Create user
       const user = await authService.register({
         name: `${firstName} ${lastName}`,
         email,
         phone,
         password
       });
+      
+      console.log('Registration successful for user:', user.email);
       
       // Show success message
       setFormError("");
