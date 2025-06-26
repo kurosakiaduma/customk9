@@ -3,23 +3,31 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ServiceFactory from "@/services/ServiceFactory";
 
 export default function SettingsPage() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      // Clear auth tokens
-      localStorage.removeItem("customk9_auth_token");
-      localStorage.removeItem("customk9_user_name");
+    try {
+      // Use the proper AuthService logout which handles both Odoo and local storage
+      const authService = ServiceFactory.getInstance().getAuthService();
+      await authService.logout();
       
-      // Redirect to client area login
-      router.push("/client-area");
-    }, 1000);
+      console.log("✅ User logged out successfully from settings");
+      
+      // Redirect with logout parameter to prevent immediate redirect back
+      window.location.href = "/client-area?logout=true";
+    } catch (error) {
+      console.error("❌ Error during logout:", error);
+      // Force redirect even if logout API fails, with logout parameter
+      window.location.href = "/client-area?logout=true";
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
   
   return (
