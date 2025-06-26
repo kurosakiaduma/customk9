@@ -6,21 +6,13 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
-import { ensureValidAppointmentImage, Appointment } from "@/app/data/appointmentsData";
+import { ensureValidAppointmentImage, Appointment } from "@/types/appointment";
 import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService } from "@/services/OdooCalendarService";
+import { OdooProductService, Service } from "@/services/OdooProductService";
 import { Dog } from '@/types/odoo';
 
 // Define interfaces for our data
-interface Service {
-  id: number;
-  name: string;
-  description: string;
-  duration: string;
-  price: number;
-  image: string;
-}
-
 interface PublicEvent {
   id: number;
   title: string;
@@ -48,183 +40,6 @@ interface BookingData {
   paymentMethod: string;
 }
 
-// Mock data for available services
-const AVAILABLE_SERVICES: Service[] = [
-  {
-    id: 1,
-    name: 'Basic Obedience Training',
-    description: 'One-on-one session focused on basic commands and behavior',
-    duration: '60 minutes',
-    price: 4500,
-    image: '/images/dog-01.jpg'
-  },
-  {
-    id: 2,
-    name: 'Puppy Group Class',
-    description: 'Socialization and basic training for puppies under 6 months',
-    duration: '90 minutes',
-    price: 3000,
-    image: '/images/dog-02.jpg'
-  },
-  {
-    id: 3,
-    name: 'Behavior Consultation',
-    description: 'Assessment and plan for addressing specific behavior issues',
-    duration: '120 minutes',
-    price: 6000,
-    image: '/images/dog-03.jpg'
-  },
-  {
-    id: 4,
-    name: 'Advanced Training Package',
-    description: 'Series of 5 sessions for advanced commands and off-leash work',
-    duration: '60 minutes per session',
-    price: 18000,
-    image: '/images/dog-04.jpg'
-  },
-  {
-    id: 5,
-    name: 'Agility Training',
-    description: 'Training for agility courses and competitions',
-    duration: '90 minutes',
-    price: 5500,
-    image: '/images/dog-05.jpg'
-  },
-  {
-    id: 6,
-    name: 'Scent Work Training',
-    description: 'Specialized training to develop your dog\'s scenting abilities',
-    duration: '75 minutes',
-    price: 5000,
-    image: '/images/dog-06.jpg'
-  },
-  {
-    id: 7,
-    name: 'Service Dog Training',
-    description: 'Specialized training for service and assistance dogs',
-    duration: '120 minutes',
-    price: 7500,
-    image: '/images/dog-07.jpg'
-  },
-  {
-    id: 8,
-    name: 'Reactive Dog Rehabilitation',
-    description: 'Specialized program for dogs with reactive behaviors',
-    duration: '90 minutes',
-    price: 6500,
-    image: '/images/dog-08.jpg'
-  },
-];
-
-// Mock data for public events
-const PUBLIC_EVENTS: PublicEvent[] = [
-  {
-    id: 101,
-    title: 'Weekend Group Obedience Class',
-    description: 'Join our popular group class for basic obedience training with professional trainers. Great for socialization and learning in a structured environment.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth(), 15).toISOString().split('T')[0],
-    time: '10:00 AM',
-    duration: '2 hours',
-    location: 'CustomK9 Training Center - Main Hall',
-    price: 2500,
-    trainer: 'Sarah Johnson',
-    capacity: 8,
-    enrolled: 5,
-    image: '/images/dog-01.jpg',
-    tags: ['Beginner-Friendly', 'All Ages']
-  },
-  {
-    id: 102,
-    title: 'Puppy Socialization Event',
-    description: 'A special event designed for puppies under 6 months to develop social skills and confidence in a safe, controlled environment.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth(), 17).toISOString().split('T')[0],
-    time: '4:00 PM',
-    duration: '90 minutes',
-    location: 'CustomK9 Training Center - Puppy Area',
-    price: 1800,
-    trainer: 'Michael Clark',
-    capacity: 10,
-    enrolled: 4,
-    image: '/images/dog-02.jpg',
-    tags: ['Puppies Only', 'Under 6 Months']
-  },
-  {
-    id: 103,
-    title: 'Advanced Skills Workshop',
-    description: 'For dogs who have mastered the basics and are ready for more challenging commands, including off-leash work and distance commands.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth(), 20).toISOString().split('T')[0],
-    time: '9:00 AM',
-    duration: '3 hours',
-    location: 'Central Park Training Ground',
-    price: 3500,
-    trainer: 'James Wilson',
-    capacity: 6,
-    enrolled: 3,
-    image: '/images/dog-03.jpg',
-    tags: ['Advanced', 'Prior Training Required']
-  },
-  {
-    id: 104,
-    title: 'Agility Introduction',
-    description: 'Learn the basics of dog agility training with our specialized equipment and expert guidance. Great for energetic dogs.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth(), 22).toISOString().split('T')[0],
-    time: '2:00 PM',
-    duration: '2 hours',
-    location: 'CustomK9 Agility Course',
-    price: 2800,
-    trainer: 'Emily Rodriguez',
-    capacity: 8,
-    enrolled: 2,
-    image: '/images/dog-04.jpg',
-    tags: ['Active Dogs', 'All Skill Levels']
-  },
-  {
-    id: 105,
-    title: 'Reactive Dog Management',
-    description: 'Specialized workshop for owners of reactive dogs. Learn techniques to manage reactivity and build confidence.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth(), 24).toISOString().split('T')[0],
-    time: '5:00 PM',
-    duration: '2 hours',
-    location: 'CustomK9 Training Center - Private Area',
-    price: 4000,
-    trainer: 'David Thompson',
-    capacity: 5,
-    enrolled: 3,
-    image: '/images/dog-05.jpg',
-    tags: ['Behavioral Issues', 'Small Group']
-  },
-  {
-    id: 106,
-    title: 'Weekend Group Class',
-    description: 'Group training session focusing on basic commands and socialization.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 5).toISOString().split('T')[0],
-    time: '11:00 AM',
-    duration: '2 hours',
-    location: 'CustomK9 Training Center - Main Hall',
-    price: 2500,
-    trainer: 'Sarah Johnson',
-    capacity: 8,
-    enrolled: 2,
-    image: '/images/dog-06.jpg',
-    tags: ['All Levels', 'Group Training']
-  },
-  {
-    id: 107,
-    title: 'Leash Reactivity Workshop',
-    description: 'Special workshop for dogs who react to other dogs or people while on leash.',
-    date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 12).toISOString().split('T')[0],
-    time: '3:00 PM',
-    duration: '2.5 hours',
-    location: 'CustomK9 Training Center - Private Area',
-    price: 3800,
-    trainer: 'David Thompson',
-    capacity: 6,
-    enrolled: 1,
-    image: '/images/dog-07.jpg',
-    tags: ['Behavioral Issues', 'Specialized Training']
-  }
-];
-
 // Available time slots (these would normally come from the server based on date)
 const TIME_SLOTS = [
   '9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
@@ -244,6 +59,8 @@ export default function BookAppointmentPage() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [dogs, setDogs] = useState<Dog[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [publicEvents, setPublicEvents] = useState<PublicEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -258,26 +75,37 @@ export default function BookAppointmentPage() {
     paymentMethod: ''
   });
   const [isBookingComplete, setIsBookingComplete] = useState(false);
-  
-  // Get the OdooClientService and OdooCalendarService from the ServiceFactory
+    // Get the OdooClientService and OdooCalendarService from the ServiceFactory
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
   const odooCalendarService = new OdooCalendarService(odooClientService);
+  const odooProductService = new OdooProductService(odooClientService);
 
-  // Load dogs from API on initial load
+  // Load data from API on initial load
   useEffect(() => {
-    const fetchDogs = async () => {
+    const fetchData = async () => {
       try {
+        setIsLoading(true);
+        
+        // Load dogs
         const fetchedDogs = await odooClientService.getDogs();
         setDogs(fetchedDogs);
+        
+        // Load services
+        const fetchedServices = await odooProductService.getTrainingServices();
+        setServices(fetchedServices);
+        
+        // For now, use empty array for public events (can be enhanced later with real calendar events)
+        setPublicEvents([]);
+        
         setIsLoading(false);
       } catch (err: any) {
-        console.error('Error fetching dogs:', err);
-        setError('Failed to load dogs. Please try again later.');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data. Please try again later.');
         setIsLoading(false);
       }
     };
 
-    fetchDogs();
+    fetchData();
   }, [odooClientService]);
   
   // Move to next step if data for current step is valid
@@ -872,7 +700,7 @@ export default function BookAppointmentPage() {
             <>
               <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Service</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {AVAILABLE_SERVICES.map((service) => (
+                {services.map((service) => (
                   <div 
                     key={service.id}
                     onClick={() => selectService(service)}
@@ -957,7 +785,7 @@ export default function BookAppointmentPage() {
                   {/* Calendar cells */}
                   {generateCalendarDays().map((day: Date | null, index: number) => {
                     const dateString = day ? day.toISOString().split('T')[0] : '';
-                    const eventsOnDay = PUBLIC_EVENTS.filter(event => event.date === dateString);
+                    const eventsOnDay = publicEvents.filter(event => event.date === dateString);
                     const isToday = day && day.toDateString() === new Date().toDateString();
                     const hasEvents = eventsOnDay.length > 0;
                     
