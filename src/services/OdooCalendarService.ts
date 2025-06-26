@@ -67,8 +67,9 @@ export class OdooCalendarService {
             if (!hasAccess) {
                 console.log('⚠️ Calendar access failed, returning empty array');
                 return [];
-            }            // Build user-specific filter
-            const domainFilter = [['start', '>=', today]];
+            }
+            // Build user-specific filter
+            const domainFilter: unknown[] = [['start', '>=', today]];
             
             // If not admin, filter by user's events only
             if (!currentUser.isAdmin && currentUser.partnerId) {
