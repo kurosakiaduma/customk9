@@ -202,47 +202,92 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   // Get services from the ServiceFactory
-  const odooClientService = ServiceFactory.getInstance().getOdooClientService();  useEffect(() => {
-    const fetchData = async () => {
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+
+  useEffect(() => {
+    const checkAuthAndLoadData = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        // Check if we have a valid Odoo session
-        console.log("🔍 Dashboard: Checking session info...");
-        const sessionInfo = await odooClientService.getSessionInfo();
-        console.log("✅ Dashboard: Session info received:", sessionInfo);
+        // First check if user has a valid session
+        console.log("🔍 Dashboard: Checking user session...");
+        const currentUser = await odooClientService.checkUserSession();
+          if (!currentUser) {
+          console.log("❌ No valid user session found, redirecting to login");
+          window.location.href = "/client-area";
+          return;
+        }console.log("✅ Valid user session found:", currentUser);
         
-        if (!sessionInfo || !sessionInfo.uid) {
-          throw new Error("No valid session found. Please log in again.");
-        }        // Session is valid, set user info
-        setUserName(sessionInfo.username || "User");
+        // Set proper display name - prefer displayName from currentUser, then from session
+        let displayName = currentUser.displayName || currentUser.username;
+        
+        // If we still don't have a good display name, check session storage
+        if (!displayName || displayName.includes('@')) {
+          const userSession = localStorage.getItem('customk9_user_session');
+          if (userSession) {
+            try {
+              const session = JSON.parse(userSession);
+              displayName = session.displayName || 
+                          (session.username && !session.username.includes('@') ? session.username : null) ||
+                          (session.email ? session.email.split('@')[0] : null) ||
+                          'User';
+            } catch (e) {
+              console.warn('Could not parse user session for display name');
+              displayName = currentUser.username?.split('@')[0] || 'User';
+            }
+          }
+        }
+        
+        setUserName(displayName);
         setIsAuthenticated(true);
-        console.log("✅ Dashboard: Session valid for user:", sessionInfo.username);
+        
+        // Now load user-specific data
+        await loadUserData();
+        
+      } catch (err) {        console.error("❌ Dashboard: Authentication/data loading error:", err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        
+        // If authentication fails, redirect to login
+        if (errorMessage.includes("authentication") || 
+            errorMessage.includes("session") ||
+            errorMessage.includes("login")) {
+          console.log("Authentication error, redirecting to login...");
+          window.location.href = "/client-area";
+          return;
+        }
+        
+        setError(`Error loading dashboard: ${errorMessage}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        // Try to fetch dogs directly
-        console.log("🐕 Dashboard: About to call getDogs()...");
+    const loadUserData = async () => {
+      try {
+        console.log("🔍 Loading user-specific data...");
+        
+        // Load dogs
         try {
           const fetchedDogs = await odooClientService.getDogs();
-          console.log("🐕 Dashboard: Dogs fetched successfully:", fetchedDogs);
+          console.log(`🐕 Loaded ${fetchedDogs.length} dogs for user`);
           setDogs(fetchedDogs);
         } catch (dogError) {
-          console.error("❌ Dashboard: Error fetching dogs:", dogError);
-          // Continue with other data even if dogs fail
+          console.error("❌ Error fetching dogs:", dogError);
         }
 
-        // Try to fetch training plans
-        console.log("📋 Dashboard: About to call getTrainingPlans()...");
+        // Load training plans
         try {
           const fetchedPlans = await odooClientService.getTrainingPlans();
-          console.log("📋 Dashboard: Training plans fetched successfully:", fetchedPlans);
+          console.log(`📋 Loaded ${fetchedPlans.length} training plans for user`);
           setTrainingPlans(fetchedPlans);
         } catch (planError) {
-          console.error("❌ Dashboard: Error fetching training plans:", planError);
-          // Continue with other data even if plans fail
-        }        // Try to fetch upcoming calendar sessions
-        console.log("📅 Dashboard: About to fetch upcoming sessions...");
+          console.error("❌ Error fetching training plans:", planError);
+        }
+
+        // Load upcoming calendar sessions
         try {
           const odooCalendarService = new OdooCalendarService(odooClientService);
           const calendarEvents = await odooCalendarService.getUpcomingAppointments();
@@ -262,35 +307,18 @@ export default function DashboardPage() {
             trainer: event.trainer_name
           }));
           
+          console.log(`📅 Loaded ${sessions.length} upcoming sessions for user`);
           setUpcomingSessions(sessions);
-          console.log("📅 Dashboard: Upcoming sessions loaded:", sessions);
         } catch (sessionError) {
-          console.error("❌ Dashboard: Error fetching upcoming sessions:", sessionError);
-          setUpcomingSessions([]); // Empty array instead of dummy data
+          console.error("❌ Error fetching upcoming sessions:", sessionError);
+          setUpcomingSessions([]);
         }
-      } catch (err) {
-        console.error("❌ Dashboard: Error fetching dashboard data:", err);
-        console.error("❌ Dashboard: Error stack:", err instanceof Error ? err.stack : 'No stack trace');
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        
-        // Check if it's an authentication error
-        if (errorMessage.includes("No valid session") || 
-            errorMessage.includes("Authentication required") || 
-            errorMessage.includes("Session expired") ||
-            errorMessage.includes("not authenticated")) {
-          // Clear any stored auth data and redirect to login
-          console.log("Authentication error detected, redirecting to login...");
-          window.location.href = "/client-area";
-          return;
-        }
-        
-        setError(`Error loading dashboard: ${errorMessage}`);
-      } finally {
-        setIsLoading(false);
+      } catch (error) {
+        console.error("❌ Error in loadUserData:", error);
+        throw error;
       }
     };
-    
-    fetchData();
+      checkAuthAndLoadData();
   }, [odooClientService]);
 
   if (isLoading) {
@@ -518,4 +546,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-} 
+}
