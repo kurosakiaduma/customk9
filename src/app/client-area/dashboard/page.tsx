@@ -197,9 +197,7 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 export default function DashboardPage() {
   const [userName, setUserName] = useState("Guest");
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
-  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -212,14 +210,14 @@ export default function DashboardPage() {
       setError(null);
       
       try {
-        // First check if user has a valid session
-        console.log("🔍 Dashboard: Checking user session...");
+        // First check if user has a valid session        console.log("🔍 Dashboard: Checking user session...");
         const currentUser = await odooClientService.checkUserSession();
-          if (!currentUser) {
+        if (!currentUser) {
           console.log("❌ No valid user session found, redirecting to login");
           window.location.href = "/client-area";
           return;
-        }console.log("✅ Valid user session found:", currentUser);
+        }
+        console.log("✅ Valid user session found:", currentUser);
         
         // Set proper display name - prefer displayName from currentUser, then from session
         let displayName = currentUser.displayName || currentUser.username;
@@ -238,10 +236,8 @@ export default function DashboardPage() {
               console.warn('Could not parse user session for display name');
               displayName = currentUser.username?.split('@')[0] || 'User';
             }
-          }
-        }
-        
-        setUserName(displayName);
+          }        }
+          setUserName(displayName);
         setIsAuthenticated(true);
         
         // Now load user-specific data
@@ -285,15 +281,23 @@ export default function DashboardPage() {
           setTrainingPlans(fetchedPlans);
         } catch (planError) {
           console.error("❌ Error fetching training plans:", planError);
-        }
-
-        // Load upcoming calendar sessions
+        }        // Load upcoming calendar sessions
         try {
           const odooCalendarService = new OdooCalendarService(odooClientService);
           const calendarEvents = await odooCalendarService.getUpcomingAppointments();
-          
-          // Convert calendar events to session format
-          const sessions = calendarEvents.slice(0, 3).map(event => ({
+          let filteredEvents = calendarEvents;
+          const currentUser = odooClientService.getCurrentUser();
+          // Only filter for non-admin users
+          if (currentUser && !currentUser.isAdmin && currentUser.partnerId) {
+            filteredEvents = (calendarEvents as import('@/services/OdooCalendarService').CalendarEvent[]).filter(event => {
+              // @ts-expect-error partner_ids may exist on backend event object for filtering
+              if (!event.partner_ids) return true;
+              // @ts-expect-error partner_ids may exist on backend event object for filtering
+              return Array.isArray(event.partner_ids) && event.partner_ids.includes(currentUser.partnerId);
+            });
+          }
+          // Convert calendar events to session format - keep all for count, but limit display to 3
+          const allSessions = filteredEvents.map(event => ({
             id: event.id,
             title: event.name,
             date: new Date(event.start).toLocaleDateString('en-US', { 
@@ -304,11 +308,10 @@ export default function DashboardPage() {
               minute: '2-digit'
             }),
             location: event.location,
-            trainer: event.trainer_name
+            trainer: event.trainer_name,
+            start: event.start
           }));
-          
-          console.log(`📅 Loaded ${sessions.length} upcoming sessions for user`);
-          setUpcomingSessions(sessions);
+          setUpcomingSessions(allSessions);
         } catch (sessionError) {
           console.error("❌ Error fetching upcoming sessions:", sessionError);
           setUpcomingSessions([]);
@@ -358,7 +361,7 @@ export default function DashboardPage() {
             <div className="ml-3">
               <h3 className="text-lg font-medium text-sky-800">Complete Your Client Intake Form</h3>
               <div className="mt-2 text-sky-700">
-                <p>Please fill out our client intake form to help us understand your dog's needs better.</p>
+                <p>Please fill out our client intake form to help us understand your dog&apos;s needs better.</p>
               </div>
               <div className="mt-4">
                 <Link
@@ -371,10 +374,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      )}
-      
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      )}        {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Active Dogs Card */}
         <Link href="/client-area/dashboard/dogs" className="bg-white rounded-xl border border-gray-100 shadow-md p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-4">
@@ -448,7 +449,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {dogs.map((dog: any) => (
+                {dogs.map((dog: Dog) => (
                   <DogProfileCard key={dog.id} dog={dog} />
                 ))}
               </div>
@@ -468,7 +469,7 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trainingPlans.length > 0 ? (
-                trainingPlans.map((plan: any) => (
+                trainingPlans.map((plan: TrainingPlan) => (
                   <TrainingPlanCard key={plan.id} plan={plan} />
                 ))
               ) : (
@@ -498,10 +499,9 @@ export default function DashboardPage() {
               >
                 View Calendar →
               </Link>
-            </div>
-            <div className="space-y-3">
+            </div>            <div className="space-y-3">
               {upcomingSessions.length > 0 ? (
-                upcomingSessions.map((session: any) => (
+                upcomingSessions.slice(0, 3).map((session: { id: number; title: string; date: string; location: string; trainer: string; start: string }) => (
                   <UpcomingSessionCard key={session.id} session={session} />
                 ))
               ) : (
