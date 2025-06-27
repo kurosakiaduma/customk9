@@ -106,14 +106,16 @@ export class OdooClientService {
     }
   }  // Method to ensure authentication before making data calls
   private async ensureAuthenticated(): Promise<void> {
+    // First check if we already have authentication state
     if (this.isAuthenticated && this.currentUser) {
       return;
     }
 
-    // Check if we have a valid user session first
+    // Check if we have a valid user session in localStorage
     const currentUser = await this.checkUserSession();
     if (currentUser) {
       console.log('✅ User session found during ensureAuthenticated');
+      // checkUserSession already sets this.isAuthenticated and this.currentUser
       return;
     }
 
@@ -584,42 +586,91 @@ export class OdooClientService {
         localStorage.removeItem('customk9_user_name');
       }
     }
-  }  // Get user-specific data filters - different filters for different models
+  }  // Enhanced user-specific data filters for comprehensive isolation
   private getUserDataFilter(model: string = ''): unknown[] {
-    // Always filter data for non-admin users, regardless of which credentials are used for the API call
+    // Only filter data for non-admin users
     if (this.currentUser && !this.currentUser.isAdmin) {
       const partnerId = this.currentUser.partnerId;
       if (partnerId) {
-        // Different models use different field names to reference partners
-        if (model === 'res.partner') {
-          // For partners (dogs), filter by parent_id since dogs are child records of the user
-          console.log(`🔍 Applying user filter for res.partner: parent_id = ${partnerId}`);
-          return [['parent_id', '=', partnerId]];
-        } else if (model === 'project.project') {
-          // For projects, filter by partner_id
-          console.log(`🔍 Applying user filter for project.project: partner_id = ${partnerId}`);
-          return [['partner_id', '=', partnerId]];
-        } else if (model === 'calendar.event') {
-          // For calendar events, filter by partner_ids (many2many) or user_id
-          console.log(`🔍 Applying user filter for calendar.event: partner_ids contains ${partnerId}`);
-          return ['|', ['partner_ids', 'in', [partnerId]], ['user_id', '=', this.currentUser.uid]];
-        } else if (model === 'project.task') {
-          // For tasks, filter by project's partner_id
-          console.log(`🔍 Applying user filter for project.task: project partner_id = ${partnerId}`);
-          return [['project_id.partner_id', '=', partnerId]];
-        } else {
-          // Default: try partner_id field
-          console.log(`🔍 Applying default user filter for ${model}: partner_id = ${partnerId}`);
-          return [['partner_id', '=', partnerId]];
+        // Comprehensive model-specific filtering
+        switch (model) {
+          case 'res.partner':
+            // For partners (dogs), filter by parent_id since dogs are child records of the user
+            console.log(`🔍 Applying user filter for res.partner: parent_id = ${partnerId}`);
+            return [['parent_id', '=', partnerId]];
+            
+          case 'project.project':
+            // For training plans/projects, filter by partner_id
+            console.log(`🔍 Applying user filter for project.project: partner_id = ${partnerId}`);
+            return [['partner_id', '=', partnerId]];
+            
+          case 'calendar.event':
+            // For calendar events, filter by partner_ids (many2many) or user_id
+            console.log(`🔍 Applying user filter for calendar.event: partner_ids contains ${partnerId}`);
+            return ['|', ['partner_ids', 'in', [partnerId]], ['user_id', '=', this.currentUser.uid]];
+            
+          case 'project.task':
+            // For training tasks, filter by project's partner_id
+            console.log(`🔍 Applying user filter for project.task: project partner_id = ${partnerId}`);
+            return [['project_id.partner_id', '=', partnerId]];
+            
+          case 'sale.order':
+            // For sales orders/bookings, filter by partner_id
+            console.log(`🔍 Applying user filter for sale.order: partner_id = ${partnerId}`);
+            return [['partner_id', '=', partnerId]];
+            
+          case 'account.move':
+            // For invoices, filter by partner_id
+            console.log(`🔍 Applying user filter for account.move: partner_id = ${partnerId}`);
+            return [['partner_id', '=', partnerId]];
+            
+          case 'hr.timesheet':
+            // For timesheets/sessions, filter by partner_id
+            console.log(`🔍 Applying user filter for hr.timesheet: partner_id = ${partnerId}`);
+            return [['partner_id', '=', partnerId]];
+            
+          case 'product.template':
+          case 'product.product':
+            // For products/services, no user filtering needed (services are global)
+            console.log(`🔍 No user filter for ${model} (global products)`);
+            return [];
+            
+          case 'res.users':
+            // For users, only allow users to see themselves
+            console.log(`🔍 Applying user filter for res.users: id = ${this.currentUser.uid}`);
+            return [['id', '=', this.currentUser.uid]];
+            
+          case 'mail.message':
+          case 'mail.thread':
+            // For messages, filter by res_partner_id or author_id
+            console.log(`🔍 Applying user filter for ${model}: author_id = ${partnerId}`);
+            return ['|', ['author_id', '=', partnerId], ['res_partner_id', '=', partnerId]];
+            
+          case 'ir.attachment':
+            // For attachments, filter by res_id if res_model is res.partner
+            console.log(`🔍 Applying user filter for ir.attachment: res_model=res.partner, res_id=${partnerId}`);
+            return ['|', 
+              ['&', ['res_model', '=', 'res.partner'], ['res_id', '=', partnerId]],
+              ['&', ['res_model', '=', 'project.project'], ['res_id', 'in', []]] // Will be populated by project IDs
+            ];
+            
+          default:
+            // Default: try partner_id field for any other model
+            console.log(`🔍 Applying default user filter for ${model}: partner_id = ${partnerId}`);
+            return [['partner_id', '=', partnerId]];
         }
       } else {
         // If no partner_id, return filter that matches nothing
-        console.log("⚠️ No partner_id found for user, returning empty filter");
+        console.log("⚠️ No partner_id found for user, returning empty filter that matches nothing");
         return [['id', '=', -1]];
       }
     } else {
-      // Admins can see all data
-      console.log("🔍 Admin user or no current user, no filter applied");
+      // Admin users (info@customk9kenya.com) can see all data
+      if (this.currentUser?.isAdmin) {
+        console.log(`🔍 Admin user (${this.currentUser.username}) - no filter applied, can see all data`);
+      } else {
+        console.log("🔍 No current user - no filter applied");
+      }
       return [];
     }
   }
@@ -649,45 +700,27 @@ export class OdooClientService {
     console.log(`✅ User has permissions for ${model}, using user session`);
     return true;
   }
-
-  // Helper method to check if a model exists and user has access
-  async checkModelAccess(modelName: string): Promise<boolean> {
-    try {
-      // First check if user has permissions for this model
-      const hasPermissions = await this.checkUserPermissions(modelName);
-      if (!hasPermissions) {
-        console.warn(`User does not have permissions for model ${modelName}`);
-        return false;
-      }
-      
-      await this.callOdooMethod(modelName, 'search', [[]], { limit: 1 });
-      return true;
-    } catch (error) {
-      console.warn(`Model ${modelName} not accessible:`, error);
-      return false;
-    }
-  }  // Dog Profile Management
+  // Dog Profile Management - Using res.partner model with admin credentials
   async getDogs(): Promise<Dog[]> {
     try {
-      console.log("🐕 OdooClientService.getDogs(): Starting...");
+      console.log("🐕 OdooClientService.getDogs(): Starting with res.partner model and admin credentials...");
       
       if (!this.isAuthenticated || !this.currentUser) {
         console.warn("🐕 User not authenticated, returning empty array");
         return [];
       }
 
-      // Use base dog filter only - user filtering will be applied automatically in callOdooMethod
+      // Use res.partner model exclusively with admin credentials
+      console.log("📦 Using res.partner model for dogs with admin credentials");
+      
       const baseFilter = [["function", "=", "Dog"]];
       
-      console.log("🔍 Base filter for dogs:", baseFilter);
-
       const response = await this.callOdooMethod('res.partner', 'search_read',
         [baseFilter],
         { fields: ["name", "comment", "id", "parent_id"] });
       
-      console.log("🐕 OdooClientService.getDogs(): Raw response:", response);
+      console.log("🐕 OdooClientService.getDogs(): Raw response from res.partner model:", response);
       
-      // Handle empty response gracefully
       if (!Array.isArray(response)) {
         console.warn("🐕 Unexpected response format, returning empty array");
         return [];
@@ -698,8 +731,6 @@ export class OdooClientService {
         return [];
       }
       
-      console.log(`🐕 Found ${response.length} dogs for user ${this.currentUser.username}`);
-        
       const processedDogs = (response as Record<string, unknown>[]).map((dog: Record<string, unknown>) => {
         try {
           // Clean HTML encoding from comment field and extract JSON
@@ -742,12 +773,12 @@ export class OdooClientService {
               dogSource: '',
               timeWithDog: '',
               medications: '',
-              currentDeworming: 'N',
+              currentDeworming: '',
               tickFleaPreventative: '',
               vetClinic: '',
               vetName: '',
               vetPhone: '',
-              medicalIssues: ''
+              medicalIssues: '',
             },
             lifestyle: {},
             history: {},
@@ -757,21 +788,14 @@ export class OdooClientService {
         }
       });
       
-      console.log("🐕 OdooClientService.getDogs(): Final processed dogs:", processedDogs);
+      console.log(`🐕 Processed ${processedDogs.length} dogs for user ${this.currentUser.username}`);
       return processedDogs;
+        
     } catch (error: unknown) {
-      console.error("❌ OdooClientService.getDogs(): Error:", error);
-      
-      // Return empty array for network/connection issues to allow graceful empty state handling
-      // Only throw for authentication errors
-      if (error instanceof Error && error.message.includes('authentication')) {
-        throw this.handleError(error);
-      }
-      
-      console.warn("🐕 Returning empty array due to error:", error);
+      console.error("🚨 Error fetching dogs:", error);
       return [];
     }
-  }  // Training Plan Management
+  }// Training Plan Management
   async getTrainingPlans(): Promise<TrainingPlan[]> {
     try {
       console.log("📋 OdooClientService.getTrainingPlans(): Starting...");
@@ -831,7 +855,6 @@ export class OdooClientService {
       return [];
     }
   }
-
   async createTrainingPlan(planData: {
     name: string;
     dogId: number;
@@ -843,15 +866,7 @@ export class OdooClientService {
       description: string;
     }>;
   }): Promise<number> {
-    try {      // Check if project model is available
-      const hasProjectAccess = await this.checkModelAccess('project.project');
-      
-      if (!hasProjectAccess) {
-        console.log("⚠️ Project model not accessible, cannot create training plan");
-        // Return a mock ID since we can't actually create the plan
-        throw new Error("Training plan creation not available - project management module not installed");
-      }
-
+    try {
       // Ensure user is authenticated and get their IDs
       if (!this.currentUser || !this.currentUser.partnerId) {
         throw new Error('User not authenticated or missing partner information');
@@ -880,46 +895,60 @@ export class OdooClientService {
     } catch (error: unknown) {
       throw this.handleError(error);
     }
-  }
+  }  async createDogProfile(dogProfileData: DogProfileCreateInput): Promise<number> {
+    try {
+      // Ensure user is authenticated and get their partner ID
+      if (!this.currentUser || !this.currentUser.partnerId) {
+        // Try to restore session from localStorage
+        const currentUser = await this.checkUserSession();
+        if (!currentUser || !currentUser.partnerId) {
+          throw new Error('User not authenticated or missing partner information');
+        }
+      }
 
-  async createDogProfile(dogProfileData: DogProfileCreateInput): Promise<number> {
-    const odooComment = JSON.stringify({
-      dogInfo: {
-        breed: dogProfileData.breed,
-        age: dogProfileData.age,
-        gender: dogProfileData.gender,
-        sterilized: dogProfileData.sterilized,
-        dogSource: dogProfileData.dogSource,
-        timeWithDog: dogProfileData.timeWithDog,
-        medications: dogProfileData.medications,
-        currentDeworming: dogProfileData.currentDeworming,
-        tickFleaPreventative: dogProfileData.tickFleaPreventative,
-        vetClinic: dogProfileData.vetClinic,
-        vetName: dogProfileData.vetName,
-        vetPhone: dogProfileData.vetPhone,
-        medicalIssues: dogProfileData.medicalIssues,
-      },
-      lifestyle: dogProfileData.lifestyle,
-      history: dogProfileData.history,
-      goals: dogProfileData.goals,
-      behaviorChecklist: dogProfileData.behaviorChecklist,
-      behaviorDetails: dogProfileData.behaviorDetails,
-      undesirableBehavior: dogProfileData.undesirableBehavior,
-      fearDescription: dogProfileData.fearDescription,
-    });    // Ensure user is authenticated and get their partner ID
-    if (!this.currentUser || !this.currentUser.partnerId) {
-      throw new Error('User not authenticated or missing partner information');
+      // Prepare comprehensive dog data for comment field
+      const commentData = {
+        dogInfo: {
+          breed: dogProfileData.breed,
+          age: dogProfileData.age,
+          gender: dogProfileData.gender,
+          level: 'Beginner',
+          progress: 0,
+          sterilized: dogProfileData.sterilized,
+          dogSource: dogProfileData.dogSource,
+          timeWithDog: dogProfileData.timeWithDog,
+          medications: dogProfileData.medications,
+          currentDeworming: dogProfileData.currentDeworming,
+          tickFleaPreventative: dogProfileData.tickFleaPreventative,
+          vetClinic: dogProfileData.vetClinic,
+          vetName: dogProfileData.vetName,
+          vetPhone: dogProfileData.vetPhone,
+          medicalIssues: dogProfileData.medicalIssues
+        },
+        lifestyle: dogProfileData.lifestyle,
+        history: dogProfileData.history,
+        goals: dogProfileData.goals,
+        behaviorChecklist: dogProfileData.behaviorChecklist,
+        behaviorDetails: dogProfileData.behaviorDetails,
+        undesirableBehavior: dogProfileData.undesirableBehavior,
+        fearDescription: dogProfileData.fearDescription
+      };
+
+      // Create dog using res.partner model with parent-child relationship
+      const response = await this.callOdooMethod('res.partner', 'create', [{
+        name: dogProfileData.name,
+        parent_id: this.currentUser?.partnerId, // Link to owner as parent
+        type: "contact",
+        function: "Dog", // Identify as a dog
+        comment: JSON.stringify(commentData) // Store all dog data as JSON
+      }]);
+
+      return response as number;
+    } catch (error: unknown) {
+      console.error('Error creating dog profile:', error);
+      throw this.handleError(error);
     }
-
-    const response = await this.callOdooMethod('res.partner', 'create', [{
-      name: dogProfileData.name,
-      parent_id: this.currentUser.partnerId, // Use current user's partner ID instead of hardcoded 3
-      function: 'Dog',
-      comment: odooComment,
-    }]);
-
-    return response as number;
-  }  async registerUser(userData: {
+  }async registerUser(userData: {
     name: string;
     email: string;
     phone: string;
