@@ -32,7 +32,9 @@ export class OdooCalendarService {
 
     constructor(odooClientService: OdooClientService) {
         this.odooClientService = odooClientService;
-    }    // Test calendar connectivity
+    }
+
+    // Test calendar connectivity
     async testCalendarConnection(): Promise<boolean> {
         try {
             console.log('🔍 Testing calendar.event model access...');
@@ -49,6 +51,7 @@ export class OdooCalendarService {
             return false;
         }
     }   
+    
     async getUpcomingAppointments(): Promise<CalendarEvent[]> {
         let currentUser = this.odooClientService.getCurrentUser();
         if (!currentUser) {
@@ -65,23 +68,28 @@ export class OdooCalendarService {
         try {
             console.log('🔍 Fetching calendar events for user:', currentUser.username);
 
-            // Build date filter for upcoming events
+            // Build date filters
             const now = new Date();
             const oneMonthFromNow = new Date();
             oneMonthFromNow.setMonth(now.getMonth() + 1);
-
-            const domainFilter: (string | number | (string | number)[])[] = [
+            
+            // FIXED: Construct domain filter properly for Odoo
+            const domainFilter = [
+                '&',
+                '&',
                 ['start', '>=', now.toISOString()],
                 ['start', '<=', oneMonthFromNow.toISOString()],
+                '|',
+                ['partner_ids', 'in', [currentUser.partnerId || 0]],
+                ['user_id', '=', currentUser.uid]
             ];
 
-            console.log('🔍 Calendar domain filter:', domainFilter);
+            console.log('🔍 Calendar domain filter (fixed):', domainFilter);
 
-            // User filtering is now handled automatically in callOdooMethod
             const result = await this.odooClientService.callOdooMethod(
                 'calendar.event',
                 'search_read',
-                [domainFilter],
+                [domainFilter], // Wrap domainFilter in array
                 {
                     fields: [
                         'id', 'name', 'start', 'stop', 'duration', 'location',
@@ -93,6 +101,7 @@ export class OdooCalendarService {
             );
 
             console.log('📅 Calendar events fetched:', result);
+            
             // Use a type-safe mapping for Odoo event objects
             type OdooEvent = {
                 id: number;
@@ -105,8 +114,10 @@ export class OdooCalendarService {
                 description?: string | false;
                 user_id?: number;
             };
+            
             const odooEvents = result as OdooEvent[];
             console.log(`📅 Found ${odooEvents.length} events for user ${currentUser.username}`);
+            
             // Transform the data to match our interface
             return odooEvents.map((event) => ({
                 id: event.id,
@@ -119,7 +130,8 @@ export class OdooCalendarService {
                 dog_name: this.getDogNameFromDescription(event.description),
                 dog_image: '/images/dog-placeholder.jpg',
                 state: 'confirmed' as const
-            }));        } catch (error) {
+            }));
+        } catch (error) {
             console.error('❌ Calendar model not accessible:', error);
             console.log('⚠️ Calendar access failed, returning empty array');
             return [];
@@ -128,6 +140,7 @@ export class OdooCalendarService {
     
     private getTrainerName(partnerIds?: number[]): string {
         // For now return a default name, in a real implementation we would fetch the partner name
+        void partnerIds; // suppress unused warning
         return 'Assigned Trainer';
     }
 
@@ -150,7 +163,9 @@ export class OdooCalendarService {
             default:
                 return 'confirmed';
         }
-    }    async createBooking(details: BookingDetails): Promise<number> {
+    }
+
+    async createBooking(details: BookingDetails): Promise<number> {
         const eventData = this.convertBookingToEvent(details);
         try {
             console.log('📅 Creating calendar event:', eventData);
@@ -172,9 +187,12 @@ export class OdooCalendarService {
             console.error('❌ Error creating booking:', error);
             throw new Error(`Failed to create appointment: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }    private convertBookingToEvent(booking: BookingDetails): Record<string, unknown> {
+    }
+
+    private convertBookingToEvent(booking: BookingDetails): Record<string, unknown> {
         const duration = booking.type === 'individual' ? 1.0 : 1.5;
         const location = booking.type === 'individual' ? 'Training Room' : 'Training Hall';
+        
         // Parse start as either ISO or 'YYYY-MM-DD h:mm AM/PM'
         let startDate: Date | null = null;
         if (booking.dateTime.start) {
@@ -184,7 +202,7 @@ export class OdooCalendarService {
                 // Fallback: parse 'YYYY-MM-DD h:mm AM/PM'
                 const match = booking.dateTime.start.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
                 if (match) {
-                    const [_, date, hourStr, minStr, ampm] = match;
+                    const [/* _ */, date, hourStr, minStr, ampm] = match;
                     let hour = parseInt(hourStr, 10);
                     const min = parseInt(minStr, 10);
                     if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
@@ -193,11 +211,14 @@ export class OdooCalendarService {
                 }
             }
         }
+        
         if (!startDate || isNaN(startDate.getTime())) {
             throw new Error(`Invalid date format for appointment booking.\nstart: ${booking.dateTime.start}`);
         }
+        
         // Compute stop by adding duration (in hours) to start
         const stopDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
+        
         return {
             name: `${booking.service} - ${booking.type} session`,
             start: startDate.toISOString().replace('T', ' ').substring(0, 19),
@@ -213,17 +234,17 @@ export class OdooCalendarService {
     async getAvailableSlots(date: string, type: 'individual' | 'group'): Promise<string[]> {
         try {
             console.log('🔍 Fetching available slots for:', date, type);
-              // Check calendar access first
+            // Check calendar access first
             const hasAccess = await this.testCalendarConnection();
             if (!hasAccess) {
                 console.log('⚠️ Calendar not accessible, returning default slots');
                 return this.getDefaultSlots(type);
             }
-            
+
             const events = await this.odooClientService.callOdooMethod(
                 'calendar.event',
                 'search_read',
-                [[  // Fix: wrap domain in array
+                [[
                     ['start', '>=', `${date} 00:00:00`],
                     ['start', '<=', `${date} 23:59:59`]
                 ]],
@@ -231,37 +252,54 @@ export class OdooCalendarService {
                     fields: ['start', 'stop']
                 }
             );
-            
+
             console.log('📅 Existing events for date:', events);
-            
-            // Generate available slots
+
+            // Extract booked times as 'h:mm AM/PM' for comparison
+            const bookedTimes = new Set(
+                (events as unknown[]).map((e) => {
+                    const startStr = (e as { start: string }).start;
+                    const time = new Date(startStr).toLocaleTimeString('en-US', {
+                        hour: 'numeric', minute: '2-digit', hour12: true
+                    });
+                    return time;
+                })
+            );
+
+            // Generate available slots in 'h:mm AM/PM' format
             const workingHours = { start: 9, end: 17 };
             const duration = type === 'individual' ? 1 : 1.5;
             const slots: string[] = [];
-            const bookedTimes = new Set((events as any[]).map((e: any) => e.start));
-
             for (let hour = workingHours.start; hour < workingHours.end; hour += duration) {
-                const slotTime = `${date} ${String(Math.floor(hour)).padStart(2, '0')}:${String((hour % 1) * 60).padStart(2, '0')}:00`;
+                const slotDate = new Date(`${date}T00:00:00`);
+                slotDate.setHours(Math.floor(hour), (hour % 1) * 60, 0, 0);
+                const slotTime = slotDate.toLocaleTimeString('en-US', {
+                    hour: 'numeric', minute: '2-digit', hour12: true
+                });
                 if (!bookedTimes.has(slotTime)) {
                     slots.push(slotTime);
                 }
             }
 
             console.log('✅ Available slots:', slots);
-            return slots;        } catch (error) {
+            return slots;
+        } catch (error) {
             console.error('❌ Error fetching available slots:', error);
             return this.getDefaultSlots(type);
         }
-    }    private getDefaultSlots(type: 'individual' | 'group'): string[] {
+    }
+
+    private getDefaultSlots(type: 'individual' | 'group'): string[] {
         const slots: string[] = [];
         const duration = type === 'individual' ? 1 : 1.5;
-        
-        // Generate time slots for standard working hours
         for (let hour = 9; hour < 17; hour += duration) {
-            const timeString = `${String(Math.floor(hour)).padStart(2, '0')}:${String((hour % 1) * 60).padStart(2, '0')}`;
+            const slotDate = new Date();
+            slotDate.setHours(Math.floor(hour), (hour % 1) * 60, 0, 0);
+            const timeString = slotDate.toLocaleTimeString('en-US', {
+                hour: 'numeric', minute: '2-digit', hour12: true
+            });
             slots.push(timeString);
         }
-        
         return slots;
     }
 }
