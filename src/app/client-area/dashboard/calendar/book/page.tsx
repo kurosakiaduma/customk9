@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -77,7 +77,7 @@ export default function BookAppointmentPage() {
   const [isBookingComplete, setIsBookingComplete] = useState(false);
     // Get the OdooClientService and OdooCalendarService from the ServiceFactory
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-  const odooCalendarService = new OdooCalendarService(odooClientService);
+  const odooCalendarService = useMemo(() => new OdooCalendarService(odooClientService), [odooClientService]);
   const odooProductService = new OdooProductService(odooClientService);
 
   // Load data from API on initial load
@@ -108,6 +108,28 @@ export default function BookAppointmentPage() {
     fetchData();
   }, [odooClientService]);
   
+  // --- Double-booking prevention: fetch available slots for selected date ---
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (bookingData.bookingType === 'personal' && bookingData.selectedDate) {
+        setIsLoading(true);
+        try {
+          const mappedType = bookingData.bookingType === 'personal' ? 'individual' : 'group';
+          const slots = await odooCalendarService.getAvailableSlots(bookingData.selectedDate, mappedType);
+          setAvailableSlots(slots);
+        } catch {
+          setAvailableSlots([]);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setAvailableSlots([]);
+      }
+    };
+    fetchSlots();
+  }, [bookingData.bookingType, bookingData.selectedDate, odooCalendarService]);
+
   // Move to next step if data for current step is valid
   const goToNextStep = async () => {
     console.log('Current step:', currentStep);
@@ -965,8 +987,7 @@ export default function BookAppointmentPage() {
       {/* Step 3: Select Date and Time */}
       {currentStep === 3 && bookingData.bookingType === 'personal' && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Choose Date & Time</h2>
-          
+          <h2 className="text-xl font-semibold mb-6 text-gray-800">Choose Date &amp; Time</h2>
           <div className="mb-8">
             <h3 className="font-medium text-gray-800 mb-3">Available Dates</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -974,6 +995,7 @@ export default function BookAppointmentPage() {
                 <button
                   key={date.dateString}
                   onClick={() => selectDate(date.dateString)}
+                  title={`Select date ${date.formattedDate}`}
                   className={`p-3 rounded-md text-center transition-colors ${
                     bookingData.selectedDate === date.dateString
                       ? 'bg-sky-600 text-white'
@@ -985,28 +1007,36 @@ export default function BookAppointmentPage() {
               ))}
             </div>
           </div>
-          
           {bookingData.selectedDate && (
             <div>
               <h3 className="font-medium text-gray-800 mb-3">Available Times</h3>
               <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
-                {TIME_SLOTS.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => selectTime(time)}
-                    className={`p-2 rounded-md text-center text-sm transition-colors ${
-                      bookingData.selectedTime === time
-                        ? 'bg-sky-600 text-white'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
+                {TIME_SLOTS.map((time) => {
+                  const isAvailable = availableSlots.includes(time);
+                  return (
+                    <button
+                      key={time}
+                      onClick={() => isAvailable && selectTime(time)}
+                      disabled={!isAvailable}
+                      title={isAvailable ? `Select time ${time}` : `Time ${time} is already booked`}
+                      className={`p-2 rounded-md text-center text-sm transition-colors ${
+                        bookingData.selectedTime === time && isAvailable
+                          ? 'bg-sky-600 text-white'
+                          : !isAvailable
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed line-through'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  );
+                })}
               </div>
+              {availableSlots.length === 0 && (
+                <div className="text-sm text-red-500 mt-4">No available slots for this date.</div>
+              )}
             </div>
           )}
-          
           <div className="mt-8 flex justify-between">
             <button
               onClick={goToPrevStep}
@@ -1087,7 +1117,7 @@ export default function BookAppointmentPage() {
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-600 mb-4">You don't have any dogs registered yet.</p>
+              <p className="text-gray-600 mb-4">You don&apos;t have any dogs registered yet.</p>
               <Link
                 href="/client-area/dashboard/dogs/add"
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-sm font-medium transition-colors"
@@ -1130,13 +1160,13 @@ export default function BookAppointmentPage() {
             </p>
             <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-2">
               <li>All dogs must be up-to-date on vaccinations and in good health to participate in training sessions.</li>
-              <li>Clients are responsible for their dogs' behavior during sessions. CustomK9 reserves the right to refuse service to dogs exhibiting dangerous behavior.</li>
+              <li>Clients are responsible for their dogs&apos; behavior during sessions. CustomK9 reserves the right to refuse service to dogs exhibiting dangerous behavior.</li>
               <li>Cancellations must be made at least 24 hours in advance to receive a full refund. Late cancellations may be subject to a cancellation fee.</li>
               <li>Appointments may be rescheduled subject to availability.</li>
               <li>Payment must be made at the time of booking to confirm your appointment.</li>
               <li>CustomK9 uses positive reinforcement methods. Clients are expected to continue these methods at home for best results.</li>
               <li>CustomK9 is not responsible for accidents or injuries that may occur during training sessions.</li>
-              <li>Results may vary based on consistent practice and the individual dogs' temperaments.</li>
+              <li>Results may vary based on consistent practice and the individual dogs&apos; temperaments.</li>
             </ol>
           </div>
           
