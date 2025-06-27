@@ -118,17 +118,40 @@ export default function BookAppointmentPage() {
       try {
         setIsLoading(true);
 
-        // Map bookingType from 'personal'/'public' to 'individual'/'group'
-        const mappedBookingType: 'individual' | 'group' = 
-          bookingData.bookingType === 'personal' ? 'individual' : 'group';
+        // --- Robustly parse selectedTime and add duration for stop time ---
+        let startStr = bookingData.selectedDate + ' ' + bookingData.selectedTime;
+        let stopStr = '';
+        try {
+          const parseTimeString = (timeStr: string): { hours: number, minutes: number } => {
+            const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (!match) throw new Error(`Invalid time format: ${timeStr}`);
+            let hours = parseInt(match[1], 10);
+            const minutes = parseInt(match[2], 10);
+            const ampm = match[3].toUpperCase();
+            if (ampm === 'PM' && hours < 12) hours += 12;
+            if (ampm === 'AM' && hours === 12) hours = 0;
+            return { hours, minutes };
+          };
+          const { hours, minutes } = parseTimeString(bookingData.selectedTime);
+          const startDateObj = new Date(bookingData.selectedDate);
+          startDateObj.setHours(hours, minutes, 0, 0);
+          const durationHours = bookingData.selectedService?.duration ? parseFloat(bookingData.selectedService.duration) : 1;
+          const stopDateObj = new Date(startDateObj.getTime() + durationHours * 60 * 60 * 1000);
+          startStr = `${bookingData.selectedDate} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+          stopStr = `${bookingData.selectedDate} ${String(stopDateObj.getHours()).padStart(2, '0')}:${String(stopDateObj.getMinutes()).padStart(2, '0')}:00`;
+        } catch (e) {
+          setError('Invalid time format for booking.');
+          setIsLoading(false);
+          return;
+        }
 
         // Call OdooCalendarService to create the appointment
         await odooCalendarService.createBooking({
           type: mappedBookingType,
           service: bookingData.selectedService?.name || bookingData.selectedEvent?.title || 'Unknown Service',
           dateTime: {
-            start: bookingData.selectedDate + ' ' + bookingData.selectedTime,
-            stop: bookingData.selectedDate + ' ' + (new Date(new Date(`2000-01-01T${bookingData.selectedTime}`).getTime() + (bookingData.selectedService?.duration ? parseFloat(bookingData.selectedService.duration) : 1) * 60 * 60 * 1000).toTimeString().substring(0, 5)),
+            start: startStr,
+            stop: stopStr,
           },
           dogs: bookingData.selectedDogs.map(dog => ({ name: dog.name, breed: dog.breed })),
           termsAccepted: bookingData.agreedToTerms
@@ -284,98 +307,90 @@ export default function BookAppointmentPage() {
   };
   
   // Complete booking process
-  const completeBooking = () => {
-    // Generate a random appointment ID
-    const appointmentId = Math.floor(Math.random() * 10000);
-    
-    // Ensure we have at least one dog image and name, with proper fallbacks
-    const dogImage = bookingData.selectedDogs.length > 0 
-      ? (bookingData.selectedDogs[0].image || "/images/dog-placeholder.jpg") 
-      : "/images/dog-placeholder.jpg";
-    
-    // Get the first dog's name or use a default if none available
-    const dogName = bookingData.selectedDogs.length > 0 
-      ? bookingData.selectedDogs[0].name 
-      : "Unknown Dog";
-    
-    // Create new appointment object with proper image handling and default values for required fields
-    const newAppointment = bookingData.bookingType === 'personal' 
-      ? {
-          id: appointmentId,
-          title: bookingData.selectedService?.name || "Personal Training Session", // Provide default title
-          date: bookingData.selectedDate,
-          time: bookingData.selectedTime,
-          duration: bookingData.selectedService?.duration || "60 min", // Provide default duration
-          location: 'CustomK9 Training Center',
-          trainer: 'John Doe',
-          dogName: dogName,
-          dogImage: dogImage,
-          dogNames: bookingData.selectedDogs.map(dog => dog.name),
-          dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
-          status: 'confirmed' as const, // Use const assertion to match the union type
-          totalPrice: bookingData.selectedService?.price || 0,
-          paymentMethod: bookingData.paymentMethod || "Cash",
-          createdAt: new Date().toISOString()
-        }
-      : {
-          id: appointmentId,
-          title: bookingData.selectedEvent?.title || "Group Training Event", // Provide default title
-          date: bookingData.selectedEvent?.date || bookingData.selectedDate,
-          time: bookingData.selectedEvent?.time || bookingData.selectedTime,
-          duration: bookingData.selectedEvent?.duration || "60 min", // Provide default duration
-          location: bookingData.selectedEvent?.location || "CustomK9 Training Center",
-          trainer: bookingData.selectedEvent?.trainer || "John Doe",
-          dogName: dogName,
-          dogImage: dogImage,
-          dogNames: bookingData.selectedDogs.map(dog => dog.name),
-          dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
-          status: 'confirmed' as const, // Use const assertion to match the union type
-          totalPrice: bookingData.selectedEvent?.price || 0,
-          paymentMethod: bookingData.paymentMethod || "Cash",
-          isGroupEvent: true,
-          createdAt: new Date().toISOString()
-        };
-    
-    // Ensure we never have empty properties that will be used as image sources
-    if (!newAppointment.dogImage || newAppointment.dogImage === "") {
-      newAppointment.dogImage = "/images/dog-placeholder.jpg";
-    }
-    
-    // Make sure all dogImages have values
-    if (newAppointment.dogImages) {
-      newAppointment.dogImages = newAppointment.dogImages.map(img => 
-        img && img !== "" ? img : "/images/dog-placeholder.jpg"
-      );
-    }
-    
-    // Apply the validation utility function - type cast to satisfy TypeScript
-    const validatedAppointment = ensureValidAppointmentImage(newAppointment as Appointment);
-    
-    // Save to localStorage
+  const completeBooking = async () => {
+    setIsLoading(true);
     try {
-      // Get existing appointments or initialize empty array
-      const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-      
-      // Validate existing appointments to ensure they have proper image properties
-      const validatedExistingAppointments = existingAppointments.map((apt: any) => 
-        ensureValidAppointmentImage(apt)
-      );
-      
-      // Add new appointment to array
-      validatedExistingAppointments.push(validatedAppointment);
-      
-      // Save updated array back to localStorage
-      localStorage.setItem('appointments', JSON.stringify(validatedExistingAppointments));
-      
-      // Update UI to show booking is complete
+      // Map bookingType from 'personal'/'public' to 'individual'/'group'
+      const mappedBookingType: 'individual' | 'group' = 
+        bookingData.bookingType === 'personal' ? 'individual' : 'group';
+
+      // Call OdooCalendarService to create the appointment in Odoo
+      await odooCalendarService.createBooking({
+        type: mappedBookingType,
+        service: bookingData.selectedService?.name || bookingData.selectedEvent?.title || 'Unknown Service',
+        dateTime: {
+          start: bookingData.selectedDate + ' ' + bookingData.selectedTime,
+          stop: bookingData.selectedDate + ' ' + (new Date(new Date(`2000-01-01T${bookingData.selectedTime}`).getTime() + (bookingData.selectedService?.duration ? parseFloat(bookingData.selectedService.duration) : 1) * 60 * 60 * 1000).toTimeString().substring(0, 5)),
+        },
+        dogs: bookingData.selectedDogs.map(dog => ({ name: dog.name, breed: dog.breed })),
+        termsAccepted: bookingData.agreedToTerms
+      });
       setIsBookingComplete(true);
       setCurrentStep(bookingData.bookingType === 'personal' ? 7 : 6);
-      
-      // Scroll to top to show confirmation
       window.scrollTo(0, 0);
     } catch (error) {
-      console.error('Error saving appointment:', error);
-      alert('There was an error saving your appointment. Please try again.');
+      // If Odoo fails, fallback to localStorage for demo resilience
+      console.error('Error saving appointment to Odoo, falling back to localStorage:', error);
+      // Generate a random appointment ID
+      const appointmentId = Math.floor(Math.random() * 10000);
+      const dogImage = bookingData.selectedDogs.length > 0 
+        ? (bookingData.selectedDogs[0].image || "/images/dog-placeholder.jpg") 
+        : "/images/dog-placeholder.jpg";
+      const dogName = bookingData.selectedDogs.length > 0 
+        ? bookingData.selectedDogs[0].name 
+        : "Unknown Dog";
+      const newAppointment = bookingData.bookingType === 'personal' 
+        ? {
+            id: appointmentId,
+            title: bookingData.selectedService?.name || "Personal Training Session",
+            date: bookingData.selectedDate,
+            time: bookingData.selectedTime,
+            duration: bookingData.selectedService?.duration || "60 min",
+            location: 'CustomK9 Training Center',
+            trainer: 'John Doe',
+            dogName: dogName,
+            dogImage: dogImage,
+            dogNames: bookingData.selectedDogs.map(dog => dog.name),
+            dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
+            status: 'confirmed' as const,
+            totalPrice: bookingData.selectedService?.price || 0,
+            paymentMethod: bookingData.paymentMethod || "Cash",
+            createdAt: new Date().toISOString()
+          }
+        : {
+            id: appointmentId,
+            title: bookingData.selectedEvent?.title || "Group Training Event",
+            date: bookingData.selectedEvent?.date || bookingData.selectedDate,
+            time: bookingData.selectedEvent?.time || bookingData.selectedTime,
+            duration: bookingData.selectedEvent?.duration || "90 min",
+            location: bookingData.selectedEvent?.location || 'CustomK9 Training Center',
+            trainer: bookingData.selectedEvent?.trainer || 'John Doe',
+            dogName: dogName,
+            dogImage: dogImage,
+            dogNames: bookingData.selectedDogs.map(dog => dog.name),
+            dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
+            status: 'confirmed' as const,
+            totalPrice: bookingData.selectedEvent?.price || 0,
+            paymentMethod: bookingData.paymentMethod || "Cash",
+            createdAt: new Date().toISOString()
+          };
+      const validatedAppointment = ensureValidAppointmentImage(newAppointment as Appointment);
+      try {
+        const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
+        const validatedExistingAppointments = existingAppointments.map((apt: any) => 
+          ensureValidAppointmentImage(apt)
+        );
+        validatedExistingAppointments.push(validatedAppointment);
+        localStorage.setItem('appointments', JSON.stringify(validatedExistingAppointments));
+        setIsBookingComplete(true);
+        setCurrentStep(bookingData.bookingType === 'personal' ? 7 : 6);
+        window.scrollTo(0, 0);
+      } catch (storageError) {
+        console.error('Error saving appointment to localStorage:', storageError);
+        alert('There was an error saving your appointment. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -882,19 +897,19 @@ export default function BookAppointmentPage() {
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Duration:</span>
-                          <p>{bookingData.selectedEvent.duration}</p>
+                          <p>{bookingData.selectedEvent?.duration}</p>
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Location:</span>
-                          <p>{bookingData.selectedEvent.location}</p>
+                          <p>{bookingData.selectedEvent?.location}</p>
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Trainer:</span>
-                          <p>{bookingData.selectedEvent.trainer}</p>
+                          <p>{bookingData.selectedEvent?.trainer}</p>
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Price:</span>
-                          <p className="font-semibold">KSh {bookingData.selectedEvent.price.toLocaleString()}</p>
+                          <p className="font-semibold">KSh {bookingData.selectedEvent?.price.toLocaleString()}</p>
                         </div>
                       </div>
                       
@@ -1360,4 +1375,4 @@ export default function BookAppointmentPage() {
       )}
     </div>
   );
-} 
+}
