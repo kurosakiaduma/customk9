@@ -123,7 +123,7 @@ export default function BookAppointmentPage() {
         let stopStr = '';
         try {
           const parseTimeString = (timeStr: string): { hours: number, minutes: number } => {
-            const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            const match = timeStr.match(/^(\\d{1,2}):(\\d{2})\\s*(AM|PM)$/i);
             if (!match) throw new Error(`Invalid time format: ${timeStr}`);
             let hours = parseInt(match[1], 10);
             const minutes = parseInt(match[2], 10);
@@ -144,6 +144,10 @@ export default function BookAppointmentPage() {
           setIsLoading(false);
           return;
         }
+
+        // Map bookingType from 'personal'/'public' to 'individual'/'group'
+        const mappedBookingType: 'individual' | 'group' = 
+          bookingData.bookingType === 'personal' ? 'individual' : 'group';
 
         // Call OdooCalendarService to create the appointment
         await odooCalendarService.createBooking({
@@ -1259,8 +1263,16 @@ export default function BookAppointmentPage() {
           
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">
             {bookingData.bookingType === 'personal' 
-              ? `Your ${bookingData.selectedService?.name} appointment has been scheduled for ${new Date(bookingData.selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${bookingData.selectedTime}.`
-              : `You have successfully joined the "${bookingData.selectedEvent?.title}" event on ${new Date(bookingData.selectedEvent?.date || '').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${bookingData.selectedEvent?.time}.`
+              ? `Your ${bookingData.selectedService?.name} appointment has been scheduled for ${new Date(bookingData.selectedDate).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric' 
+              })} at ${bookingData.selectedTime}.`
+              : `You have successfully joined the "${bookingData.selectedEvent?.title}" event on ${new Date(bookingData.selectedEvent?.date || '').toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric' 
+              })} at ${bookingData.selectedEvent?.time}.`
             }
           </p>
           
