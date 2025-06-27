@@ -4,34 +4,44 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Dog } from "@/types/dog";
+import ServiceFactory from "@/services/ServiceFactory";
 
-interface NewDogFormData {
-  name: string;
-  breed: string;
-  age: string;
-  gender: string;
-  weight: string;
-  birthday: string;
-  microchipped: boolean;
-  neutered: boolean;
-  image: string;
-  notes: string;
-}
-
-export default function AddDogPage() {
-  const router = useRouter();
-  const [formData, setFormData] = useState<NewDogFormData>({
-    name: '',
+const defaultDog: Partial<Dog> = {
+  name: '',
+  breed: '',
+  age: '',
+  gender: '',
+  level: 'Beginner',
+  progress: 0,
+  image: '/images/dog-placeholder.jpg',
+  dogInfo: {
     breed: '',
     age: '',
     gender: '',
-    weight: '',
-    birthday: '',
-    microchipped: false,
-    neutered: false,
-    image: '/images/dog-placeholder.jpg',
-    notes: '',
-  });
+    level: 'Beginner',
+    progress: 0,
+    sterilized: '',
+    dogSource: '',
+    timeWithDog: '',
+    medications: '',
+    currentDeworming: '',
+    tickFleaPreventative: '',
+    vetClinic: '',
+    vetName: '',
+    vetPhone: '',
+    medicalIssues: '',
+  },
+  lifestyle: {},
+  history: {},
+  goals: {},
+  behaviorChecklist: [],
+  notes: '',
+};
+
+export default function AddDogPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState<Partial<Dog>>(defaultDog);
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,15 +88,15 @@ export default function AddDogPage() {
   const validateForm = (): boolean => {
     const newErrors: {[key: string]: string} = {};
     
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "Dog's name is required";
     }
     
-    if (!formData.breed.trim()) {
+    if (!formData.breed?.trim()) {
       newErrors.breed = "Breed is required";
     }
     
-    if (!formData.age.trim()) {
+    if (!formData.age?.trim()) {
       newErrors.age = "Age is required";
     }
     
@@ -98,59 +108,67 @@ export default function AddDogPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
+  // Helper to ensure all fields in an object are non-undefined strings
+  function fillDefaults<T extends Record<string, string>>(obj: Partial<T>, defaults: T): T {
+    const result: Record<string, string> = { ...defaults };
+    for (const key in defaults) {
+      result[key] = typeof obj[key] === 'undefined' ? '' : obj[key] as string;
     }
-    
+    return result as T;
+  }
+
+  const defaultLifestyle = {
+    homeAloneLocation: '', sleepLocation: '', hasCrate: '', likesCrate: '', crateLocation: '', chewsCrate: '', hoursAlone: '', foodBrand: '', feedingSchedule: '', foodLeftOut: '', allergies: '', toyTypes: '', toyPlayTime: '', toyStorage: '', walkFrequency: '', walkPerson: '', walkDuration: '', otherExercise: '', walkEquipment: '', offLeash: '', forestVisits: '', pulling: '', pullingPrevention: ''
+  };
+  const defaultHistory = {
+    previousTraining: '', growled: '', growlDetails: '', bitten: '', biteDetails: '', biteInjury: '', fearful: '', fearDetails: '', newPeopleResponse: '', groomingResponse: '', ignoreReaction: '', previousServices: '', toolsUsed: ''
+  };
+  const defaultGoals = {
+    trainingGoals: '', idealDogBehavior: ''
+  };
+
+  // On submit, call OdooServerService.createDogProfile
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
     setIsSubmitting(true);
-    
-    // Create a new dog object
-    const newDog = {
-      id: Date.now().toString(), // Generate a unique ID
-      ...formData,
-      level: 'Beginner',
-      progress: 0,
-      lastCheckup: '',
-      vaccinations: [],
-      intakeDetails: {
-        dogSource: '',
-        timeWithDog: '',
-        medicalIssues: '',
-        vetClinic: '',
-        vetName: '',
-        vetPhone: '',
-        behaviorConcerns: '',
-      },
-    };
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      try {
-        // Get existing dogs from localStorage or initialize empty array
-        const existingDogs = JSON.parse(localStorage.getItem('dogs') || '[]');
-        
-        // Add new dog
-        const updatedDogs = [...existingDogs, newDog];
-        
-        // Save to localStorage
-        localStorage.setItem('dogs', JSON.stringify(updatedDogs));
-        
-        setSubmitSuccess(true);
-        
-        // Redirect to dogs page after successful submission
-        setTimeout(() => {
-          router.push('/client-area/dashboard/dogs');
-        }, 1500);
-      } catch (error) {
-        console.error('Error saving dog:', error);
-        setErrors({ submit: 'Failed to save dog. Please try again.' });
-        setIsSubmitting(false);
-      }
-    }, 1000);
+    setErrors({});
+    try {
+      const odooService = ServiceFactory.getInstance().getOdooClientService();
+      // Prepare payload matching DogProfileCreateInput (all required fields at root)
+      const dogPayload = {
+        name: formData.name || '',
+        breed: formData.breed || '',
+        age: formData.age || '',
+        gender: formData.gender || '',
+        sterilized: formData.dogInfo?.sterilized || '',
+        dogSource: formData.dogInfo?.dogSource || '',
+        timeWithDog: formData.dogInfo?.timeWithDog || '',
+        medications: formData.dogInfo?.medications || '',
+        currentDeworming: formData.dogInfo?.currentDeworming || '',
+        tickFleaPreventative: formData.dogInfo?.tickFleaPreventative || '',
+        vetClinic: formData.dogInfo?.vetClinic || '',
+        vetName: formData.dogInfo?.vetName || '',
+        vetPhone: formData.dogInfo?.vetPhone || '',
+        medicalIssues: formData.dogInfo?.medicalIssues || '',
+        lifestyle: fillDefaults(formData.lifestyle || {}, defaultLifestyle),
+        history: fillDefaults(formData.history || {}, defaultHistory),
+        goals: fillDefaults(formData.goals || {}, defaultGoals),
+        behaviorChecklist: formData.behaviorChecklist || [],
+        behaviorDetails: formData.behaviorDetails || '',
+        undesirableBehavior: formData.undesirableBehavior || '',
+        fearDescription: formData.fearDescription || '',
+        notes: formData.notes || '',
+      };
+      await odooService.createDogProfile(dogPayload);
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        router.push('/client-area/dashboard/dogs');
+      }, 1500);
+    } catch (error) {
+      setErrors({ submit: (error as Error).message || 'Failed to save dog. Please try again.' });
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -205,7 +223,7 @@ export default function AddDogPage() {
               <div className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Dog's Name <span className="text-red-500">*</span>
+                    Dog&apos;s Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -251,81 +269,40 @@ export default function AddDogPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-                      Weight
+                    <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+                      Gender <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      id="weight"
-                      name="weight"
-                      value={formData.weight}
+                    <select
+                      id="gender"
+                      name="gender"
+                      value={formData.gender}
                       onChange={handleChange}
-                      placeholder="e.g. 25 kg"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
+                      className={`w-full p-2 border ${errors.gender ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500`}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                    {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
-                    Gender <span className="text-red-500">*</span>
+                  <label htmlFor="sterilized" className="block text-sm font-medium text-gray-700 mb-1">
+                    Sterilized
                   </label>
                   <select
-                    id="gender"
-                    name="gender"
-                    value={formData.gender}
+                    id="sterilized"
+                    name="sterilized"
+                    value={formData.dogInfo?.sterilized}
                     onChange={handleChange}
-                    className={`w-full p-2 border ${errors.gender ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500`}
+                    className={`w-full p-2 border ${errors.sterilized ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500`}
                   >
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
                   </select>
-                  {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
-                    Birthday
-                  </label>
-                  <input
-                    type="date"
-                    id="birthday"
-                    name="birthday"
-                    value={formData.birthday}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="microchipped"
-                      name="microchipped"
-                      checked={formData.microchipped}
-                      onChange={handleChange}
-                      className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="microchipped" className="ml-2 block text-sm text-gray-700">
-                      Microchipped
-                    </label>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="neutered"
-                      name="neutered"
-                      checked={formData.neutered}
-                      onChange={handleChange}
-                      className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="neutered" className="ml-2 block text-sm text-gray-700">
-                      Spayed/Neutered
-                    </label>
-                  </div>
+                  {errors.sterilized && <p className="mt-1 text-sm text-red-500">{errors.sterilized}</p>}
                 </div>
               </div>
             </div>
@@ -340,7 +317,7 @@ export default function AddDogPage() {
                 </label>
                 <div className="relative h-48 w-full mb-4 bg-gray-100 rounded-md overflow-hidden">
                   <Image
-                    src={formData.image}
+                    src={formData.image || '/images/dog-placeholder.jpg'}
                     alt="Dog profile"
                     fill
                     sizes="100%"
@@ -435,4 +412,4 @@ export default function AddDogPage() {
       )}
     </div>
   );
-} 
+}
