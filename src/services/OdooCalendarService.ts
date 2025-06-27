@@ -1,4 +1,3 @@
-import { config } from '@/config/config';
 import { OdooClientService } from '@/services/odoo/OdooClientService';
 
 export interface CalendarEvent {
@@ -49,61 +48,67 @@ export class OdooCalendarService {
             console.error('❌ Calendar model not accessible:', error);
             return false;
         }
-    }    async getUpcomingAppointments(): Promise<CalendarEvent[]> {
-        const today = new Date().toISOString().split('T')[0];
-        
+    }   
+    async getUpcomingAppointments(): Promise<CalendarEvent[]> {
+        let currentUser = this.odooClientService.getCurrentUser();
+        if (!currentUser) {
+            // Try to restore session (works on client-side)
+            if (typeof window !== 'undefined' && this.odooClientService.checkUserSession) {
+                currentUser = await this.odooClientService.checkUserSession();
+            }
+        }
+        if (!currentUser) {
+            console.error('❌ No current user found (even after session restore attempt)');
+            return [];
+        }
+
         try {
-            console.log('🔍 Fetching calendar events from:', today);
-            
-            // Check if user is authenticated
-            const currentUser = this.odooClientService.getCurrentUser();
-            if (!currentUser) {
-                console.log('⚠️ User not authenticated');
-                return [];
-            }
-            
-            // First test if we have access
-            const hasAccess = await this.testCalendarConnection();
-            if (!hasAccess) {
-                console.log('⚠️ Calendar access failed, returning empty array');
-                return [];
-            }
-            // Build user-specific filter
-            const domainFilter: unknown[] = [['start', '>=', today]];
-            
-            // If not admin, filter by user's events only
-            if (!currentUser.isAdmin && currentUser.partnerId) {
-                domainFilter.push(['partner_ids', 'in', [currentUser.partnerId]]);
-            }
-            
+            console.log('🔍 Fetching calendar events for user:', currentUser.username);
+
+            // Build date filter for upcoming events
+            const now = new Date();
+            const oneMonthFromNow = new Date();
+            oneMonthFromNow.setMonth(now.getMonth() + 1);
+
+            const domainFilter: (string | number | (string | number)[])[] = [
+                ['start', '>=', now.toISOString()],
+                ['start', '<=', oneMonthFromNow.toISOString()],
+            ];
+
             console.log('🔍 Calendar domain filter:', domainFilter);
 
+            // User filtering is now handled automatically in callOdooMethod
             const result = await this.odooClientService.callOdooMethod(
-                'calendar.event', 
-                'search_read', 
+                'calendar.event',
+                'search_read',
                 [domainFilter],
                 {
                     fields: [
-                        'id', 
-                        'name', 
-                        'start', 
-                        'stop', 
-                        'duration',
-                        'location',
-                        'partner_ids',
-                        'description',
-                        'allday'
+                        'id', 'name', 'start', 'stop', 'duration', 'location',
+                        'partner_ids', 'description', 'user_id'
                     ],
-                    order: 'start asc',
-                    limit: 10
+                    limit: 20,
+                    order: 'start ASC'
                 }
             );
 
             console.log('📅 Calendar events fetched:', result);
-            console.log(`📅 Found ${(result as any[]).length} events for user ${currentUser.username}`);
-
+            // Use a type-safe mapping for Odoo event objects
+            type OdooEvent = {
+                id: number;
+                name?: string;
+                start: string;
+                stop: string;
+                duration?: number;
+                location?: string;
+                partner_ids?: number[];
+                description?: string | false;
+                user_id?: number;
+            };
+            const odooEvents = result as OdooEvent[];
+            console.log(`📅 Found ${odooEvents.length} events for user ${currentUser.username}`);
             // Transform the data to match our interface
-            return (result as any[]).map((event: any) => ({
+            return odooEvents.map((event) => ({
                 id: event.id,
                 name: event.name || 'Training Session',
                 start: event.start,
@@ -114,17 +119,19 @@ export class OdooCalendarService {
                 dog_name: this.getDogNameFromDescription(event.description),
                 dog_image: '/images/dog-placeholder.jpg',
                 state: 'confirmed' as const
-            }));} catch (error) {
-            console.error('❌ Failed to fetch appointments:', error);
-            // Return empty array instead of mock data
+            }));        } catch (error) {
+            console.error('❌ Calendar model not accessible:', error);
+            console.log('⚠️ Calendar access failed, returning empty array');
             return [];
         }
-    }    private getTrainerName(partnerIds: number[]): string {
+    }
+    
+    private getTrainerName(partnerIds?: number[]): string {
         // For now return a default name, in a real implementation we would fetch the partner name
         return 'Assigned Trainer';
     }
 
-    private getDogNameFromDescription(description: string | false): string {
+    private getDogNameFromDescription(description: string | false | undefined): string {
         if (!description) return 'Training Dog';
         
         // Try to extract dog name from description
@@ -143,47 +150,63 @@ export class OdooCalendarService {
             default:
                 return 'confirmed';
         }
-    }
-
-    async createBooking(details: BookingDetails): Promise<number> {
+    }    async createBooking(details: BookingDetails): Promise<number> {
         const eventData = this.convertBookingToEvent(details);
-        
         try {
             console.log('📅 Creating calendar event:', eventData);
-            
-            // Check calendar access first
-            const hasAccess = await this.testCalendarConnection();
-            if (!hasAccess) {
-                console.log('⚠️ Calendar not accessible, simulating booking creation');
-                return Math.floor(Math.random() * 1000) + 100; // Return mock ID
+            // Get current user info to link the appointment properly
+            const currentUser = this.odooClientService.getCurrentUser();
+            if (currentUser?.partnerId && currentUser?.uid) {
+                // Always set the booking user as the event owner and participant
+                eventData.partner_ids = [[6, 0, [currentUser.partnerId]]];
+                eventData.user_id = currentUser.uid;
             }
-
             const result = await this.odooClientService.callOdooMethod(
                 'calendar.event',
                 'create',
                 [eventData]
             );
-
-            console.log('✅ Calendar event created:', result);
+            console.log('✅ Calendar event created with ID:', result);
             return result as number;
         } catch (error) {
             console.error('❌ Error creating booking:', error);
-            throw error;
+            throw new Error(`Failed to create appointment: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }
-
-    private convertBookingToEvent(booking: BookingDetails): any {
+    }    private convertBookingToEvent(booking: BookingDetails): Record<string, unknown> {
         const duration = booking.type === 'individual' ? 1.0 : 1.5;
         const location = booking.type === 'individual' ? 'Training Room' : 'Training Hall';
-        
+        // Parse start as either ISO or 'YYYY-MM-DD h:mm AM/PM'
+        let startDate: Date | null = null;
+        if (booking.dateTime.start) {
+            // Try ISO first
+            startDate = new Date(booking.dateTime.start);
+            if (isNaN(startDate.getTime())) {
+                // Fallback: parse 'YYYY-MM-DD h:mm AM/PM'
+                const match = booking.dateTime.start.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+                if (match) {
+                    const [_, date, hourStr, minStr, ampm] = match;
+                    let hour = parseInt(hourStr, 10);
+                    const min = parseInt(minStr, 10);
+                    if (ampm.toUpperCase() === 'PM' && hour < 12) hour += 12;
+                    if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+                    startDate = new Date(`${date}T${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:00`);
+                }
+            }
+        }
+        if (!startDate || isNaN(startDate.getTime())) {
+            throw new Error(`Invalid date format for appointment booking.\nstart: ${booking.dateTime.start}`);
+        }
+        // Compute stop by adding duration (in hours) to start
+        const stopDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
         return {
             name: `${booking.service} - ${booking.type} session`,
-            start: booking.dateTime.start,
-            stop: booking.dateTime.stop,
+            start: startDate.toISOString().replace('T', ' ').substring(0, 19),
+            stop: stopDate.toISOString().replace('T', ' ').substring(0, 19),
             duration: duration,
             location: location,
             description: `Service: ${booking.service}\nDogs: ${booking.dogs.map(d => d.name).join(', ')}\nType: ${booking.type}`,
-            allday: false
+            allday: false,
+            show_as: 'busy'
         };
     }
 
