@@ -82,7 +82,7 @@ CustomK9 is a sophisticated business management platform designed specifically f
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/customk9.git
+   git clone https://github.com/kurosakiaduma/customk9.git
    cd customk9
    ```
 
@@ -238,7 +238,7 @@ vercel --prod
 
 ## 📞 Support & Contact
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/customk9/issues)
+- **Issues**: [GitHub Issues](https://github.com/kurosakiaduma/customk9/issues)
 - **Documentation**: Available in the `docs/` directory
 - **Development**: See [Development Roadmap](CUSTOMK9_DEVELOPMENT_ROADMAP.md)
 
