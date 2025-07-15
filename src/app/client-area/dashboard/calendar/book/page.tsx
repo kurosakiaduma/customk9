@@ -10,7 +10,7 @@ import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService } from "@/services/OdooCalendarService";
 import { OdooProductService, Service } from "@/services/OdooProductService";
 import { BookingService, BookingRequest, BookingResult, BookingConflictError } from "@/services/booking";
-import { Dog } from '@/types/odoo';
+import { Dog } from '@/types/dog';
 
 
 // Define interfaces for our data
