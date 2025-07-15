@@ -84,6 +84,8 @@ export interface Dog {
   progress: number;
   image: string;
   dogInfo: DogInfo;
+  sterilized: string | boolean;
+  dog_source?: string; // snake_case for Odoo
   lifestyle: Partial<DogLifestyle>;
   history: Partial<DogHistory>;
   goals: Partial<DogGoals>;
@@ -95,7 +97,7 @@ export interface Dog {
   undesirable_behavior?: string;
   fearDescription?: string;
   fear_description?: string;
-  ownerId?: number | string;
+  owner_id?: number | string;
   notes?: string;
   likesAboutDog?: string[];
   dislikesAboutDog?: string[];
