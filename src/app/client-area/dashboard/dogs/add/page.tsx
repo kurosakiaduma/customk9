@@ -352,7 +352,7 @@ export default function AddDogPage() {
                   <select
                     id="sterilized"
                     name="sterilized"
-                    value={formData.dogInfo?.sterilized}
+                    value={typeof formData.dogInfo?.sterilized === 'boolean' ? (formData.dogInfo?.sterilized ? 'Yes' : 'No') : (formData.dogInfo?.sterilized || '')}
                     onChange={handleChange}
                     className={`w-full p-2 border ${errors.sterilized ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500`}
                   >
