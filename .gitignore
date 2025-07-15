@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PowerShell
+*.ps1
+
+# Bash Scripts
+*.sh
+
+# Python Scripts
+*.py
