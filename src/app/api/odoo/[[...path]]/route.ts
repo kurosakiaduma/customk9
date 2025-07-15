@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Handle POST requests (like your authentication)
-export async function POST(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     const body = await request.json();
     // Await params as required by Next.js App Router
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: { path: s
 }
 
 // Handle GET requests if needed
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     // Await params as required by Next.js App Router
     const awaitedParams = await params;
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
 }
 
 // Handle PUT requests
-export async function PUT(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     const body = await request.json();
     const awaitedParams = await params;
@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: { path: st
 }
 
 // Handle DELETE requests
-export async function DELETE(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     const awaitedParams = await params;
     const path = awaitedParams.path ? awaitedParams.path.join('/') : '';
