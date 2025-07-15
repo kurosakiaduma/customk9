@@ -179,7 +179,7 @@ export class AuthService {
       try {
         const sessionData = {
           sessionInfo: odooClient.sessionInfo,
-          currentUser: odooClient.getCurrentUser,
+          currentUser: user, // Use the user object, not the getter function
           timestamp: Date.now(),
         };
         
@@ -391,9 +391,6 @@ export class AuthService {
       document.cookie = `${AuthService.REMEMBER_ME_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
     }
   }
-
-  // getCurrentUser is already implemented above
-  // Remove this duplicate method
 
   private setAuthData(user: AuthUser): void {
     // Get session info from Odoo client
