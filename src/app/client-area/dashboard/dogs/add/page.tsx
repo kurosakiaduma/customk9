@@ -31,6 +31,7 @@ const defaultDog: Partial<Dog> = {
     vetName: '',
     vetPhone: '',
     medicalIssues: '',
+    vetAddress: '',
   },
   lifestyle: {},
   history: {},
