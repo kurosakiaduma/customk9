@@ -799,8 +799,8 @@ export default class OdooClientService {
       }
 
       // Use admin credentials from config
-      const adminUsername = process.env.NEXT_PUBLIC_ODOO_ADMIN_USERNAME || 'admin@customk9.com';
-      const adminPassword = process.env.NEXT_PUBLIC_ODOO_ADMIN_PASSWORD || 'Qwerty@254';
+      const adminUsername = process.env.NEXT_PUBLIC_ODOO_ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.NEXT_PUBLIC_ODOO_ADMIN_PASSWORD || 'admin';
 
       logger.debug('Authenticating as admin', { db, username: adminUsername });
 

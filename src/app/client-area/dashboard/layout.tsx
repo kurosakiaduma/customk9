@@ -110,7 +110,7 @@ export default function DashboardLayout({
           if (!hasToken) {
             // No valid session or token, redirect to login
             console.log('No valid session or token found, redirecting to login');
-            window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname);
+            window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname ?? "");
             return;
           }
         }
@@ -122,7 +122,7 @@ export default function DashboardLayout({
       } catch (error) {
         console.error('Error checking authentication:', error);
         // On error, redirect to login
-        window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname);
+        window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname ?? "");
       }
     };
     
