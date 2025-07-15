@@ -254,7 +254,7 @@ export class AuthService {
     return localStorage.getItem(AuthService.TOKEN_KEY);
   }
 
-  private getCurrentUser(): AuthUser | null {
+  public getCurrentUser(): AuthUser | null {
     // Return from memory if available
     if (this.currentUser) {
       return this.currentUser;
