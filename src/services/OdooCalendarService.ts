@@ -66,7 +66,7 @@ export class OdooCalendarService {
         }
 
         try {
-            console.log('🔍 Fetching calendar events for user:', currentUser.username);
+            console.log('🔍 Fetching calendar events for user:', currentUser);
 
             // Build date filters
             const now = new Date();
@@ -81,7 +81,7 @@ export class OdooCalendarService {
                 ['start', '<=', oneMonthFromNow.toISOString()],
                 '|',
                 ['partner_ids', 'in', [currentUser.partnerId || 0]],
-                ['user_id', '=', currentUser.uid]
+                ['user_id', '=', currentUser.id]
             ];
 
             console.log('🔍 Calendar domain filter (fixed):', domainFilter);
@@ -171,10 +171,10 @@ export class OdooCalendarService {
             console.log('📅 Creating calendar event:', eventData);
             // Get current user info to link the appointment properly
             const currentUser = this.odooClientService.getCurrentUser();
-            if (currentUser?.partnerId && currentUser?.uid) {
+            if (currentUser?.partnerId && currentUser?.id) {
                 // Always set the booking user as the event owner and participant
                 eventData.partner_ids = [[6, 0, [currentUser.partnerId]]];
-                eventData.user_id = currentUser.uid;
+                eventData.user_id = currentUser.id;
             }
             const result = await this.odooClientService.callOdooMethod(
                 'calendar.event',

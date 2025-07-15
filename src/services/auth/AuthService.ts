@@ -12,7 +12,7 @@ export interface AuthUser {
   context?: {
     lang: string;
     tz: string;
-    uid: number;
+    id: number;
     [key: string]: unknown;
   };
   groupsId?: number[];
@@ -45,7 +45,7 @@ export class AuthService {
       
       // Log the response structure with types
       console.log('Response structure:', {
-        'result.uid (number)': result?.uid,
+        'result.id (number)': result?.id,
         'result.id (number)': result?.id,
         'result.name (string)': result?.name,
         'result.email (string)': result?.email,
@@ -67,7 +67,7 @@ export class AuthService {
       console.groupEnd();
 
       // Check if the result contains a valid user ID
-      const userId = result?.uid || result?.id;
+      const userId = result?.id || result?.id;
       if (!userId) {
         console.error('❌ AuthService: Authentication failed - no user ID in response');
         throw new Error('Authentication failed: Invalid credentials or server error');
@@ -97,7 +97,7 @@ export class AuthService {
         context = {
           lang: typeof lang === 'string' ? lang : 'en_US',
           tz: typeof tz === 'string' ? tz : 'UTC',
-          uid: userId,
+          id: userId,
           ...rest
         };
       }

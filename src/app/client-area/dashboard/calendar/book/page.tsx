@@ -265,8 +265,8 @@ export default function BookAppointmentPage() {
         paymentMethod: 'credit_card'
       });
       
-      // Redirect to booking confirmation page
-      router.push(`/client-area/dashboard/calendar/book/confirmation?bookingId=${bookingId}`);
+      // Redirect to general appointments page after successful booking
+      router.push('/client-area/dashboard/calendar');
       
       return result;
       

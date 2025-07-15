@@ -62,7 +62,7 @@ export default function ClientAreaPage() {
             const sessionData = JSON.parse(odooSessionValue);
             console.log('Parsed session data:', sessionData);
             // Check if session exists and has required data
-            if (sessionData.sessionInfo && sessionData.sessionInfo.uid) {
+            if (sessionData.sessionInfo && sessionData.sessionInfo.id) {
               // Check if session is not expired
               const now = Date.now();
               const expiresAt = sessionData.sessionInfo.expires;

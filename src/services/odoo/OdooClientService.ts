@@ -72,7 +72,7 @@ type OdooClientEvents = {
 };
 
 interface CurrentUser {
-  uid: number;
+  id: number;
   username: string;
   displayName?: string;
   partnerId?: number | [number, string] | null;
@@ -417,11 +417,11 @@ interface CurrentUser {
           cookies: response.headers?.['set-cookie'] || []
         });
 
-        // Check if login was successful by looking for a valid UID
-        const effectiveUid = result?.uid;
+        // Check if login was successful by looking for a valid id
+        const effectiveUid = result?.id;
         if (!effectiveUid) {
-          const errorMessage = result?.error?.data?.message || 'Authentication failed: No valid UID received';
-          logger.error('Login failed - missing UID', { error: errorMessage });
+          const errorMessage = result?.error?.data?.message || 'Authentication failed: No valid id received';
+          logger.error('Login failed - missing id', { error: errorMessage });
           throw new Error(errorMessage);
         }
         if (!sessionId) {
@@ -435,7 +435,7 @@ interface CurrentUser {
 
         // Set session info with password
         this._sessionInfo = {
-          uid: effectiveUid,
+          id: effectiveUid,
           username: result?.username || login,  // Fallback to login if username not provided
           name: result?.name || login,          // Fallback to login if name not provided
           company_id: result?.company_id || 1,  // Default company ID
@@ -451,7 +451,7 @@ interface CurrentUser {
         };
 
         console.log('🔑 Stored session info:', {
-          uid: this._sessionInfo.uid,
+          id: this._sessionInfo.id,
           username: this._sessionInfo.username,
           hasPassword: !!this._sessionInfo.password,
           passwordLength: typeof this._sessionInfo.password === 'string' ? this._sessionInfo.password.length : 0,
@@ -461,7 +461,7 @@ interface CurrentUser {
 
         // Set current user
         this._currentUser = {
-          uid: result.uid,
+          id: result.id,
           username: result.username,
           displayName: result.name,
           partnerId: result.partner_id,
@@ -504,7 +504,7 @@ interface CurrentUser {
 
   private mapCurrentUserToOdooUser(user: CurrentUser): OdooUser {
     return {
-      id: user.uid,
+      id: user.id,
       name: user.displayName || user.username,
       email: user.username,
       partner_id: Array.isArray(user.partnerId) ? user.partnerId[0] : user.partnerId || null,
@@ -579,10 +579,10 @@ interface CurrentUser {
       if (!options.skipAuthCheck) {
         if (options.useAdminSession) {
           // Ensure admin session exists and is valid
-          if (!this._adminSessionInfo?.uid) {
+          if (!this._adminSessionInfo?.id) {
             await this.authenticateAsAdmin();
           }
-          currentUid = this._adminSessionInfo?.uid || 0;
+          currentUid = this._adminSessionInfo?.id || 0;
           currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
           currentSessionId = this._adminSessionInfo?.session_id;
         } else {
@@ -594,7 +594,7 @@ interface CurrentUser {
           } else {
             // Ensure user session is valid
             await this.ensureAuthenticated();
-            currentUid = this._sessionInfo?.uid || 0;
+            currentUid = this._sessionInfo?.id || 0;
             currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
             currentSessionId = this._sessionInfo?.session_id;
           }
@@ -724,7 +724,7 @@ interface CurrentUser {
       console.log('🔑 Current session info:', {
         useAdminSession: options.useAdminSession,
         hasSessionInfo: !!sessionInfo,
-        uid: sessionInfo?.uid || 0,
+        id: sessionInfo?.id || 0,
         hasPassword: !!sessionInfo?.password,
         hasSessionId: !!sessionInfo?.session_id,
         passwordLength: sessionInfo?.password ? String(sessionInfo.password).length : 0,
@@ -746,7 +746,7 @@ interface CurrentUser {
             if (updatedSessionInfo?.password || updatedSessionInfo?.session_id) {
               console.log('✅ Successfully re-authenticated as admin');
               // Update current credentials with the new session info
-              currentUid = updatedSessionInfo.uid || 0;
+              currentUid = updatedSessionInfo.id || 0;
               currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
               currentSessionId = updatedSessionInfo.session_id;
             } else {
@@ -761,7 +761,7 @@ interface CurrentUser {
         }
       } else {
         // Use the existing session info
-        currentUid = sessionInfo?.uid || 0;
+        currentUid = sessionInfo?.id || 0;
         currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
         currentSessionId = sessionInfo?.session_id;
       }
@@ -800,7 +800,7 @@ interface CurrentUser {
             }
           },
           sessionInfo: {
-            uid: sessionInfo?.uid,
+            id: sessionInfo?.id,
             username: sessionInfo?.username,
             isAdmin: options.useAdminSession,
             sessionId: sessionInfo?.session_id ? '********' : 'not-set',
@@ -960,7 +960,7 @@ interface CurrentUser {
         throw error;
       }
 
-      if (!response.data?.result?.uid) {
+      if (!response.data?.result?.id) {
         interface ErrorWithResponse extends Error {
           response?: unknown;
           status?: number;
@@ -993,7 +993,7 @@ interface CurrentUser {
 
       // Create and store admin session info
       const sessionInfo: OdooSessionInfo = {
-        uid: response.data.result.uid,
+        id: response.data.result.id,
         username: response.data.result.name || adminUsername,
         name: response.data.result.name || adminUsername,
         session_id: sessionId,
@@ -1004,14 +1004,14 @@ interface CurrentUser {
         is_system: response.data.result.is_system || false,
         company_id: response.data.result.company_id || 1,
         partner_id: response.data.result.partner_id || null,
-        user_id: response.data.result.uid,
+        user_id: response.data.result.id,
         tz: response.data.result.tz,
         lang: response.data.result.user_context?.lang || 'en_US',
       };
 
       // Debug logging for the created session info
       console.log('🔑 Created admin session info:', {
-        uid: sessionInfo.uid,
+        id: sessionInfo.id,
         username: sessionInfo.username,
         hasPassword: !!sessionInfo.password,
         passwordLength: sessionInfo.password ? String(sessionInfo.password).length : 0,
@@ -1022,7 +1022,7 @@ interface CurrentUser {
       });
 
       this._adminSessionInfo = sessionInfo;
-      logger.info(`Successfully authenticated as admin: ${sessionInfo.username} (UID: ${sessionInfo.uid})`);
+      logger.info(`Successfully authenticated as admin: ${sessionInfo.username} (id: ${sessionInfo.id})`);
       
       // Update the client with the new session ID and headers
       if (sessionId) {
@@ -1104,11 +1104,11 @@ interface CurrentUser {
       
       const sessionInfo = response.data?.result || null;
       
-      if (sessionInfo?.uid) {
+      if (sessionInfo?.id) {
         this._sessionInfo = sessionInfo;
         this._isAuthenticated = true;
         this._currentUser = {
-          uid: sessionInfo.uid,
+          id: sessionInfo.id,
           username: sessionInfo.username || '',
           displayName: sessionInfo.name || '',
           partnerId: sessionInfo.partner_id,
@@ -1160,7 +1160,7 @@ interface CurrentUser {
       logger.debug('Refreshing session');
       const response = await this._client.post('/web/session/refresh', {});
       
-      if (response.data?.result?.uid) {
+      if (response.data?.result?.id) {
         this._sessionInfo.expires = Date.now() + SESSION_TIMEOUT_MS;
         if (this._currentUser) {
           this._currentUser.expires_at = typeof this._sessionInfo.expires === 'number' ? this._sessionInfo.expires : undefined;
@@ -1187,7 +1187,7 @@ interface CurrentUser {
       return [];
     }
     
-    return [['create_uid', '=', this._currentUser?.uid || 0]];
+    return [['create_uid', '=', this._currentUser?.id || 0]];
   }
 
   private handleError(error: unknown, context: string = ''): never {
@@ -1293,7 +1293,7 @@ interface CurrentUser {
       }
 
       // Validate required session data
-      if (!sessionInfo?.uid || !currentUser?.uid) {
+      if (!sessionInfo?.id || !currentUser?.id) {
         if (this._config.debug) {
           console.log('Invalid odoo_session data in storage');
         }
