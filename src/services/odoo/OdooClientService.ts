@@ -3,7 +3,6 @@ import {
   OdooSessionInfo,
   OdooUser,
   OdooError,
-  OdooDomainItem,
   ProjectTask,
   CalendarEvent
 } from './odoo.types';
@@ -32,7 +31,8 @@ const logger = {
   },
 };
 
-type OdooDomain = Array<string | number | boolean | OdooDomainItem>;
+type OdooDomainItem = [string, string, unknown];
+type OdooDomain = OdooDomainItem[];
 
 // Re-export types for convenience
 export type {
@@ -1505,7 +1505,7 @@ export default class OdooClientService {
       
       const domain: OdooDomain = [
         ['id', 'in', partner[0].child_ids],
-        ...(dogCategoryId ? [[ 'category_id', 'in', [dogCategoryId] ]] : [])
+        ...(dogCategoryId ? [ ['category_id', 'in', [dogCategoryId]] as OdooDomainItem ] : [])
       ];
 
       const fields = [
