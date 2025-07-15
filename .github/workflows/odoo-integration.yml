@@ -1,0 +1,47 @@
+name: Odoo Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  odoo-integration:
+    runs-on: ubuntu-latest
+    
+    env:
+      CUSTOMK9_API_URL: ${{ secrets.CUSTOMK9_API_URL }}
+      CUSTOMK9_DB: ${{ secrets.CUSTOMK9_DB }}
+      CUSTOMK9_USERNAME: ${{ secrets.CUSTOMK9_USERNAME }}
+      CUSTOMK9_PASSWORD: ${{ secrets.CUSTOMK9_PASSWORD }}
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+    
+    - name: Install Python dependencies
+      run: |
+        pip install requests
+        pip install pytest
+    
+    - name: Run Integration Tests
+      run: |
+        python -m pytest tests/odoo_integration/ -v
+        
+    - name: Test API Endpoints
+      run: |
+        python -c "
+        import requests
+        response = requests.get('${{ env.CUSTOMK9_API_URL }}/api/health')
+        assert response.status_code == 200
+        "
+    
+    - name: Verify Module Status
+      run: |
+        ./check-module-status.sh
+        ./test-module-syntax.sh

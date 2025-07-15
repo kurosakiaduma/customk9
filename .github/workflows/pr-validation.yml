@@ -1,0 +1,39 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  pr-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check PR Title Format
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Check PR Body
+      run: |
+        if [ -z "${{ github.event.pull_request.body }}" ]; then
+          echo "PR body is empty"
+          exit 1
+        fi
+    
+    - name: Check Required Files
+      run: |
+        if [ ! -f "README.md" ]; then
+          echo "README.md is required"
+          exit 1
+        fi
+        if [ ! -f "CHANGELOG.md" ]; then
+          echo "CHANGELOG.md is required"
+          exit 1
+        fi
+    
+    - name: Check for Breaking Changes
+      run: |
+        git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -q "BREAKING CHANGE" && echo "Breaking changes detected" || echo "No breaking changes"
