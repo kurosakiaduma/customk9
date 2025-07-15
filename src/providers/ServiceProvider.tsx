@@ -16,8 +16,9 @@ export default function ServiceProvider({ children }: ServiceProviderProps) {
       // Initialize services if not already initialized
       ServiceFactory.initialize({
         odoo: config.odoo, // Pass the existing Odoo server config
-        odooClient: { // Add the client-side Odoo service config
-          baseUrl: '/api/odoo', // Points to your Next.js API proxy
+        odooClient: { // client-side Odoo service config
+          baseUrl: '/api/odoo', // Points to Next.js API proxy
+          db: 'customk9', // database name from config
         },
       });
       setIsInitialized(true);
