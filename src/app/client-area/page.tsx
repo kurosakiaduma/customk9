@@ -5,9 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Navigation from "../components/layout/Navigation";
 import Footer from "../components/layout/Footer";
-import Link from "next/link";
 import ServiceFactory from "@/services/ServiceFactory";
-import { AuthUser } from "@/services/auth/AuthService";
 
 export default function ClientAreaPage() {
   const [activeTab, setActiveTab] = useState("login");
@@ -37,29 +35,45 @@ export default function ClientAreaPage() {
         const loggedOut = urlParams.get('logout') === 'true';
         
         if (loggedOut) {
-          // User just logged out, don't redirect
-          console.log('User just logged out, staying on login page');
+          // User just logged out, clear any existing session
+          console.log('User just logged out, clearing session');
+          await authService.logout();
           setIsAuthenticated(false);
           setCheckingAuth(false);
+          // Remove the logout parameter from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
           return;
         }
         
-        // First check the old token-based auth (for backward compatibility)
-        const hasToken = authService.isAuthenticated();
-        if (hasToken) {
-          setIsAuthenticated(true);
-          setCheckingAuth(false);
-          return;
-        }
+        console.log('Checking authentication status...');
         
-        // Then check for Odoo session
+        // First try to restore session from storage
         const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-        const currentUser = await odooClientService.checkUserSession();
-        if (currentUser) {
+        
+        // Check if we have a valid session in memory or storage
+        const hasValidSession = odooClientService.isAuthenticated;
+        console.log('Has valid session:', hasValidSession);
+        
+        if (hasValidSession) {
+          console.log('Found valid session, user is authenticated');
           setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
+          setCheckingAuth(false);
+          return;
         }
+        
+        // Check the old token-based auth (for backward compatibility)
+        const hasToken = authService.isAuthenticated();
+        console.log('Has token:', hasToken);
+        
+        if (hasToken) {
+          console.log('Found token, user is authenticated');
+          setIsAuthenticated(true);
+          setCheckingAuth(false);
+          return;
+        }
+        
+        console.log('No valid session or token found');
+        setIsAuthenticated(false);
       } catch (error) {
         console.error('Error checking authentication:', error);
         setIsAuthenticated(false);
@@ -77,7 +91,19 @@ export default function ClientAreaPage() {
   // Redirect to dashboard if authenticated (but not if just logged out)
   useEffect(() => {
     if (isAuthenticated && !checkingAuth) {
-      router.push("/client-area/dashboard");
+      // Check for redirect URL in query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirect');
+      
+      if (redirectTo) {
+        // If we have a redirect URL, use it
+        console.log('Redirecting to:', redirectTo);
+        router.push(decodeURIComponent(redirectTo));
+      } else {
+        // Otherwise go to dashboard
+        console.log('No redirect URL, going to dashboard');
+        router.push("/client-area/dashboard");
+      }
     }
   }, [isAuthenticated, checkingAuth, router]);
 
@@ -91,11 +117,28 @@ export default function ClientAreaPage() {
       if (!email || !password) {
         throw new Error("Please fill in all fields");
       }
-        const user = await authService.login(email, password);
+      
+      console.log('Attempting login for:', email);
+      const user = await authService.login(email, password);
       console.log('Login successful for user:', user.email);
+      
+      // Store remember me preference
+      if (rememberMe) {
+        localStorage.setItem('customk9_remember_me', 'true');
+      } else {
+        localStorage.removeItem('customk9_remember_me');
+      }
+      
+      // Set authentication state
       setIsAuthenticated(true);
+      
+      // The useEffect will handle the redirect
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Login failed");
+      console.error('Login error:', error);
+      setFormError(error instanceof Error ? error.message : "Login failed. Please try again.");
+      
+      // Clear sensitive data on error
+      setPassword('');
     } finally {
       setIsLoading(false);
     }
@@ -295,7 +338,7 @@ export default function ClientAreaPage() {
                     <div>
                       <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700">Email Address</label>
                       <input 
-                        type="email" 
+                        type="username" 
                         id="email" 
                         className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" 
                         placeholder="your@email.com"
@@ -352,7 +395,7 @@ export default function ClientAreaPage() {
                   </form>
                   <div className="mt-6 text-center">
                     <p className="text-gray-600">
-                      Don't have an account?{" "}
+                      Don&apos;t have an account?{" "}
                       <button 
                         className="text-sky-600 hover:text-sky-800 font-medium"
                         onClick={() => setActiveTab("register")}

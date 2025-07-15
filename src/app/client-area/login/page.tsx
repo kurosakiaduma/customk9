@@ -1,44 +1,57 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import Link from 'next/link';
 import ServiceFactory from '@/services/ServiceFactory';
 
 export default function ClientLoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');    try {
+    setError('');
+    
+    try {
       const odooService = ServiceFactory.getInstance().getOdooClientService();
-      const sessionInfo = await odooService.authenticateUser(email, password);
+      
+      // Use the login method with username and password
+      const sessionInfo = await odooService.login(username, password);
       
       console.log('✅ Login successful:', {
-        uid: sessionInfo.uid,
-        username: sessionInfo.username,
-        isAdmin: sessionInfo.is_admin,
-        partnerId: sessionInfo.partner_id
+        id: sessionInfo.id,
+        name: sessionInfo.name,
+        is_admin: sessionInfo.is_admin,
+        partner_id: sessionInfo.partner_id
       });
+      
+      // Get the current user info
+      const currentUser = odooService.currentUser;
+      
+      if (!currentUser) {
+        throw new Error('Failed to get user information');
+      }
       
       // Store comprehensive session information for persistence
       localStorage.setItem('customk9_user_session', JSON.stringify({
-        email: email,
-        uid: sessionInfo.uid,
-        username: sessionInfo.username || email, // Fallback to email if no username
-        displayName: sessionInfo.username || email.split('@')[0], // Extract name from email
-        isAdmin: sessionInfo.is_admin || false,
-        partnerId: sessionInfo.partner_id,
+        id: currentUser.id,
+        name: currentUser.name || username,
+        email: username.includes('@') ? username : '',
+        partner_id: currentUser.partner_id,
+        is_admin: currentUser.is_admin || false,
+        is_system: currentUser.is_system || false,
+        session_id: sessionInfo.session_id,
         timestamp: Date.now()
       }));
       
       console.log('✅ Session stored, redirecting to dashboard');
-      router.push('/client-area/dashboard');
+      
+      // Force a full page reload to ensure all auth state is properly set
+      window.location.href = '/client-area/dashboard';
     } catch (error) {
       console.error('Login failed:', error);
       setError('Invalid email or password. Please check your credentials and try again.');
@@ -67,18 +80,18 @@ export default function ClientLoginPage() {
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
-                Email address
+                Username or Email
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Username or Email"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
               />
             </div>
