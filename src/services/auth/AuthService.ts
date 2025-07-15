@@ -146,6 +146,7 @@ export class AuthService {
     name: string;
     email: string;
     password: string;
+    phone?: string;
   }): Promise<AuthUser> {
     try {
       console.log('Starting registration process for:', userData.email);
@@ -155,6 +156,7 @@ export class AuthService {
         name: userData.name,
         email: userData.email,
         customer_rank: 1, // Mark as customer
+        ...(userData.phone ? { phone: userData.phone } : {})
       };
       
       const partnerId = await this.odooClientService.create('res.partner', partnerData);
