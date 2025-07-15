@@ -21,6 +21,7 @@ const defaultDogInfo = {
   vetName: '',
   vetPhone: '',
   medicalIssues: '',
+  vetAddress: '',
 };
 
 const defaultDog: Partial<Dog> = {
@@ -402,7 +403,7 @@ export default function IntakeFormPage() {
                   <select
                     id="sterilized"
                     name="sterilized"
-                    value={formData.dogInfo?.sterilized}
+                    value={typeof formData.dogInfo?.sterilized === 'boolean' ? (formData.dogInfo?.sterilized ? 'Yes' : 'No') : (formData.dogInfo?.sterilized || '')}
                     onChange={handleInputChange}
                     className="w-full md:w-auto p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                   >
