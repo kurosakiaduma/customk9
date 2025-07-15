@@ -1692,11 +1692,6 @@ export default class OdooClientService {
 
       const domain: (string | [string, string, any])[] = [];
       
-      // Filter by current user if available
-      if (this._currentUser.uid) {
-        domain.push('|', ['user_id', '=', this._currentUser.uid] as [string, string, number]);
-      }
-      
       // Filter by partner if available
       if (this._currentUser.partnerId) {
         const partnerId = Array.isArray(this._currentUser.partnerId) 
@@ -1705,16 +1700,6 @@ export default class OdooClientService {
           
         if (typeof partnerId === 'number') {
           domain.push('|', ['partner_ids', 'in', [partnerId]] as [string, string, number[]]);
-        } else if (Array.isArray(partnerId)) {
-          if (
-            Array.isArray(partnerId) &&
-            partnerId !== undefined &&
-            partnerId !== null &&
-            partnerId.length > 0 &&
-            typeof partnerId[0] === 'number'
-          ) {
-            domain.push('|', ['partner_ids', 'in', [partnerId[0]]] as [string, string, number[]]);
-          }
         }
       }
 
