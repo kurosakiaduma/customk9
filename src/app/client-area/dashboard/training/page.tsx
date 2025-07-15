@@ -26,7 +26,7 @@ const sanitizeHtml = (html: string) => {
 
 // Components
 const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; isSelected: boolean; onClick: () => void }) => {
-  const tasks = plan.tasks ?? [];
+  const tasks = Array.isArray(plan.tasks) ? plan.tasks : [];
   const progress = calculateProgress(tasks);  
   
   return (
@@ -87,7 +87,7 @@ const TaskStatus = ({ status }: { status: number }) => {
 
 // Component for the detailed view of a training plan
 const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
-  const tasks = plan.tasks ?? [];
+  const tasks = Array.isArray(plan.tasks) ? plan.tasks : [];
   const progress = calculateProgress(tasks);
 
   return (

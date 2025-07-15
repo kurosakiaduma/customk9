@@ -16,7 +16,7 @@ const WelcomeSection = ({ name }: { name: string }) => (
       Welcome back, {name}!
     </h1>
     <p className="text-gray-600">
-      Here's an overview of your dogs' training progress and upcoming sessions.
+      Here&apos;s an overview of your dogs&apos; training progress and upcoming sessions.
     </p>
   </div>
 );
@@ -155,7 +155,7 @@ const calculateProgress = (tasks: any[]) => {
 };
 
 const TrainingPlanCard = ({ plan }: { plan: any }) => {
-  const tasks = plan.tasks ?? [];
+  const tasks = Array.isArray(plan.tasks) ? plan.tasks : [];
   const progress = calculateProgress(tasks);
 
   // Helper to check for valid date value

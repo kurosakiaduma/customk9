@@ -1505,7 +1505,7 @@ export default class OdooClientService {
       
       const domain: OdooDomain = [
         ['id', 'in', partner[0].child_ids],
-        ...(dogCategoryId ? [['category_id', 'in', [dogCategoryId]]] : [])
+        ...(dogCategoryId ? [[ 'category_id', 'in', [dogCategoryId] ]] : [])
       ];
 
       const fields = [
