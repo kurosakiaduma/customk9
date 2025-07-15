@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import ServiceFactory from "@/services/ServiceFactory";
 import { format } from "date-fns";
-import { TrainingPlan } from "@/types/odoo";
+import { TrainingPlan } from "@/services/odoo/odoo.types";
 
 const calculateProgress = (tasks: any[]) => {
   if (!tasks || tasks.length === 0) return 0;
