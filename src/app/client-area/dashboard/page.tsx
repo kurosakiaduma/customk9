@@ -8,6 +8,7 @@ import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService } from "@/services/OdooCalendarService";
 import { Dog } from "@/types/dog";
 import { TrainingPlan } from "@/services/odoo/odoo.types";
+import styles from './Dashboard.module.css';
 
 // Components
 const WelcomeSection = ({ name }: { name: string }) => (
@@ -70,7 +71,7 @@ const DogProfileCard = ({ dog }: { dog: any }) => {
           alt={dog.name}
           fill
           sizes="100%"
-          style={{ objectFit: "cover" }}
+          className="object-cover"
           onError={() => setImageError(true)}
         />
       </div>
@@ -90,7 +91,7 @@ const DogProfileCard = ({ dog }: { dog: any }) => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-sky-600 h-2 rounded-full" 
+              className={`bg-sky-600 h-2 rounded-full ${styles.progressBar}`}
               style={{ width: `${dog.progress}%` }}
             ></div>
           </div>
@@ -199,7 +200,7 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
-            className="bg-sky-600 h-2 rounded-full" 
+            className={`bg-sky-600 h-2 rounded-full ${styles.progressBar}`}
             style={{ width: `${progress}%` }}
           ></div>
         </div>
@@ -238,7 +239,9 @@ export default function DashboardPage() {
     }
     const currentUser = authService.getCurrentUser();
     if (!currentUser) {
-      localStorage.removeItem('odoo_session');
+      // Clear invalid cookie
+      const domain = window.location.hostname;
+      document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
       window.location.href = '/client-area';
       return;
     }

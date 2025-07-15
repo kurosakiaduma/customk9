@@ -22,6 +22,63 @@ export class AuthService {
   private static readonly SESSION_KEY = 'odoo_session';
   private static readonly REMEMBER_ME_KEY = 'customk9_remember_me';
   
+  /**
+   * Gets a cookie value by name
+   */
+  private static getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    
+    const nameEQ = name + '=';
+    const cookies = document.cookie.split(';');
+    
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i];
+      while (cookie.charAt(0) === ' ') {
+        cookie = cookie.substring(1, cookie.length);
+      }
+      if (cookie.indexOf(nameEQ) === 0) {
+        return decodeURIComponent(cookie.substring(nameEQ.length, cookie.length));
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * Sets a cookie with the given name, value, and options
+   */
+  private static setCookie(
+    name: string,
+    value: string,
+    days: number = 7,
+    path: string = '/',
+    domain?: string,
+    secure: boolean = false
+  ): void {
+    if (typeof document === 'undefined') return;
+
+    let expires = '';
+    if (days) {
+      const date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      expires = '; expires=' + date.toUTCString();
+    }
+
+    let cookieString = 
+      encodeURIComponent(name) + '=' + encodeURIComponent(value) + 
+      expires + '; path=' + path;
+
+    if (domain) {
+      cookieString += '; domain=' + domain;
+    }
+
+    if (secure) {
+      cookieString += '; secure';
+    }
+
+    // Set the cookie
+    document.cookie = cookieString;
+  }
+  
   private odooClientService: OdooClientService;
   private currentUser: AuthUser | null = null;
 
@@ -45,7 +102,6 @@ export class AuthService {
       
       // Log the response structure with types
       console.log('Response structure:', {
-        'result.id (number)': result?.id,
         'result.id (number)': result?.id,
         'result.name (string)': result?.name,
         'result.email (string)': result?.email,
@@ -108,7 +164,7 @@ export class AuthService {
         email: userInfo.email || email,
         isAdmin,
         isSystem: userInfo.is_system,
-        token: String(odooClient.currentUser?.partner_id) || '', // 
+        token: String(odooClient.currentUser?.partner_id) || '',
         partnerId: typeof userInfo.partner_id === 'number' ? userInfo.partner_id : undefined,
         context,
         groupsId: Array.isArray(userInfo.groups_id) ? userInfo.groups_id : []
@@ -119,22 +175,30 @@ export class AuthService {
       // Store user in memory
       this.currentUser = user;
 
-      // Store session info in odoo_session for persistence
+      // Store session info in cookie for persistence
       try {
-        // Calculate expiration timestamp: now + 40 minutes (in ms), UTC+3
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 40);
-        const utc3Timestamp = now.getTime() + (3 * 60 * 60 * 1000);
-
         const sessionData = {
           sessionInfo: odooClient.sessionInfo,
           currentUser: odooClient.getCurrentUser,
-          timestamp: utc3Timestamp,
+          timestamp: Date.now(),
         };
-        localStorage.setItem(AuthService.SESSION_KEY, JSON.stringify(sessionData));
-        console.log('AuthService: Session data stored in odoo_session');
+        
+        // Set cookie with 1 day expiration
+        const domain = window.location.hostname;
+        const isProduction = process.env.NODE_ENV === 'production';
+        const expiresInDays = 1;
+        
+        // Set the cookie
+        document.cookie = `${AuthService.SESSION_KEY}=${encodeURIComponent(JSON.stringify(sessionData))}; ` +
+          `max-age=${expiresInDays * 24 * 60 * 60}; ` +
+          `path=/; ` +
+          `domain=${domain}; ` +
+          `${isProduction ? 'Secure; ' : ''}` +
+          'SameSite=Lax';
+          
+        console.log('AuthService: Session data stored in cookie');
       } catch (storageError) {
-        console.error('AuthService: Error storing session data in odoo_session:', storageError);
+        console.error('AuthService: Error storing session data in cookie:', storageError);
       }
 
       return user;
@@ -210,42 +274,75 @@ export class AuthService {
         console.log('Odoo session cleared');
       }
     } catch (error) {
-      console.error(' Error during Odoo logout:', error);
+      console.error('Error during Odoo logout:', error);
     }
 
-    // Always clear odoo_session and remember me
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(AuthService.SESSION_KEY);
-      localStorage.removeItem(AuthService.REMEMBER_ME_KEY);
-      console.log('odoo_session and remember me cleared');
+    // Clear cookies and localStorage
+    if (typeof document !== 'undefined') {
+      const domain = window.location.hostname;
+      
+      // Clear session cookie
+      document.cookie = `${AuthService.SESSION_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
+      
+      // Clear remember me cookie
+      document.cookie = `${AuthService.REMEMBER_ME_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
+      
+      // Clear localStorage for backward compatibility
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(AuthService.SESSION_KEY);
+        localStorage.removeItem(AuthService.REMEMBER_ME_KEY);
+      }
+      
+      console.log('Session cookies and localStorage cleared');
     }
+    
+    // Clear in-memory user
+    this.currentUser = null;
   }
 
   isAuthenticated(): boolean {
-    // Treat user as authenticated if currentUser exists, regardless of session_id value
+    // Check in-memory user first
     if (this.currentUser) {
       return true;
     }
-    if (typeof window === 'undefined') return false;
-    const sessionData = localStorage.getItem(AuthService.SESSION_KEY);
-    if (sessionData) {
-      const parsed = JSON.parse(sessionData);
-      if (parsed?.currentUser) {
-        this.currentUser = parsed.currentUser;
+    
+    // Check cookie
+    if (typeof document === 'undefined') return false;
+    
+    try {
+      // Get the session cookie
+      const cookieValue = AuthService.getCookie(AuthService.SESSION_KEY);
+      if (!cookieValue) {
+        return false;
+      }
+      
+      // Parse the cookie value
+      const sessionData = JSON.parse(cookieValue);
+      if (sessionData?.currentUser) {
+        // Restore user from cookie
+        this.currentUser = sessionData.currentUser;
         return true;
       }
+    } catch (error) {
+      console.error('Error checking authentication status:', error);
     }
+    
     return false;
   }
 
   getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    const sessionData = localStorage.getItem(AuthService.SESSION_KEY);
-    if (sessionData) {
-      const parsed = JSON.parse(sessionData);
-      return parsed?.sessionInfo?.session_id || null;
+    if (typeof document === 'undefined') return null;
+    
+    try {
+      const cookieValue = AuthService.getCookie(AuthService.SESSION_KEY);
+      if (!cookieValue) return null;
+      
+      const sessionData = JSON.parse(cookieValue);
+      return sessionData?.sessionInfo?.session_id || null;
+    } catch (error) {
+      console.error('Error getting token from cookie:', error);
+      return null;
     }
-    return null;
   }
 
   public getCurrentUser(): AuthUser | null {
@@ -253,30 +350,45 @@ export class AuthService {
     if (this.currentUser) {
       return this.currentUser;
     }
-    // Try to load from odoo_session
+    
+    // Try to load from cookie
     try {
-      if (typeof window === 'undefined') return null;
-      const sessionData = localStorage.getItem(AuthService.SESSION_KEY);
-      if (sessionData) {
-        const parsed = JSON.parse(sessionData);
-        if (parsed?.currentUser) {
-          this.currentUser = parsed.currentUser;
-          return parsed.currentUser;
-        }
+      if (typeof document === 'undefined') return null;
+      
+      const cookieValue = AuthService.getCookie(AuthService.SESSION_KEY);
+      if (!cookieValue) return null;
+      
+      const sessionData = JSON.parse(cookieValue);
+      if (sessionData?.currentUser) {
+        this.currentUser = sessionData.currentUser;
+        return this.currentUser;
       }
     } catch (error) {
-      console.error('Error loading user from odoo_session:', error);
+      console.error('Error loading user from cookie:', error);
     }
+    
     return null;
   }
   
   setRememberMe(remember: boolean): void {
-    if (typeof window === 'undefined') return;
+    if (typeof document === 'undefined') return;
+    
+    const domain = window.location.hostname;
+    const isProduction = process.env.NODE_ENV === 'production';
     
     if (remember) {
-      localStorage.setItem(AuthService.REMEMBER_ME_KEY, 'true');
+      // Set remember me cookie for 30 days
+      AuthService.setCookie(
+        AuthService.REMEMBER_ME_KEY, 
+        'true', 
+        30, // days
+        '/', // path
+        domain, // domain
+        isProduction // secure in production
+      );
     } else {
-      localStorage.removeItem(AuthService.REMEMBER_ME_KEY);
+      // Clear remember me cookie
+      document.cookie = `${AuthService.REMEMBER_ME_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
     }
   }
 
@@ -284,12 +396,26 @@ export class AuthService {
   // Remove this duplicate method
 
   private setAuthData(user: AuthUser): void {
-    // Store user in odoo_session
+    // Get session info from Odoo client
+    const sessionInfo = this.odooClientService.getSessionInfo();
+
+    // Store user and session in cookie
     const sessionData = {
-      sessionInfo: null,
+      sessionInfo: sessionInfo,
       currentUser: user,
       timestamp: Date.now(),
     };
-    localStorage.setItem(AuthService.SESSION_KEY, JSON.stringify(sessionData));
+    
+    const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    AuthService.setCookie(
+      AuthService.SESSION_KEY,
+      JSON.stringify(sessionData),
+      1, // 1 day
+      '/', // path
+      domain, // domain
+      isProduction // secure in production
+    );
   }
 }

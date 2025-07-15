@@ -44,14 +44,16 @@ export default function ClientAreaPage() {
 
         console.log('Checking authentication status...');
 
-        // Helper function to get session value from localStorage or cookie
-        const getSessionValue = () => {
-          const localSession = localStorage.getItem('odoo_session');
-          if (localSession) return localSession;
-          // Fallback: check cookie if needed
-          const cookies = document.cookie.split(';').map(c => c.trim());
-          const cookie = cookies.find(c => c.startsWith('odoo_session='));
-          return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
+        // Helper function to get session value from cookie
+        const getSessionValue = (): string => {
+          try {
+            const cookies = document.cookie.split(';').map(c => c.trim());
+            const cookie = cookies.find(c => c.startsWith('odoo_session='));
+            return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
+          } catch (error) {
+            console.error('Error getting session from cookie:', error);
+            return '';
+          }
         };
 
         // Check for Odoo session and validate it
@@ -75,16 +77,17 @@ export default function ClientAreaPage() {
               } else {
                 console.log('Session expired');
                 // Clear expired cookie
-                document.cookie = 'odoo_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
-                localStorage.removeItem('odoo_session');
+                const domain = window.location.hostname;
+                document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
               }
             } else {
               console.log('Invalid session structure');
             }
           } catch (error) {
             console.error('Error parsing session:', error);
-            // Clear invalid cookie and localStorage
-            document.cookie = 'odoo_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
+            // Clear invalid cookie
+            const domain = window.location.hostname;
+            document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
           }
         }
 

@@ -87,22 +87,39 @@ interface CurrentUser {
   export default class OdooClientService {
 
     /**
-     * Saves the current session and user info to localStorage
+     * Saves the current session and user info to cookies
      */
     private async saveSessionToStorage(): Promise<void> {
-      if (typeof window === 'undefined') return;
+      if (typeof document === 'undefined') return;
+      
       try {
         const sessionData = {
           sessionInfo: this._sessionInfo,
           currentUser: this._currentUser,
           timestamp: Date.now(),
         };
-        localStorage.setItem('odoo_session', JSON.stringify(sessionData));
+        
+        // Store session data in a cookie that expires in 1 day
+        const cookieValue = JSON.stringify(sessionData);
+        const expiresInDays = 1; // 1 day
+        
+        // Set the cookie with HttpOnly and Secure flags in production
+        const isProduction = process.env.NODE_ENV === 'production';
+        const domain = window.location.hostname;
+        
+        // Set the cookie
+        document.cookie = `odoo_session=${encodeURIComponent(cookieValue)}; ` +
+          `max-age=${expiresInDays * 24 * 60 * 60}; ` +
+          `path=/; ` +
+          `domain=${domain}; ` +
+          `${isProduction ? 'Secure; ' : ''}` +
+          'SameSite=Lax';
+        
         if (this._config.debug) {
-          console.log('Session saved to odoo_session:', sessionData);
+          console.log('Session saved to odoo_session cookie');
         }
       } catch (error) {
-        console.error('Error saving session to odoo_session:', error);
+        console.error('Error saving session to cookie:', error);
       }
     }
   /**
@@ -113,19 +130,26 @@ interface CurrentUser {
     this._currentUser = null;
     this._isAuthenticated = false;
     this._authenticationPromise = null;
+    
     // Clear any stored session data
-    if (typeof window !== 'undefined') {
+    if (typeof document !== 'undefined') {
       try {
-        // Clear cookies
+        const domain = window.location.hostname;
+        
+        // Clear session_id cookie
         document.cookie = 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        // Clear odoo_session from localStorage and sessionStorage
-        localStorage.removeItem('odoo_session');
-        localStorage.removeItem('odoo_session');
+        
+        // Clear odoo_session cookie
+        document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
+        
+        // Session cleared from cookies
+        
         logger.info('Session cleared');
       } catch (error) {
-        logger.error('Error clearing session storage', { error });
+        logger.error('Error clearing session', { error });
       }
     }
+    
     // Notify listeners
     this._onLogout?.();
   }
@@ -137,15 +161,15 @@ interface CurrentUser {
   private _authenticationPromise: Promise<OdooSessionInfo> | null = null;
   private _config: OdooClientConfig;
   private _requestQueue: Array<() => Promise<unknown>> = [];
-  private _isRefreshing = false;
+  private _isRefreshing = false; // Track if a refresh is in progress
 
-  private _onSessionExpired: (() => void) | null = null;
+  private _onSessionExpired: ((error?: Error | OdooError) => void) | null = null;
   private _onError: ((error: unknown) => void) | null = null;
   private _onLogin: ((user: OdooUser) => void) | null = null;
   private _onLogout: (() => void) | null = null;
-  private _onUnauthorized: (() => void) | null = null;
-  private _onForbidden: (() => void) | null = null;
-  private _onNotFound: (() => void) | null = null;
+  private _onUnauthorized: ((error?: unknown) => void) | null = null;
+  private _onForbidden: ((error?: unknown) => void) | null = null;
+  private _onNotFound: ((error?: unknown) => void) | null = null;
   private _onBadRequest: ((error: unknown) => void) | null = null;
   private _onServerError: ((error: unknown) => void) | null = null;
   private _onNetworkError: ((error: unknown) => void) | null = null;
@@ -156,7 +180,7 @@ interface CurrentUser {
 
   constructor(config: OdooClientConfig) {
     // Ensure we have a database name
-    const db = config.db || (config as any).database;
+    const db = config.db || ('database' in config ? config.database : undefined);
     
     if (!db) {
       console.error('Database name is required in OdooClientConfig. Received config:', config);
@@ -381,7 +405,7 @@ interface CurrentUser {
     
     this._authenticationPromise = new Promise(async (resolve, reject) => {
       try {
-        const payload = {
+        const response = await this._client.post(apiPath, {
           jsonrpc: '2.0',
           method: 'call',
           params: {
@@ -390,13 +414,33 @@ interface CurrentUser {
             password: password,
             context: {}
           }
-        };
+        });
 
-        const response = await this._client.post(apiPath, payload);
+        logger.debug('Raw authentication response', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          data: response.data,
+          timestamp: new Date().toISOString(),
+        });
+
         const result = response.data?.result;
-
+        console.log(`[OdooClientService] RESULT ONE IS ${result}`)
+        if (!result || (!result.uid && !result.id)) {
+          const error = new Error('Invalid response format from Odoo server: Missing user ID in response');
+          logger.error('Authentication failed: Invalid response format', {
+            error: error.message,
+            status: response.status,
+            responseData: response.data,
+            timestamp: new Date().toISOString(),
+          });
+          throw new Error('Authentication failed: Invalid response format');
+        }
+        // Extract the result object which contains user data
+        const result_two = response.data.result?.result || response.data.result || {};
+        console.log(`[OdooClientService] RESULT TWO IS ${result_two}`)
         // Extract session ID from response data or cookies
-        let sessionId = result?.session_id || '';
+        let sessionId = result.session_id || '';
         if (!sessionId) {
           const cookies = response.headers?.['set-cookie'] || [];
           for (const cookie of cookies) {
@@ -408,22 +452,64 @@ interface CurrentUser {
           }
         }
 
-        // Debug log the full response for troubleshooting
-        console.log('🔑 Login response:', {
-          status: response.status,
-          statusText: response.statusText,
-          hasSessionCookie: !!sessionId,
-          responseData: response.data,
-          cookies: response.headers?.['set-cookie'] || []
-        });
-
-        // Check if login was successful by looking for a valid id
-        const effectiveUid = result?.id;
+        // Check if login was successful by looking for a valid uid in the result
+        const effectiveUid = result.uid || result.id;
         if (!effectiveUid) {
-          const errorMessage = result?.error?.data?.message || 'Authentication failed: No valid id received';
-          logger.error('Login failed - missing id', { error: errorMessage });
+          const errorMessage = 'Authentication failed: No valid user ID received';
+          logger.error('Login failed - missing uid', { 
+            error: errorMessage,
+            responseData: result 
+          });
           throw new Error(errorMessage);
         }
+        
+        // Extract user data from the response
+        const userData = {
+          id: effectiveUid,
+          name: result.name || login,
+          username: result.username || result.login || login,
+          partner_id: result.partner_id,
+          isAdmin: Boolean(result.is_admin || result.is_system),
+          is_system: Boolean(result.is_system),
+          session_id: sessionId,
+          context: result.user_context || result.context || {},
+          groups_id: result.groups_id || [],
+          email: result.email || result.login || ''
+        };
+
+        // Create session info with the user data
+        this._sessionInfo = {
+          uid: effectiveUid,
+          username: userData.username || login,
+          name: userData.name || login,
+          is_admin: userData.isAdmin,
+          is_system: userData.is_system,
+          session_id: sessionId,
+          partner_id: userData.partner_id,
+          context: userData.context,
+          groups_id: userData.groups_id,
+          expires_at: Date.now() + SESSION_TIMEOUT_MS,
+          db: dbName,
+          company_id: 1, // Default company ID
+          tz: 'UTC' // Default timezone
+        };
+
+        // Store the current user
+        this._currentUser = {
+          id: effectiveUid,
+          username: userData.username || login,
+          displayName: userData.name || login,
+          partnerId: userData.partner_id,
+          isAdmin: userData.isAdmin,
+          is_system: userData.is_system,
+          session_id: sessionId,
+          context: userData.context,
+          groups_id: userData.groups_id,
+          expires_at: Date.now() + SESSION_TIMEOUT_MS
+        };
+        
+        this._isAuthenticated = true;
+
         if (!sessionId) {
           logger.warn('Login succeeded but session_id is missing. Proceeding with empty session_id.');
         }
@@ -436,6 +522,7 @@ interface CurrentUser {
         // Set session info with password
         this._sessionInfo = {
           id: effectiveUid,
+          uid: effectiveUid,
           username: result?.username || login,  // Fallback to login if username not provided
           name: result?.name || login,          // Fallback to login if name not provided
           company_id: result?.company_id || 1,  // Default company ID
@@ -451,36 +538,40 @@ interface CurrentUser {
         };
 
         console.log('🔑 Stored session info:', {
-          id: this._sessionInfo.id,
-          username: this._sessionInfo.username,
-          hasPassword: !!this._sessionInfo.password,
-          passwordLength: typeof this._sessionInfo.password === 'string' ? this._sessionInfo.password.length : 0,
+          id: this._sessionInfo.uid,
+          username: this._sessionInfo?.username,
+          hasPassword: false,
           sessionId: sessionId ? `${sessionId.substring(0, 5)}...` : 'none',
           expires: new Date(this._sessionInfo.expires as number).toISOString()
         });
 
-        // Set current user
-        this._currentUser = {
-          id: result.id,
-          username: result.username,
-          displayName: result.name,
-          partnerId: result.partner_id,
-          isAdmin: result.is_admin || false,
-          is_system: result.is_system || false,
-          session_id: this._sessionInfo.session_id,
-          context: result.user_context || {},
-          groups_id: result.groups_id || [],
-          expires_at: typeof this._sessionInfo.expires === 'number' ? this._sessionInfo.expires : undefined,
-        };
-
         this._isAuthenticated = true;
 
-        // Save session to storage
-        await this.saveSessionToStorage();
+        try {
+          // Save session to storage
+          await this.saveSessionToStorage();
+          
+          // Log successful login
+          logger.info('Login successful', { 
+            username: login,
+            userId: effectiveUid,
+            sessionId: sessionId ? `${sessionId.substring(0, 5)}...` : 'none'
+          });
+        } catch (error) {
+          logger.error('Error saving session to storage', { error });
+          // Don't reject the login promise for storage errors
+          // The user is still logged in, just the session might not persist across page refreshes
+        }
 
-        // Notify listeners
-        this._onLogin?.(this.mapCurrentUserToOdooUser(this._currentUser));
-
+        // Ensure session info is not null before resolving
+        if (!this._sessionInfo) {
+          const error = new Error('Failed to create session info');
+          logger.error('Session info is null after creation', { error });
+          reject(error);
+          return;
+        }
+        
+        // Resolve the authentication promise
         resolve(this._sessionInfo);
       } catch (error) {
         logger.error('Login error', { error });
@@ -502,357 +593,112 @@ interface CurrentUser {
     }
   }
 
-  private mapCurrentUserToOdooUser(user: CurrentUser): OdooUser {
-    return {
-      id: user.id,
-      name: user.displayName || user.username,
-      email: user.username,
-      partner_id: Array.isArray(user.partnerId) ? user.partnerId[0] : user.partnerId || null,
-      is_admin: user.isAdmin,
-      is_system: user.is_system,
-      session_id: this._sessionInfo?.session_id || '',
-      context: user.context || {},
-      groups_id: user.groups_id || []
-    };
-  }
-
-  public async create(model: string, data: Record<string, unknown>): Promise<number> {
-    try {
-      console.log(`🆕 OdooClientService: Creating ${model} record with data:`, data);
-
-      let payload = data;
-      let useAdminSession = false;
-
-      if ((model === 'res.partner' || model === 'res.users') && !this._sessionInfo) {
-        useAdminSession = true;
-        if (model === 'res.partner') {
-          // Remove invalid fields for res.partner registration
-          const allowedFields = [
-            'name', 'email', 'phone', 'mobile', 'street', 'city', 'state_id', 'country_id',
-            'zip', 'website', 'company_type', 'parent_id', 'type', 'category_id', 'lang',
-            'is_company', 'vat', 'comment', 'function', 'title', 'user_id', 'image_1920', 'active', 'tz'
-          ];
-          payload = Object.fromEntries(Object.entries(data).filter(([key]) => allowedFields.includes(key)));
-        }
-      }
-
-      const result = await this.call<number>(
-        model,
-        'create',
-        [payload],
-        { context: this._sessionInfo?.context || {} },
-        useAdminSession ? { useAdminSession: true } : {}
-      );
-
-      console.log(`✅ OdooClientService: Created ${model} record with ID:`, result);
-      return result;
-    } catch (error) {
-      console.error(`❌ OdooClientService: Failed to create ${model} record:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Makes a JSON-RPC call to the Odoo server
-   * @param model The Odoo model to call
-   * @param method The method to call on the model
-   * @param args Positional arguments for the method
-   * @param kwargs Keyword arguments for the method
-   * @param options Additional options
-   * @returns Promise that resolves with the method result
-   */
-  public async call<T = unknown>(
-    model: string,
-    method: string,
-    args: unknown[] = [],
-    kwargs: Record<string, unknown> = {},
-    options: { skipAuthCheck?: boolean; useAdminSession?: boolean } = {}
-  ): Promise<T> {
-    try {
-      // These will be set based on the session info
-      let currentUid: number = 0;
-      let currentPassword: string = '';
-      let currentSessionId: string | undefined;
-
-      // Handle authentication and get credentials
-      // Allow unauthenticated registration for res.partner create
-      if (!options.skipAuthCheck) {
-        if (options.useAdminSession) {
-          // Ensure admin session exists and is valid
-          if (!this._adminSessionInfo?.id) {
-            await this.authenticateAsAdmin();
-          }
-          currentUid = this._adminSessionInfo?.id || 0;
-          currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
-          currentSessionId = this._adminSessionInfo?.session_id;
-        } else {
-          // If this is a registration (res.partner create) and no session, skip auth
-          if (model === 'res.partner' && method === 'create' && !this._sessionInfo) {
-            currentUid = 0;
-            currentPassword = '';
-            currentSessionId = undefined;
-          } else {
-            // Ensure user session is valid
-            await this.ensureAuthenticated();
-            currentUid = this._sessionInfo?.id || 0;
-            currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
-            currentSessionId = this._sessionInfo?.session_id;
-          }
-        }
-      } else {
-        // For unauthenticated calls
-        currentUid = 0;
-        currentPassword = '';
-        currentSessionId = undefined;
-      }
-
-      // Get database name from config
-      const db = this._config.db;
-      if (!db) {
-        const errorMsg = 'Database name is required but not configured. Please check your Odoo client configuration.';
-        logger.error(errorMsg, { config: this._config });
-        throw new Error(errorMsg);
-      }
-
-      // Apply user-specific filters for search and search_read methods
-      let finalArgs = args;
-      if (['search', 'search_read'].includes(method)) {
-        const userFilter = await this.getUserDataFilter(model);
-        if (userFilter.length > 0) {
-          const existingDomain = Array.isArray(args[0]) ? args[0] : [];
-          finalArgs = [
-            existingDomain.length > 0 ? ['&', ...existingDomain, ...userFilter] : userFilter,
-            ...args.slice(1)
-          ];
-        }
-      }
-
-      // Generate a random message ID for the JSON-RPC call
-      const messageId = Math.floor(Math.random() * 1000000000);
-      
-      // Prepare the JSON-RPC payload with the determined credentials
-      const payload = {
-        jsonrpc: '2.0',
-        method: 'call',
-        params: {
-          db: db,
-          service: 'object',
-          method: 'execute_kw',
-          args: [
-            db,                    // 1. Database name
-            currentUid,           // 2. User ID (0 for public, actual ID for users)
-            currentPassword || '', // 3. User password or session token (ensure it's not undefined)
-            model,                // 4. Model name (e.g., 'res.partner')
-            method,               // 5. Method name (e.g., 'search_read', 'create')
-            finalArgs,            // 6. Positional arguments for the method
-            kwargs                // 7. Keyword arguments for the method
-          ]
-        },
-        id: messageId
-      };
-
-      // Log the actual payload with password for debugging
-      logger.debug('JSON-RPC Payload (with password):', {
-        ...payload,
-        params: {
-          ...payload.params,
-          args: payload.params.args.map((arg: unknown, i: number) => {
-            // Log password in plain text for debugging
-            if (i === 2) {
-              console.log('🔑 Password in payload:', arg);
-              return arg;
-            }
-            return arg;
-          })
-        }
-      });
-
-      // Also log the safe version (without password)
-      if (this._config.debug) {
-        const safePayload = {
-          ...payload,
-          params: {
-            ...payload.params,
-            args: payload.params.args.map((arg: unknown, i: number) => 
-              i === 2 ? (arg ? '********' : '') : arg // Mask password in logs
-            )
-          }
-        };
-        logger.debug('JSON-RPC Payload (safe):', safePayload);
-      }
-
-      // Set up headers to match the authentication request
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        ...this._config.headers,
-      };
-
-      // Add session ID to headers and cookies if available
-      if (currentSessionId) {
-        headers['X-Openerp-Session-Id'] = currentSessionId;
-        headers['X-CSRFToken'] = currentSessionId; // Some Odoo versions require CSRF token
-        // Only set Cookie header if sessionId is non-empty
-        if (currentSessionId !== '') {
-          headers['Cookie'] = `session_id=${currentSessionId};`;
-        }
-      }
-
-      // Log the request if in debug mode
-      if (this._config.debug) {
-        console.log(`📤 [${messageId}] Calling Odoo ${model}.${method}`, {
-          url: '/jsonrpc',
-          db,
-          model,
-          method,
-          args: finalArgs,
-          kwargs,
-          headers
-        });
-      }
-
-      // Make the API call to the JSON-RPC endpoint
-      const requestConfig: AxiosRequestConfig = {
-        headers,
-        withCredentials: true,
-      };
-
-      // Get the appropriate session info based on whether we're using admin session
-      const sessionInfo = options.useAdminSession ? this._adminSessionInfo : this._sessionInfo;
-      
-      // Debug logging for password/session info
-      console.log('🔑 Current session info:', {
-        useAdminSession: options.useAdminSession,
-        hasSessionInfo: !!sessionInfo,
-        id: sessionInfo?.id || 0,
-        hasPassword: !!sessionInfo?.password,
-        hasSessionId: !!sessionInfo?.session_id,
-        passwordLength: sessionInfo?.password ? String(sessionInfo.password).length : 0,
-        sessionIdLength: sessionInfo?.session_id?.length || 0,
-        sessionInfoKeys: sessionInfo ? Object.keys(sessionInfo) : []
-      });
-      
-      // Check if we have either password or session ID
-      if ((!sessionInfo?.password || sessionInfo.password === '') && 
-          (!sessionInfo?.session_id || sessionInfo.session_id === '')) {
-        console.warn('⚠️ No password or session ID available for the API call');
-        
-        if (options.useAdminSession) {
-          console.warn('⚠️ Attempting to re-authenticate as admin...');
-          try {
-            await this.authenticateAsAdmin();
-            // Try to get the session info again after re-authentication
-            const updatedSessionInfo = this._adminSessionInfo;
-            if (updatedSessionInfo?.password || updatedSessionInfo?.session_id) {
-              console.log('✅ Successfully re-authenticated as admin');
-              // Update current credentials with the new session info
-              currentUid = updatedSessionInfo.id || 0;
-              currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
-              currentSessionId = updatedSessionInfo.session_id;
-            } else {
-              throw new Error('Failed to re-authenticate as admin: No session info returned');
-            }
-          } catch (error) {
-            console.error('❌ Failed to re-authenticate as admin:', error);
-            throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
-          }
-        } else {
-          throw new Error('No valid session available and not using admin session');
-        }
-      } else {
-        // Use the existing session info
-        currentUid = sessionInfo?.id || 0;
-        currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
-        currentSessionId = sessionInfo?.session_id;
-      }
-
-      // Ensure we have the latest session info
-      if (sessionInfo?.session_id) {
-        requestConfig.headers = {
-          ...requestConfig.headers,
-          'X-Openerp-Session-Id': sessionInfo.session_id,
-          'X-CSRFToken': sessionInfo.session_id,
-        };
-        // Only set Cookie header if sessionId is non-empty
-        if (sessionInfo.session_id !== '') {
-          requestConfig.headers['Cookie'] = `session_id=${sessionInfo.session_id}`;
-        }
-      }
-
-      // Log the request details before sending
-      if (this._config.debug) {
-        logger.debug(`📤 [${messageId}] Sending request to Odoo ${model}.${method}`, {
-          url: '/jsonrpc',
-          method: 'POST',
-          headers: {
-            ...requestConfig.headers,
-            'X-Openerp-Session-Id': requestConfig.headers?.['X-Openerp-Session-Id'] ? '********' : 'not-set',
-            'X-CSRFToken': requestConfig.headers?.['X-CSRFToken'] ? '********' : 'not-set',
-            'Cookie': requestConfig.headers?.['Cookie'] ? '********' : 'not-set',
-          },
-          payload: {
-            ...payload,
-            params: {
-              ...payload.params,
-              args: payload.params.args.map((arg: unknown, i: number) => 
-                i === 2 ? (arg ? '********' : '') : arg // Mask password in logs
-              )
-            }
-          },
-          sessionInfo: {
-            id: sessionInfo?.id,
-            username: sessionInfo?.username,
-            isAdmin: options.useAdminSession,
-            sessionId: sessionInfo?.session_id ? '********' : 'not-set',
-            expires: (sessionInfo?.expires && (typeof sessionInfo.expires === 'string' || typeof sessionInfo.expires === 'number'))
-              ? new Date(sessionInfo.expires).toISOString()
-              : 'not-set'
-          }
-        });
-      }
-
-      const response = await this._client.post('/jsonrpc', payload, requestConfig);
-
-      // Log the response if in debug mode
-      if (this._config.debug) {
-        logger.info(`📥 [${messageId}] Response from Odoo ${model}.${method}`, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-          data: response.data,
-          error: response.data?.error,
-          request: {
-            url: '/jsonrpc',
-            model,
-            method: method,
-            useAdminSession: options.useAdminSession
-          }
-        });
-      }
-
-      // Check for JSON-RPC error in response
-      if (response.data?.error) {
-        const error = response.data.error;
-        console.error(`❌ [${messageId}] Odoo API error:`, {
-          code: error.code,
-          message: error.message,
-          data: error.data
-        });
-        throw this.handleError(error);
-      }
-
-      // Return the result
-      return response.data.result;
-    } catch (error) {
-      console.error(`❌ Error in Odoo API call ${model}.${method}:`, error);
-      throw this.handleError(error, `Error in Odoo API call ${model}.${method}`);
-    }
-  }
-
   /**
    * Ensures the user is authenticated
    * @throws {Error} If the user is not authenticated
    */
+  private async ensureAuthenticated(): Promise<void> {
+    // If already authenticated and session is valid, return
+    if (this._isAuthenticated && this._currentUser && this._sessionInfo) {
+      // Check if session is about to expire (within 5 minutes)
+      if (this._sessionInfo.expires && (Number(this._sessionInfo.expires) - Date.now() < 5 * 60 * 1000)) {
+        try {
+          await this.refreshSession();
+        } catch (error) {
+          logger.warn('Failed to refresh session, requiring re-authentication', { error });
+          await this.clearSession();
+          throw new Error('Session expired. Please log in again.');
+        }
+      }
+      return;
+    }
+    
+    // Try to restore session from storage if not authenticated
+    if (typeof window !== 'undefined') {
+      const restored = await this.tryRestoreSessionFromStorage();
+      if (restored) {
+        return;
+      }
+    }
+    
+    throw new Error('Authentication required');
+  }
+
+  /**
+   * Handles errors from Odoo API calls
+   * @param error The error object
+   * @param context Additional context for the error
+   * @returns A new Error with a user-friendly message
+   */
+  private handleError(error: unknown, context: string = ''): Error {
+    let errorMessage = 'An unknown error occurred';
+    
+    // Handle OdooError format
+    if (error && typeof error === 'object' && 'error' in error) {
+      const odooError = (error as { error: { code: number; message: string; data?: { message?: string } } }).error;
+      errorMessage = odooError.data?.message || odooError.message || 'An unknown error occurred';
+    }
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    const errorWithContext = context ? `${context}: ${errorMessage}` : errorMessage;
+
+    try {
+      if (this._onError) {
+        this._onError(error);
+      }
+
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const errorData = error.response?.data as OdooError | { error: OdooError } | undefined;
+
+        // Handle both direct OdooError and wrapped { error: OdooError } responses
+        const odooError = errorData && 'error' in errorData ? errorData.error : errorData as OdooError;
+        
+        if (odooError) {
+          errorMessage = odooError.data?.message || odooError.message || 'Unknown Odoo error';
+        }
+
+        switch (status) {
+          case 401:
+            this.clearSession();
+            this._onUnauthorized?.();
+            return new Error(errorMessage || 'Unauthorized');
+
+          case 403:
+            this._onForbidden?.();
+            return new Error(errorMessage || 'Forbidden');
+
+          case 404:
+            this._onNotFound?.();
+            return new Error(errorMessage || 'Not found');
+
+          case 400:
+            this._onBadRequest?.(error);
+            return new Error(errorMessage || 'Bad request');
+
+          case 500:
+            this._onServerError?.(error);
+            return new Error(errorMessage || 'Server error');
+
+          default:
+            this._onNetworkError?.(error);
+            return new Error(`Network error: ${errorMessage}`);
+        }
+      }
+
+      return new Error(errorWithContext);
+    } catch (innerError) {
+      // Ensure we always return an Error object
+      if (innerError instanceof Error) {
+        return innerError;
+      }
+      return new Error(String(innerError));
+    }
+  }
+
   /**
    * Authenticates as admin user
    * @private
@@ -864,7 +710,7 @@ interface CurrentUser {
         throw new Error('Database name is required for admin authentication');
       }
 
-      // Use admin credentials from config
+      // Use admin credentials from environment variables
       const adminUsername = process.env.NEXT_PUBLIC_ODOO_ADMIN_USERNAME || 'admin';
       const adminPassword = process.env.NEXT_PUBLIC_ODOO_ADMIN_PASSWORD || 'admin';
 
@@ -921,8 +767,8 @@ interface CurrentUser {
       logger.debug('Raw authentication response', responseLog);
 
       if (response.data?.error) {
-        const errorData = response.data.error;
-        const errorMsg = errorData.data?.message || 'Admin authentication failed';
+        const errorData = response.data.error as { code: number; message: string; data?: { message?: string } };
+        const errorMsg = errorData.data?.message || errorData.message || 'Admin authentication failed';
         const errorDetails = {
           message: errorMsg,
           code: errorData.code,
@@ -951,33 +797,27 @@ interface CurrentUser {
           errorMessage = `Database error: ${errorMsg}`;
         }
         
-        interface ErrorWithDetails extends Error {
-          details?: unknown;
-        }
-        
-        const error = new Error(errorMessage) as ErrorWithDetails;
-        error.details = errorDetails;
-        throw error;
+        const err = new Error(errorMessage) as Error & { details?: unknown };
+        err.details = errorDetails;
+        throw err;
       }
 
-      if (!response.data?.result?.id) {
-        interface ErrorWithResponse extends Error {
-          response?: unknown;
-          status?: number;
-        }
-        
-        const error = new Error('Invalid response format from Odoo server: Missing user ID in response') as ErrorWithResponse;
-        error.response = response.data;
-        error.status = response.status;
-        
+      const result = response.data?.result;
+      const effectiveUid = result?.uid || result?.id;
+
+      if (!effectiveUid) {
+        const err = new Error('Invalid response format from Odoo server: Missing user ID in response') as Error & { response?: unknown; status?: number };
+        err.response = response.data;
+        err.status = response.status;
+
         logger.error('Authentication failed: Invalid response format', {
-          error: error.message,
+          error: err.message,
           status: response.status,
           responseData: response.data,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
-        throw error;
+
+        throw err;
       }
 
       // Extract session ID from response headers or cookies
@@ -993,20 +833,21 @@ interface CurrentUser {
 
       // Create and store admin session info
       const sessionInfo: OdooSessionInfo = {
-        id: response.data.result.id,
-        username: response.data.result.name || adminUsername,
-        name: response.data.result.name || adminUsername,
+        id: effectiveUid,
+        uid: effectiveUid, // Add the required uid field
+        username: result.name || adminUsername,
+        name: result.name || adminUsername,
         session_id: sessionId,
         password: adminPassword, // Store password for future API calls
         expires: Date.now() + SESSION_TIMEOUT_MS,
-        context: response.data.result.user_context || {},
+        context: result.user_context || {},
         is_admin: true,
-        is_system: response.data.result.is_system || false,
-        company_id: response.data.result.company_id || 1,
-        partner_id: response.data.result.partner_id || null,
-        user_id: response.data.result.id,
-        tz: response.data.result.tz,
-        lang: response.data.result.user_context?.lang || 'en_US',
+        is_system: result.is_system || false,
+        company_id: result.company_id || 1,
+        partner_id: result.partner_id || null,
+        user_id: effectiveUid,
+        tz: result.tz,
+        lang: result.user_context?.lang || 'en_US',
       };
 
       // Debug logging for the created session info
@@ -1051,91 +892,11 @@ interface CurrentUser {
     }
   }
 
-  private async ensureAuthenticated(): Promise<void> {
-    // If already authenticated and session is valid, return
-    if (this._isAuthenticated && this._currentUser && this._sessionInfo) {
-      // Check if session is about to expire (within 5 minutes)
-      if (this._sessionInfo.expires && (Number(this._sessionInfo.expires) - Date.now() < 5 * 60 * 1000)) {
-        try {
-          await this.refreshSession();
-        } catch (error) {
-          logger.warn('Failed to refresh session, requiring re-authentication', { error });
-          await this.clearSession();
-          throw new Error('Session expired. Please log in again.');
-        }
-      }
-      return;
-    }
-    
-    // Try to restore session from storage if not authenticated
-    if (typeof window !== 'undefined') {
-      const restored = await this.tryRestoreSessionFromStorage();
-      if (restored) {
-        return;
-      }
-    }
-    
-    throw new Error('Authentication required');
-  }
-
-  private async getSessionInfo(): Promise<OdooSessionInfo | null> {
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      };
-
-      if (this._sessionInfo?.session_id) {
-        headers['X-Openerp-Session-Id'] = this._sessionInfo.session_id;
-      }
-
-      const response = await this._client.post<{ result: OdooSessionInfo }>(
-        '/web/session/get_session_info', 
-        { 
-          jsonrpc: '2.0', 
-          method: 'call', 
-          params: {}
-        }, 
-        {
-          withCredentials: true,
-          headers
-        }
-      );
-      
-      const sessionInfo = response.data?.result || null;
-      
-      if (sessionInfo?.id) {
-        this._sessionInfo = sessionInfo;
-        this._isAuthenticated = true;
-        this._currentUser = {
-          id: sessionInfo.id,
-          username: sessionInfo.username || '',
-          displayName: sessionInfo.name || '',
-          partnerId: sessionInfo.partner_id,
-          isAdmin: sessionInfo.is_admin || false,
-          is_system: sessionInfo.is_system || false,
-          session_id: sessionInfo.session_id || '',
-          context: sessionInfo.context || {},
-          groups_id: sessionInfo.groups_id || [],
-        };
-        await this.saveSessionToStorage();
-      } else {
-        await this.clearSession();
-      }
-      
-      return sessionInfo;
-    } catch (error) {
-      console.error('Error getting session info:', error);
-      await this.clearSession();
-      return null;
-    }
-  }
-
   /**
    * Refreshes the current session
    * @private
    */
-  private refreshSession = async (): Promise<void> => {
+  private async refreshSession(): Promise<void> {
     if (!this._sessionInfo?.session_id) {
       throw new Error('No active session to refresh');
     }
@@ -1145,7 +906,7 @@ interface CurrentUser {
       return new Promise((resolve) => {
         const checkRefresh = () => {
           if (!this._isRefreshing) {
-            resolve(undefined);
+            resolve();
           } else {
             setTimeout(checkRefresh, 100);
           }
@@ -1161,9 +922,12 @@ interface CurrentUser {
       const response = await this._client.post('/web/session/refresh', {});
       
       if (response.data?.result?.id) {
-        this._sessionInfo.expires = Date.now() + SESSION_TIMEOUT_MS;
-        if (this._currentUser) {
-          this._currentUser.expires_at = typeof this._sessionInfo.expires === 'number' ? this._sessionInfo.expires : undefined;
+        if (this._sessionInfo) {
+          const expires = Date.now() + SESSION_TIMEOUT_MS;
+          this._sessionInfo.expires = expires;
+          if (this._currentUser) {
+            this._currentUser.expires_at = Number(new Date(expires).toISOString());
+          }
         }
         await this.saveSessionToStorage();
         logger.debug('Session refreshed successfully');
@@ -1177,107 +941,45 @@ interface CurrentUser {
     } finally {
       this._isRefreshing = false;
     }
-  };
-
-  public async getUserDataFilter(model: string): Promise<(string | (string | number | boolean | null)[])[]> {
-    // Model parameter is kept for future use when implementing model-specific filters
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const modelName = model;
-    if (this.isUsingAdminCredentials) {
-      return [];
-    }
-    
-    return [['create_uid', '=', this._currentUser?.id || 0]];
   }
 
-  private handleError(error: unknown, context: string = ''): never {
-    let errorMessage = 'An unknown error occurred';
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-
-    const errorWithContext = context ? `${context}: ${errorMessage}` : errorMessage;
-
-    try {
-      if (this._onError) {
-        this._onError(error);
-      }
-
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        // Error data is not used but kept for future debugging
-        // const errorData = error.response?.data as OdooError | undefined;
-
-        if (error.response?.data?.error) {
-          const odooError = error.response.data.error;
-          errorMessage = odooError.data?.message || odooError.message || 'Unknown Odoo error';
-        }
-
-        switch (status) {
-          case 401:
-            this.clearSession();
-            this._onUnauthorized?.();
-            throw new Error(errorMessage || 'Unauthorized');
-
-          case 403:
-            this._onForbidden?.();
-            throw new Error(errorMessage || 'Forbidden');
-
-          case 404:
-            this._onNotFound?.();
-            throw new Error(errorMessage || 'Not found');
-
-          case 400:
-            this._onBadRequest?.(error);
-            throw new Error(errorMessage || 'Bad request');
-
-          case 500:
-            this._onServerError?.(error);
-            throw new Error(errorMessage || 'Server error');
-
-          default:
-            this._onNetworkError?.(error);
-            throw new Error(`Network error: ${errorMessage}`);
-        }
-      } 
-      
-      // Handle Odoo specific errors
-      if (error && typeof error === 'object' && 'data' in error) {
-        const errorObj = error as { data?: { error?: { message?: string; data?: { message?: string } } } };
-        const odooError = errorObj.data?.error;
-        if (odooError) {
-          const message = odooError.data?.message || odooError.message || 'Unknown Odoo error';
-          throw new Error(message);
-        }
-      }
-
-      throw new Error(errorWithContext);
-    } catch (innerError) {
-      // Ensure we always throw an Error object
-      if (innerError instanceof Error) {
-        throw innerError;
-      }
-      throw new Error(String(innerError));
-    }
+  private mapCurrentUserToOdooUser(user: CurrentUser): OdooUser {
+    return {
+      id: user.id,
+      name: user.displayName || user.username,
+      email: user.username,
+      partner_id: Array.isArray(user.partnerId) ? user.partnerId[0] : user.partnerId || null,
+      is_admin: user.isAdmin,
+      is_system: user.is_system,
+      session_id: this._sessionInfo?.session_id || '',
+      context: user.context || {},
+      groups_id: user.groups_id || []
+    };
   }
 
   /**
-   * Tries to restore a session from localStorage if available
+   * Tries to restore a session from cookies if available
    */
   private async tryRestoreSessionFromStorage(): Promise<boolean> {
-    if (typeof window === 'undefined') return false;
+    if (typeof document === 'undefined') return false;
 
     try {
-      const sessionData = localStorage.getItem('odoo_session');
-      if (!sessionData) {
+      // Get the session cookie
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('odoo_session='))
+        ?.split('=')[1];
+
+      if (!cookieValue) {
         if (this._config.debug) {
-          console.log('No odoo_session data found in storage');
+          console.log('No odoo_session cookie found');
         }
         return false;
       }
 
-      const parsedData = JSON.parse(sessionData);
+      // Decode and parse the cookie value
+      const decodedValue = decodeURIComponent(cookieValue);
+      const parsedData = JSON.parse(decodedValue);
       const { sessionInfo, currentUser, timestamp } = parsedData;
 
       // Check if session is expired (1 day max age)
@@ -1286,7 +988,7 @@ interface CurrentUser {
 
       if (isExpired) {
         if (this._config.debug) {
-          console.log('odoo_session has expired');
+          console.log('odoo_session cookie has expired');
         }
         await this.clearSession();
         return false;
@@ -1295,19 +997,19 @@ interface CurrentUser {
       // Validate required session data
       if (!sessionInfo?.id || !currentUser?.id) {
         if (this._config.debug) {
-          console.log('Invalid odoo_session data in storage');
+          console.log('Invalid odoo_session data in cookie');
         }
         await this.clearSession();
         return false;
       }
 
-      // Only clear session if truly expired or invalid, otherwise restore
+      // Restore the session
       this._sessionInfo = sessionInfo;
       this._currentUser = currentUser;
       this._isAuthenticated = true;
 
       if (this._config.debug) {
-        console.log('Session restored from odoo_session for user:', currentUser.username);
+        console.log('Session restored from odoo_session cookie for user:', currentUser.username);
       }
 
       // Notify listeners
@@ -1317,9 +1019,12 @@ interface CurrentUser {
 
       return true;
     } catch (error) {
-      console.error('Error restoring session from odoo_session:', error);
-      // Only clear session if JSON parse fails or truly invalid
-      // Do not clear localStorage unless necessary
+      console.error('Error restoring session from odoo_session cookie:', error);
+      // Clear the invalid cookie
+      if (typeof window !== 'undefined') {
+        const domain = window.location.hostname;
+        document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
+      }
       return false;
     }
   }
@@ -1343,8 +1048,12 @@ interface CurrentUser {
     return this._currentUser?.isAdmin || false;
   }
 
-  public getDbName(): string {
+  public get dbName(): string {
     return this._config.db;
+  }
+
+  public getSessionInfo(): OdooSessionInfo | null {
+    return this._sessionInfo;
   }
 
   /**
@@ -1492,15 +1201,175 @@ interface CurrentUser {
   /**
    * Alias for call() method for backward compatibility
    */
-  public async callOdooMethod<T = unknown>(
+  public async callOdooMethod<T>(
     model: string,
     method: string,
     args: unknown[] = [],
-    kwargs: Record<string, unknown> = {}
+    kwargs: Record<string, unknown> = {},
+    options: { skipAuthCheck?: boolean; useAdminSession?: boolean } = {}
   ): Promise<T> {
-    return this.call<T>(model, method, args, kwargs);
+    return this.call<T>(model, method, args, kwargs, options);
   }
   
+  /**
+   * Creates a new record in the specified model
+   * @param model The model to create a record in
+   * @param data The data for the new record
+   * @returns The ID of the created record
+   */
+  public async create(model: string, data: Record<string, unknown>): Promise<number> {
+    try {
+      logger.debug(`Creating ${model} record`, { data });
+      
+      // Ensure we're authenticated
+      await this.ensureAuthenticated();
+      
+      // Call the create method on the model
+      const result = await this.call<number | Record<string, unknown>>(
+        model,
+        'create',
+        [data],
+        { context: this._sessionInfo?.context || {} }
+      );
+
+      if (typeof result !== 'number' || !result) {
+        logger.error(`Error creating ${model} record: Invalid result format`, { result });
+        throw new Error(`Failed to create ${model} record: Odoo returned an invalid ID.`);
+      }
+      
+      logger.info(`Successfully created ${model} record`, { id: result });
+      return result;
+    } catch (error) {
+      logger.error(`Error creating ${model} record`, { error });
+      throw this.handleError(error, `Failed to create ${model} record`);
+    }
+  }
+
+  /**
+   * Makes a generic RPC call to the Odoo server
+   * @param model The model to call the method on
+   * @param method The method to call
+   * @param args Positional arguments for the method
+   * @param kwargs Keyword arguments for the method
+   * @param options Additional options
+   * @returns Promise with the method result
+   */
+  public async call<T = unknown>(
+    model: string,
+    method: string,
+    args: unknown[] = [],
+    kwargs: Record<string, unknown> = {},
+    options: { skipAuthCheck?: boolean; useAdminSession?: boolean } = {}
+  ): Promise<T> {
+    try {
+      // These will be set based on the session info
+      let currentUid: number = 0;
+      let currentPassword: string = '';
+      let currentSessionId: string | undefined;
+
+      // Handle authentication and get credentials
+      if (!options.skipAuthCheck) {
+        if (options.useAdminSession) {
+          // Ensure admin session exists and is valid
+          if (!this._adminSessionInfo?.id) {
+            await this.authenticateAsAdmin();
+          }
+          currentUid = typeof this._adminSessionInfo?.uid === 'number' ? this._adminSessionInfo.uid : 0;
+          currentPassword = typeof this._adminSessionInfo?.password === 'string' 
+            ? this._adminSessionInfo.password 
+            : '';
+          currentSessionId = this._adminSessionInfo?.session_id;
+        } else {
+          // Ensure user session is valid
+          await this.ensureAuthenticated();
+          currentUid = typeof this._sessionInfo?.uid === 'number' ? this._sessionInfo.uid : 0;
+          currentPassword = typeof this._sessionInfo?.password === 'string' 
+            ? this._sessionInfo.password 
+            : '';
+          currentSessionId = this._sessionInfo?.session_id;
+        }
+      }
+
+      // Get database name from config
+      const db = this._config.db;
+      if (!db) {
+        throw new Error('Database name is required but not configured');
+      }
+
+      // Generate a random message ID for the JSON-RPC call
+      const messageId = Math.floor(Math.random() * 1000000000);
+      
+      // Prepare the JSON-RPC payload with the determined credentials
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          db,
+          service: 'object',
+          method: 'execute_kw',
+          args: [
+            db,                    // 1. Database name
+            currentUid,           // 2. User ID (0 for public, actual ID for users)
+            currentPassword,      // 3. User password or session token
+            model,                // 4. Model name (e.g., 'res.partner')
+            method,               // 5. Method name (e.g., 'search_read', 'create')
+            args,                 // 6. Positional arguments for the method
+            kwargs                // 7. Keyword arguments for the method
+          ]
+        },
+        id: messageId
+      };
+
+      // Set up headers
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        ...this._config.headers,
+      };
+
+      // Add session ID to headers if available
+      if (currentSessionId) {
+        headers['X-Openerp-Session-Id'] = currentSessionId;
+        headers['X-CSRFToken'] = currentSessionId;
+        headers['Cookie'] = `session_id=${currentSessionId}`;
+      }
+
+      // Log the request if in debug mode
+      if (this._config.debug) {
+        const safePayload = {
+          ...payload,
+          params: {
+            ...payload.params,
+            args: payload.params.args.map((arg: unknown, i: number) => 
+              i === 2 ? (arg ? '********' : '') : arg // Mask password in logs
+            )
+          }
+        };
+        logger.debug(`Calling ${model}.${method}`, { payload: safePayload });
+      }
+
+      // Make the API call
+      const response = await this._client.post('/jsonrpc', payload, { headers });
+
+      // Check for JSON-RPC error in response
+      if (response.data?.error) {
+        const error = response.data.error;
+        logger.error(`API error in ${model}.${method}`, {
+          code: error.code,
+          message: error.message,
+          data: error.data
+        });
+        throw this.handleError(error);
+      }
+
+      // Return the result
+      return response.data.result;
+    } catch (error) {
+      logger.error(`Error in ${model}.${method}`, { error });
+      throw this.handleError(error, `Error in Odoo API call ${model}.${method}`);
+    }
+  }
+
   /**
    * Creates a new training plan (project task) for a dog
    * @param plan Training plan data
@@ -1630,7 +1499,7 @@ interface CurrentUser {
         return [];
       }
 
-      const domain: (string | [string, string, any])[] = [];
+      const domain: (string | OdooDomainItem)[] = [];
       
       // Filter by partner if available
       if (this._currentUser.partnerId) {

@@ -96,17 +96,14 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
 
-  // Helper function to get session value from localStorage or cookie
-  const getSessionValue = () => {
+  // Helper function to get session value from cookie
+  const getSessionValue = (): string => {
     try {
-      const localSession = localStorage.getItem('odoo_session');
-      if (localSession) return localSession;
-      // Fallback: check cookie if needed
       const cookies = document.cookie.split(';').map(c => c.trim());
       const cookie = cookies.find(c => c.startsWith('odoo_session='));
       return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
     } catch (error) {
-      console.error('Error getting session value:', error);
+      console.error('Error getting session from cookie:', error);
       return '';
     }
   };
@@ -126,9 +123,7 @@ export default function DashboardLayout({
         
         if (!sessionValue) {
           console.log('❌ No valid session found, redirecting to login');
-          // Clear any stale data
-          localStorage.removeItem('odoo_session');
-          router.push('/client-area?redirect=' + encodeURIComponent(pathname ?? ""));
+          router.push('/login?session_expired=true');
           return;
         }
         
@@ -137,9 +132,8 @@ export default function DashboardLayout({
         console.log('Current user:', user);
         
         if (!user) {
-          console.log('❌ No user data available');
-          localStorage.removeItem('odoo_session');
-          router.push('/client-area?redirect=' + encodeURIComponent(pathname ?? ""));
+          console.log('❌ No user data available, redirecting to login');
+          router.push('/login?session_expired=true');
           return;
         }
         
