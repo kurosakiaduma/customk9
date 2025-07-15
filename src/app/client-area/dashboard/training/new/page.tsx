@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ServiceFactory from "@/services/ServiceFactory";
-import { Dog } from "@/types/odoo";
+import { Dog } from "@/types/dog";
 
 // Define a specific type for dog options in the dropdown
 interface DogOption {

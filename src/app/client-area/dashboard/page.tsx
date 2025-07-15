@@ -6,7 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService } from "@/services/OdooCalendarService";
-import { Dog, TrainingPlan } from "@/types/odoo";
+import { Dog } from "@/types/dog";
+import { TrainingPlan } from "@/types/odoo";
 
 // Components
 const WelcomeSection = ({ name }: { name: string }) => (

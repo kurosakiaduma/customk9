@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ServiceFactory from "@/services/ServiceFactory";
-import { Dog } from "@/types/odoo";
+import { Dog } from "@/types/dog";
 
 // Dog profile detail component
 const DogDetailCard = ({ dog }: { dog: Dog }) => {

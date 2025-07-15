@@ -156,23 +156,6 @@ export interface OdooModelInfo {
   field___last_update?: string;
 }
 
-export interface Dog {
-  id: number;
-  name: string;
-  breed: string;
-  age: number;
-  gender: string;
-  sterilized: boolean;
-  image_1920: string;
-  medical_issues: string;
-  behavior_details: string;
-  last_vet_visit: string;
-  next_vet_visit: string;
-  partner_id: number;
-  create_uid: number;
-  [key: string]: unknown;
-}
-
 export interface ProjectTask {
   id: number;
   name: string;
