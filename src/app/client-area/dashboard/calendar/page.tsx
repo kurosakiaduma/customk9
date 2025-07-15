@@ -303,7 +303,7 @@ export default function CalendarPage() {
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-600 mb-4">You don't have any upcoming appointments.</p>
+              <p className="text-gray-600 mb-4">You don&apos;t have any upcoming appointments.</p>
               <Link
                 href="/client-area/dashboard/calendar/book"
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-sm font-medium transition-colors"
@@ -322,6 +322,7 @@ export default function CalendarPage() {
             <button
               onClick={() => changeMonth(-1)}
               className="p-2 rounded-full hover:bg-gray-100"
+              title="Previous Month"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"></path>
@@ -335,6 +336,7 @@ export default function CalendarPage() {
             <button
               onClick={() => changeMonth(1)}
               className="p-2 rounded-full hover:bg-gray-100"
+              title="Next Month"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
@@ -470,6 +472,7 @@ export default function CalendarPage() {
                 <button
                   onClick={() => setShowAppointmentModal(false)}
                   className="text-gray-400 hover:text-gray-500"
+                  title="Close"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>

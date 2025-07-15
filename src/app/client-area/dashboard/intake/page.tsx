@@ -167,10 +167,10 @@ export default function IntakeFormPage() {
       const dogPayload = {
         name: formData.name || '',
         breed: formData.breed || '',
-        age: Number(formData.age) || 1,
+        age: formData.age ? String(formData.age) : '1',
         gender: formData.gender || '',
         dog_source: formData.dogInfo?.dogSource || '',
-        time_with_dog: formData.dogInfo?.timeWithDog || 1,
+        time_with_dog: formData.dogInfo?.timeWithDog ? String(formData.dogInfo?.timeWithDog) : '1',
         medications: formData.dogInfo?.medications || '',
         current_deworming: formData.dogInfo?.currentDeworming || '',
         tick_flea_preventative: formData.dogInfo?.tickFleaPreventative || '',
@@ -220,10 +220,10 @@ export default function IntakeFormPage() {
         // Goals fields
         training_goals: formData.goals?.trainingGoals || '',
         ideal_dog_behavior: formData.goals?.idealDogBehavior || '',
-        // Arrays as comma-separated strings
-        behavior_checklist: (formData.behaviorChecklist || []).join(','),
-        likes_about_dog: (formData.likesAboutDog || []).join(','),
-        dislikes_about_dog: (formData.dislikesAboutDog || []).join(','),
+        // Arrays as string arrays
+        behavior_checklist: formData.behaviorChecklist || [],
+        likes_about_dog: formData.likesAboutDog || [],
+        dislikes_about_dog: formData.dislikesAboutDog || [],
         // Other fields
         behavior_details: formData.behaviorDetails || '',
         undesirable_behavior: formData.undesirableBehavior || '',
@@ -232,19 +232,19 @@ export default function IntakeFormPage() {
         why_training: formData.whyTraining || '',
       };
       const currentUser = odooService.getCurrentUser();
-      let ownerId: number | null = null;
+      let owner_id: number | null = null;
       if (currentUser && currentUser.partner_id) {
         if (Array.isArray(currentUser.partner_id)) {
-          ownerId = currentUser.partner_id[0]; // [id, name]
+          owner_id = currentUser.partner_id[0]; // [id, name]
         } else {
-          ownerId = typeof currentUser.partner_id === "number" ? currentUser.partner_id : null;
+          owner_id = typeof currentUser.partner_id === "number" ? currentUser.partner_id : null;
         }
       }
       const sterilizedValue = formData.dogInfo?.sterilized === "Yes" || formData.dogInfo?.sterilized === true ? true : false;
       await odooService.createDogProfile({
         ...dogPayload,
         sterilized: sterilizedValue,
-        owner_id: ownerId
+        owner_id: owner_id !== null ? owner_id : undefined
       });
       // Show success message
       setSubmissionStatus({

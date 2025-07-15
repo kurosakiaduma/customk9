@@ -109,25 +109,6 @@ export default function AddDogPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Helper to ensure all fields in an object are non-undefined strings
-  function fillDefaults<T extends Record<string, string>>(obj: Partial<T>, defaults: T): T {
-    const result: Record<string, string> = { ...defaults };
-    for (const key in defaults) {
-      result[key] = typeof obj[key] === 'undefined' ? '' : obj[key] as string;
-    }
-    return result as T;
-  }
-
-  const defaultLifestyle = {
-    homeAloneLocation: '', sleepLocation: '', hasCrate: '', likesCrate: '', crateLocation: '', chewsCrate: '', hoursAlone: '', foodBrand: '', feedingSchedule: '', foodLeftOut: '', allergies: '', toyTypes: '', toyPlayTime: '', toyStorage: '', walkFrequency: '', walkPerson: '', walkDuration: '', otherExercise: '', walkEquipment: '', offLeash: '', forestVisits: '', pulling: '', pullingPrevention: ''
-  };
-  const defaultHistory = {
-    previousTraining: '', growled: '', growlDetails: '', bitten: '', biteDetails: '', biteInjury: '', fearful: '', fearDetails: '', newPeopleResponse: '', groomingResponse: '', ignoreReaction: '', previousServices: '', toolsUsed: ''
-  };
-  const defaultGoals = {
-    trainingGoals: '', idealDogBehavior: ''
-  };
-
   // On submit, call OdooServerService.createDogProfile
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +121,10 @@ export default function AddDogPage() {
       const dogPayload = {
         name: formData.name || '',
         breed: formData.breed || '',
-        age: Number(formData.age) || 1,
+        age: formData.age || '', // Ensure age is a string
         gender: formData.gender || '',
         dog_source: formData.dogInfo?.dogSource || '',
-        time_with_dog: formData.dogInfo?.timeWithDog || 1,
+        time_with_dog: formData.dogInfo?.timeWithDog || '',
         medications: formData.dogInfo?.medications || '',
         current_deworming: formData.dogInfo?.currentDeworming || '',
         tick_flea_preventative: formData.dogInfo?.tickFleaPreventative || '',
@@ -193,10 +174,10 @@ export default function AddDogPage() {
         // Goals fields
         training_goals: formData.goals?.trainingGoals || '',
         ideal_dog_behavior: formData.goals?.idealDogBehavior || '',
-        // Arrays as comma-separated strings
-        behavior_checklist: (formData.behaviorChecklist || []).join(','),
-        likes_about_dog: (formData.likesAboutDog || []).join(','),
-        dislikes_about_dog: (formData.dislikesAboutDog || []).join(','),
+        // Arrays as arrays (not comma-separated strings)
+        behavior_checklist: formData.behaviorChecklist || [],
+        likes_about_dog: formData.likesAboutDog || [],
+        dislikes_about_dog: formData.dislikesAboutDog || [],
         // Other fields
         behavior_details: formData.behaviorDetails || '',
         undesirable_behavior: formData.undesirableBehavior || '',
@@ -205,19 +186,19 @@ export default function AddDogPage() {
         why_training: formData.whyTraining || '',
       };
       const currentUser = odooService.getCurrentUser();
-      let ownerId: number | null = null;
+      let owner_id: number | undefined = undefined;
       if (currentUser && currentUser.partner_id) {
         if (Array.isArray(currentUser.partner_id)) {
-          ownerId = currentUser.partner_id[0]; // [id, name]
-        } else {
-          ownerId = typeof currentUser.partner_id === "number" ? currentUser.partner_id : null;
+          owner_id = currentUser.partner_id[0]; // [id, name]
+        } else if (typeof currentUser.partner_id === "number") {
+          owner_id = currentUser.partner_id;
         }
       }
       const sterilizedValue = formData.dogInfo?.sterilized === "Yes" || formData.dogInfo?.sterilized === true ? true : false;
       await odooService.createDogProfile({
         ...dogPayload,
         sterilized: sterilizedValue,
-        owner_id: ownerId
+        owner_id: owner_id
       });
       setSubmitSuccess(true);
       setTimeout(() => {

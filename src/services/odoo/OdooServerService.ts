@@ -88,7 +88,7 @@ interface Dog {
   behaviorDetails?: string;
   undesirableBehavior?: string;
   fearDescription?: string;
-  ownerId?: number | string;
+  owner_id?: number | string;
   notes?: string;
 }
 
@@ -316,7 +316,7 @@ export class OdooServerService {
    * @param dog Dog profile data (rich structure)
    * @returns The new dog partner ID
    */
-  async createDogProfile(dog: Partial<Dog> & { ownerId: number }): Promise<number> {
+  async createDogProfile(dog: Partial<Dog> & { owner_id: number }): Promise<number> {
     try {
       // Prepare the comment field with all structured data
       const commentData = {
@@ -356,7 +356,7 @@ export class OdooServerService {
           method: "create",
           args: [{
             name: dog.name,
-            parent_id: dog.ownerId, // Owner's partner ID
+            parent_id: dog.owner_id, // Owner's partner ID
             type: "contact",
             function: "Dog",
             comment: JSON.stringify(commentData)

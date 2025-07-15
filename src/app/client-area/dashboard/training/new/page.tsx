@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ServiceFactory from "@/services/ServiceFactory";
-import { Dog } from "@/types/dog";
 
 // Define a specific type for dog options in the dropdown
 interface DogOption {
@@ -39,7 +38,7 @@ export default function NewTrainingPlanPage() {
     const fetchDogs = async () => {
       try {
         const dogsData = await odooClientService.getDogs();
-        setDogs(dogsData.map(dog => ({ id: dog.id, name: dog.name })));
+        setDogs(dogsData.map(dog => ({ id: Number(dog.id), name: dog.name })));
         setIsLoading(false);
       } catch (err: any) {
         console.error('Failed to fetch dogs:', err);
@@ -136,6 +135,8 @@ export default function NewTrainingPlanPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
                 required
+                placeholder="Enter plan name"
+                title="Plan Name"
               />
             </div>
             
@@ -148,6 +149,7 @@ export default function NewTrainingPlanPage() {
                 onChange={(e) => setFormData({ ...formData, dogId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
                 required
+                title="Select Dog"
               >
                 <option value="">Select a dog</option>
                 {dogs.map((dog) => (
@@ -168,6 +170,8 @@ export default function NewTrainingPlanPage() {
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
                 required
+                title="Start Date"
+                placeholder="Select start date"
               />
             </div>
             
@@ -181,6 +185,8 @@ export default function NewTrainingPlanPage() {
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
                 required
+                title="End Date"
+                placeholder="Select end date"
               />
             </div>
           </div>
@@ -194,6 +200,8 @@ export default function NewTrainingPlanPage() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+              title="Description"
+              placeholder="Enter plan description"
             />
           </div>
         </div>
@@ -224,6 +232,8 @@ export default function NewTrainingPlanPage() {
                       onChange={(e) => handleTaskChange(index, 'name', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
                       required
+                      title="Task Name"
+                      placeholder="Enter task name"
                     />
                   </div>
                   <div>
@@ -235,6 +245,8 @@ export default function NewTrainingPlanPage() {
                       value={task.description}
                       onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                      title="Task Description"
+                      placeholder="Enter task description"
                     />
                   </div>
                 </div>
@@ -242,6 +254,7 @@ export default function NewTrainingPlanPage() {
                   type="button"
                   onClick={() => removeTask(index)}
                   className="mt-7 text-red-600 hover:text-red-800"
+                  title="Remove Task"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -4,10 +4,11 @@ import {
   OdooUser,
   OdooError,
   OdooDomainItem,
-  Dog,
   ProjectTask,
   CalendarEvent
 } from './odoo.types';
+
+import { Dog } from '@/types/dog';
 
 // Constants for session management
 // Note: Retry logic constants are defined but not yet implemented
@@ -401,7 +402,9 @@ export default class OdooClientService {
           session_id: sessionId,
           password: password, // Store the password in the session
           is_admin: result?.is_admin || false,
+          is_system: result?.is_system || false,
           user_context: result?.user_context || {},
+          context: result?.user_context || {},
           db: dbName,
           expires: Date.now() + SESSION_TIMEOUT_MS,
         };
@@ -410,9 +413,9 @@ export default class OdooClientService {
           uid: this._sessionInfo.uid,
           username: this._sessionInfo.username,
           hasPassword: !!this._sessionInfo.password,
-          passwordLength: this._sessionInfo.password?.length || 0,
+          passwordLength: typeof this._sessionInfo.password === 'string' ? this._sessionInfo.password.length : 0,
           sessionId: sessionId ? `${sessionId.substring(0, 5)}...` : 'none',
-          expires: new Date(this._sessionInfo.expires).toISOString()
+          expires: new Date(this._sessionInfo.expires as number).toISOString()
         });
 
         // Set current user
@@ -426,7 +429,7 @@ export default class OdooClientService {
           session_id: this._sessionInfo.session_id,
           context: result.user_context || {},
           groups_id: result.groups_id || [],
-          expires_at: this._sessionInfo.expires,
+          expires_at: typeof this._sessionInfo.expires === 'number' ? this._sessionInfo.expires : undefined,
         };
 
         this._isAuthenticated = true;
@@ -521,13 +524,13 @@ export default class OdooClientService {
             await this.authenticateAsAdmin();
           }
           currentUid = this._adminSessionInfo?.uid || 0;
-          currentPassword = this._adminSessionInfo?.password || '';
+          currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
           currentSessionId = this._adminSessionInfo?.session_id;
         } else {
           // Ensure user session is valid
           await this.ensureAuthenticated();
           currentUid = this._sessionInfo?.uid || 0;
-          currentPassword = this._sessionInfo?.password || '';
+          currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
           currentSessionId = this._sessionInfo?.session_id;
         }
       } else {
@@ -678,7 +681,7 @@ export default class OdooClientService {
               console.log('✅ Successfully re-authenticated as admin');
               // Update current credentials with the new session info
               currentUid = updatedSessionInfo.uid || 0;
-              currentPassword = updatedSessionInfo.password || '';
+              currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
               currentSessionId = updatedSessionInfo.session_id;
             } else {
               throw new Error('Failed to re-authenticate as admin: No session info returned');
@@ -693,7 +696,7 @@ export default class OdooClientService {
       } else {
         // Use the existing session info
         currentUid = sessionInfo?.uid || 0;
-        currentPassword = sessionInfo?.password || '';
+        currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
         currentSessionId = sessionInfo?.session_id;
       }
 
@@ -735,7 +738,9 @@ export default class OdooClientService {
             username: sessionInfo?.username,
             isAdmin: options.useAdminSession,
             sessionId: sessionInfo?.session_id ? '********' : 'not-set',
-            expires: sessionInfo?.expires ? new Date(sessionInfo.expires).toISOString() : 'not-set'
+            expires: (sessionInfo?.expires && (typeof sessionInfo.expires === 'string' || typeof sessionInfo.expires === 'number'))
+              ? new Date(sessionInfo.expires).toISOString()
+              : 'not-set'
           }
         });
       }
@@ -1092,7 +1097,7 @@ export default class OdooClientService {
       if (response.data?.result?.uid) {
         this._sessionInfo.expires = Date.now() + SESSION_TIMEOUT_MS;
         if (this._currentUser) {
-          this._currentUser.expires_at = this._sessionInfo.expires;
+          this._currentUser.expires_at = typeof this._sessionInfo.expires === 'number' ? this._sessionInfo.expires : undefined;
         }
         await this.saveSessionToStorage();
         logger.debug('Session refreshed successfully');
@@ -1700,8 +1705,16 @@ export default class OdooClientService {
           
         if (typeof partnerId === 'number') {
           domain.push('|', ['partner_ids', 'in', [partnerId]] as [string, string, number[]]);
-        } else if (Array.isArray(partnerId) && partnerId.length > 0 && typeof partnerId[0] === 'number') {
-          domain.push('|', ['partner_ids', 'in', [partnerId[0]]] as [string, string, number[]]);
+        } else if (Array.isArray(partnerId)) {
+          if (
+            Array.isArray(partnerId) &&
+            partnerId !== undefined &&
+            partnerId !== null &&
+            partnerId.length > 0 &&
+            typeof partnerId[0] === 'number'
+          ) {
+            domain.push('|', ['partner_ids', 'in', [partnerId[0]]] as [string, string, number[]]);
+          }
         }
       }
 
