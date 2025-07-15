@@ -24,55 +24,92 @@ export default function ClientAreaPage() {
   
   const router = useRouter();
   const authService = ServiceFactory.getInstance().getAuthService();
-    // Check if user is already authenticated
+  // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
       setCheckingAuth(true);
-      
       try {
         // Check URL parameters for logout
         const urlParams = new URLSearchParams(window.location.search);
         const loggedOut = urlParams.get('logout') === 'true';
-        
         if (loggedOut) {
           // User just logged out, clear any existing session
           console.log('User just logged out, clearing session');
           await authService.logout();
           setIsAuthenticated(false);
           setCheckingAuth(false);
-          // Remove the logout parameter from URL
           window.history.replaceState({}, document.title, window.location.pathname);
           return;
         }
-        
+
         console.log('Checking authentication status...');
-        
-        // First try to restore session from storage
+
+        // Helper function to get session value from localStorage or cookie
+        const getSessionValue = () => {
+          const localSession = localStorage.getItem('odoo_session');
+          if (localSession) return localSession;
+          // Fallback: check cookie if needed
+          const cookies = document.cookie.split(';').map(c => c.trim());
+          const cookie = cookies.find(c => c.startsWith('odoo_session='));
+          return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
+        };
+
+        // Check for Odoo session and validate it
+        const odooSessionValue = getSessionValue();
+        console.log('Raw session value:', odooSessionValue);
+        if (odooSessionValue) {
+          try {
+            const sessionData = JSON.parse(odooSessionValue);
+            console.log('Parsed session data:', sessionData);
+            // Check if session exists and has required data
+            if (sessionData.sessionInfo && sessionData.sessionInfo.uid) {
+              // Check if session is not expired
+              const now = Date.now();
+              const expiresAt = sessionData.sessionInfo.expires;
+              console.log('Session check:', { now, expiresAt, isValid: expiresAt && now < expiresAt });
+              if (expiresAt && now < expiresAt) {
+                console.log('Valid session found, user is authenticated');
+                setIsAuthenticated(true);
+                setCheckingAuth(false);
+                return;
+              } else {
+                console.log('Session expired');
+                // Clear expired cookie
+                document.cookie = 'odoo_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
+                localStorage.removeItem('odoo_session');
+              }
+            } else {
+              console.log('Invalid session structure');
+            }
+          } catch (error) {
+            console.error('Error parsing session:', error);
+            // Clear invalid cookie and localStorage
+            document.cookie = 'odoo_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
+          }
+        }
+
+        // Check OdooClientService session
         const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-        
-        // Check if we have a valid session in memory or storage
         const hasValidSession = odooClientService.isAuthenticated;
         console.log('Has valid session:', hasValidSession);
-        
         if (hasValidSession) {
           console.log('Found valid session, user is authenticated');
           setIsAuthenticated(true);
           setCheckingAuth(false);
           return;
         }
-        
+
         // Check the old token-based auth (for backward compatibility)
         const hasToken = authService.isAuthenticated();
         console.log('Has token:', hasToken);
-        
         if (hasToken) {
           console.log('Found token, user is authenticated');
           setIsAuthenticated(true);
           setCheckingAuth(false);
           return;
         }
-        
-        console.log('No valid session or token found');
+
+        console.log('No valid session, token, or custom user found');
         setIsAuthenticated(false);
       } catch (error) {
         console.error('Error checking authentication:', error);
@@ -81,9 +118,9 @@ export default function ClientAreaPage() {
         setCheckingAuth(false);
       }
     };
-    
+
     checkAuth();
-    
+
     // Scroll to top on page load
     window.scrollTo(0, 0);
   }, [authService]);
@@ -111,33 +148,33 @@ export default function ClientAreaPage() {
     e.preventDefault();
     setFormError("");
     setIsLoading(true);
-    
+
     try {
       // Simple validation
       if (!email || !password) {
         throw new Error("Please fill in all fields");
       }
-      
+
       console.log('Attempting login for:', email);
       const user = await authService.login(email, password);
       console.log('Login successful for user:', user.email);
-      
+
+      // Remove any custom user session from localStorage
+      // ...existing code...
+
       // Store remember me preference
       if (rememberMe) {
         localStorage.setItem('customk9_remember_me', 'true');
       } else {
         localStorage.removeItem('customk9_remember_me');
       }
-      
+
       // Set authentication state
       setIsAuthenticated(true);
-      
       // The useEffect will handle the redirect
     } catch (error) {
       console.error('Login error:', error);
       setFormError(error instanceof Error ? error.message : "Login failed. Please try again.");
-      
-      // Clear sensitive data on error
       setPassword('');
     } finally {
       setIsLoading(false);
@@ -148,53 +185,44 @@ export default function ClientAreaPage() {
     e.preventDefault();
     setFormError("");
     setIsLoading(true);
-    
     try {
       // Simple validation
       if (!email || !password || !firstName || !lastName || !phone) {
         throw new Error("Please fill in all required fields");
       }
-      
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
       }
-      
       if (!termsAccepted) {
         throw new Error("You must accept the terms and conditions");
       }
-      
       if (password.length < 8) {
         throw new Error("Password must be at least 8 characters long");
       }
-        // Create user
+      // Create user
       const user = await authService.register({
         name: `${firstName} ${lastName}`,
         email,
         phone,
         password
       });
-      
       console.log('Registration successful for user:', user.email);
-      
-      // Show success message
+
+      // After registration, redirect to login tab and show message
+      setActiveTab("login");
+      setSuccessMessage("Registration successful! Please log in with your new credentials.");
       setFormError("");
-      setSuccessMessage("Account created successfully! Please log in with your email and password.");
-      
-      // Clear form
+      setIsAuthenticated(false);
+      setCheckingAuth(false);
+      // Optionally clear registration fields
       setFirstName("");
       setLastName("");
-      setEmail("");
       setPhone("");
+      setEmail("");
       setPassword("");
       setConfirmPassword("");
       setTermsAccepted(false);
-      
-      // Switch to login tab after 2 seconds
-      setTimeout(() => {
-        setActiveTab("login");
-        setSuccessMessage("");
-      }, 2000);
-      
+      return;
     } catch (error) {
       console.error('Registration error:', error);
       setFormError(error instanceof Error ? error.message : "Registration failed");
@@ -209,8 +237,7 @@ export default function ClientAreaPage() {
     // Simulate API call delay
     setTimeout(() => {
       // Store fake auth token for demo
-      localStorage.setItem("customk9_auth_token", "demo_token_guest");
-      localStorage.setItem("customk9_user_name", "Demo User");
+      // ...existing code...
       
       setIsAuthenticated(true);
       setIsLoading(false);
@@ -601,4 +628,4 @@ export default function ClientAreaPage() {
       <Footer />
     </div>
   );
-} 
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AuthUser } from "@/services/auth/AuthService";
 import ServiceFactory from "@/services/ServiceFactory";
 
@@ -76,7 +76,7 @@ const Icon = ({ name }: { name: string }) => {
     case "logo":
       return (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"></path>
         </svg>
       );
     default:
@@ -91,43 +91,70 @@ export default function DashboardLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Helper function to get session value from localStorage or cookie
+  const getSessionValue = () => {
+    try {
+      const localSession = localStorage.getItem('odoo_session');
+      if (localSession) return localSession;
+      // Fallback: check cookie if needed
+      const cookies = document.cookie.split(';').map(c => c.trim());
+      const cookie = cookies.find(c => c.startsWith('odoo_session='));
+      return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
+    } catch (error) {
+      console.error('Error getting session value:', error);
+      return '';
+    }
+  };
 
   // Get current user on mount and check authentication
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
+        setAuthError(null);
+        
         const authService = ServiceFactory.getInstance().getAuthService();
-        const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+        const sessionValue = getSessionValue();
         
-        // First check if we have a valid session
-        const hasValidSession = odooClientService.isAuthenticated;
+        console.log('🔍 Checking authentication...');
+        console.log('Session value exists:', !!sessionValue);
         
-        if (!hasValidSession) {
-          // If no valid session, check for token-based auth (backward compatibility)
-          const hasToken = authService.isAuthenticated();
-          
-          if (!hasToken) {
-            // No valid session or token, redirect to login
-            console.log('No valid session or token found, redirecting to login');
-            window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname ?? "");
-            return;
-          }
+        if (!sessionValue) {
+          console.log('❌ No valid session found, redirecting to login');
+          // Clear any stale data
+          localStorage.removeItem('odoo_session');
+          router.push('/client-area?redirect=' + encodeURIComponent(pathname ?? ""));
+          return;
         }
         
-        // If we get here, we have a valid session or token
+        // Get the current user
         const user = authService.getCurrentUser();
+        console.log('Current user:', user);
+        
+        if (!user) {
+          console.log('❌ No user data available');
+          localStorage.removeItem('odoo_session');
+          router.push('/client-area?redirect=' + encodeURIComponent(pathname ?? ""));
+          return;
+        }
+        
+        // If we get here, authentication is valid
+        console.log('✅ Authentication successful for user:', user.name);
         setCurrentUser(user);
+        setIsLoading(false);
         
       } catch (error) {
-        console.error('Error checking authentication:', error);
-        // On error, redirect to login
-        window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname ?? "");
+        console.error('❌ Error checking authentication:', error);
       }
     };
-    
+
     checkAuth();
-  }, []);
+  }, [pathname, router]);
 
   // Get user initials for avatar
   const getInitials = (name: string) => {
@@ -137,6 +164,40 @@ export default function DashboardLayout({
       .join('')
       .toUpperCase();
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-sky-600 border-r-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{authError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the dashboard if not authenticated
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
@@ -155,10 +216,10 @@ export default function DashboardLayout({
               {/* User Profile Summary */}
               <div className="flex items-center space-x-4">
                 <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-xl border-2 border-white">
-                  {currentUser ? getInitials(currentUser.name || '') : 'G'}
+                  {getInitials(currentUser.name || 'User')}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-lg">{currentUser?.name || 'Guest'}</h2>
+                  <h2 className="font-semibold text-lg">{currentUser.name || 'User'}</h2>
                   <p className="text-sky-200 text-sm">Premium Member</p>
                 </div>
               </div>
@@ -210,10 +271,10 @@ export default function DashboardLayout({
               <div className="p-4 bg-sky-600 text-white">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-sm border-2 border-white">
-                    {currentUser ? getInitials(currentUser.name || '') : 'G'}
+                    {getInitials(currentUser.name || 'User')}
                   </div>
                   <div>
-                    <h2 className="font-semibold">{currentUser?.name || 'Guest'}</h2>
+                    <h2 className="font-semibold">{currentUser.name || 'User'}</h2>
                     <p className="text-sky-200 text-xs">Premium Member</p>
                   </div>
                 </div>
@@ -251,4 +312,4 @@ export default function DashboardLayout({
       </div>
     </div>
   );
-} 
+}

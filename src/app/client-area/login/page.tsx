@@ -35,19 +35,7 @@ export default function ClientLoginPage() {
       if (!currentUser) {
         throw new Error('Failed to get user information');
       }
-      
-      // Store comprehensive session information for persistence
-      localStorage.setItem('customk9_user_session', JSON.stringify({
-        id: currentUser.id,
-        name: currentUser.name || username,
-        email: username.includes('@') ? username : '',
-        partner_id: currentUser.partner_id,
-        is_admin: currentUser.is_admin || false,
-        is_system: currentUser.is_system || false,
-        session_id: sessionInfo.session_id,
-        timestamp: Date.now()
-      }));
-      
+
       console.log('✅ Session stored, redirecting to dashboard');
       
       // Force a full page reload to ensure all auth state is properly set

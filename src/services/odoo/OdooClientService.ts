@@ -84,7 +84,51 @@ interface CurrentUser {
   expires_at?: number;
 }
 
-export default class OdooClientService {
+  export default class OdooClientService {
+
+    /**
+     * Saves the current session and user info to localStorage
+     */
+    private async saveSessionToStorage(): Promise<void> {
+      if (typeof window === 'undefined') return;
+      try {
+        const sessionData = {
+          sessionInfo: this._sessionInfo,
+          currentUser: this._currentUser,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem('odoo_session', JSON.stringify(sessionData));
+        if (this._config.debug) {
+          console.log('Session saved to odoo_session:', sessionData);
+        }
+      } catch (error) {
+        console.error('Error saving session to odoo_session:', error);
+      }
+    }
+  /**
+   * Clears the current session and authentication state
+   */
+  public async clearSession(): Promise<void> {
+    this._sessionInfo = null;
+    this._currentUser = null;
+    this._isAuthenticated = false;
+    this._authenticationPromise = null;
+    // Clear any stored session data
+    if (typeof window !== 'undefined') {
+      try {
+        // Clear cookies
+        document.cookie = 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        // Clear odoo_session from localStorage and sessionStorage
+        localStorage.removeItem('odoo_session');
+        localStorage.removeItem('odoo_session');
+        logger.info('Session cleared');
+      } catch (error) {
+        logger.error('Error clearing session storage', { error });
+      }
+    }
+    // Notify listeners
+    this._onLogout?.();
+  }
   private _client!: AxiosInstance;
   private _sessionInfo: OdooSessionInfo | null = null;
   private _adminSessionInfo: OdooSessionInfo | null = null;
@@ -133,10 +177,7 @@ export default class OdooClientService {
     });
     
     this.initializeAxios();
-
-    if (typeof window !== 'undefined') {
-      this.tryRestoreSessionFromStorage();
-    }
+    // No custom session restoration logic; rely only on Odoo session cookie
   }
 
   /**
@@ -478,14 +519,31 @@ export default class OdooClientService {
   public async create(model: string, data: Record<string, unknown>): Promise<number> {
     try {
       console.log(`🆕 OdooClientService: Creating ${model} record with data:`, data);
-      
+
+      let payload = data;
+      let useAdminSession = false;
+
+      if ((model === 'res.partner' || model === 'res.users') && !this._sessionInfo) {
+        useAdminSession = true;
+        if (model === 'res.partner') {
+          // Remove invalid fields for res.partner registration
+          const allowedFields = [
+            'name', 'email', 'phone', 'mobile', 'street', 'city', 'state_id', 'country_id',
+            'zip', 'website', 'company_type', 'parent_id', 'type', 'category_id', 'lang',
+            'is_company', 'vat', 'comment', 'function', 'title', 'user_id', 'image_1920', 'active', 'tz'
+          ];
+          payload = Object.fromEntries(Object.entries(data).filter(([key]) => allowedFields.includes(key)));
+        }
+      }
+
       const result = await this.call<number>(
         model,
         'create',
-        [data],
-        { context: this._sessionInfo?.context || {} }
+        [payload],
+        { context: this._sessionInfo?.context || {} },
+        useAdminSession ? { useAdminSession: true } : {}
       );
-      
+
       console.log(`✅ OdooClientService: Created ${model} record with ID:`, result);
       return result;
     } catch (error) {
@@ -517,6 +575,7 @@ export default class OdooClientService {
       let currentSessionId: string | undefined;
 
       // Handle authentication and get credentials
+      // Allow unauthenticated registration for res.partner create
       if (!options.skipAuthCheck) {
         if (options.useAdminSession) {
           // Ensure admin session exists and is valid
@@ -527,11 +586,18 @@ export default class OdooClientService {
           currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
           currentSessionId = this._adminSessionInfo?.session_id;
         } else {
-          // Ensure user session is valid
-          await this.ensureAuthenticated();
-          currentUid = this._sessionInfo?.uid || 0;
-          currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
-          currentSessionId = this._sessionInfo?.session_id;
+          // If this is a registration (res.partner create) and no session, skip auth
+          if (model === 'res.partner' && method === 'create' && !this._sessionInfo) {
+            currentUid = 0;
+            currentPassword = '';
+            currentSessionId = undefined;
+          } else {
+            // Ensure user session is valid
+            await this.ensureAuthenticated();
+            currentUid = this._sessionInfo?.uid || 0;
+            currentPassword = typeof this._adminSessionInfo?.password === 'string' ? this._adminSessionInfo.password : '';
+            currentSessionId = this._sessionInfo?.session_id;
+          }
         }
       } else {
         // For unauthenticated calls
@@ -1199,9 +1265,6 @@ export default class OdooClientService {
   /**
    * Tries to restore a session from localStorage if available
    */
-  /**
-   * Tries to restore a session from localStorage if available
-   */
   private async tryRestoreSessionFromStorage(): Promise<boolean> {
     if (typeof window === 'undefined') return false;
 
@@ -1209,21 +1272,21 @@ export default class OdooClientService {
       const sessionData = localStorage.getItem('odoo_session');
       if (!sessionData) {
         if (this._config.debug) {
-          console.log('No session data found in storage');
+          console.log('No odoo_session data found in storage');
         }
         return false;
       }
 
       const parsedData = JSON.parse(sessionData);
       const { sessionInfo, currentUser, timestamp } = parsedData;
-      
+
       // Check if session is expired (1 day max age)
       const maxAge = 24 * 60 * 60 * 1000; // 1 day in milliseconds
       const isExpired = timestamp && (Date.now() - timestamp) > maxAge;
-      
+
       if (isExpired) {
         if (this._config.debug) {
-          console.log('Session has expired');
+          console.log('odoo_session has expired');
         }
         await this.clearSession();
         return false;
@@ -1232,158 +1295,35 @@ export default class OdooClientService {
       // Validate required session data
       if (!sessionInfo?.uid || !currentUser?.uid) {
         if (this._config.debug) {
-          console.log('Invalid session data in storage');
+          console.log('Invalid odoo_session data in storage');
         }
         await this.clearSession();
         return false;
       }
 
-      // Restore session
+      // Only clear session if truly expired or invalid, otherwise restore
       this._sessionInfo = sessionInfo;
       this._currentUser = currentUser;
       this._isAuthenticated = true;
-      
+
       if (this._config.debug) {
-        console.log('Session restored from storage for user:', currentUser.username);
+        console.log('Session restored from odoo_session for user:', currentUser.username);
       }
-      
+
       // Notify listeners
       if (this._onLogin) {
         this._onLogin(this.mapCurrentUserToOdooUser(currentUser));
       }
-      
+
       return true;
     } catch (error) {
-      console.error('Error restoring session from storage:', error);
-      await this.clearSession();
+      console.error('Error restoring session from odoo_session:', error);
+      // Only clear session if JSON parse fails or truly invalid
+      // Do not clear localStorage unless necessary
       return false;
     }
   }
-
-  /**
-   * Saves the current session information to localStorage.
-   */
-  private async saveSessionToStorage(): Promise<void> {
-    if (typeof window === 'undefined') return;
-
-    try {
-      if (!this._sessionInfo || !this._currentUser) {
-        console.log('No session or user data to save to storage');
-        return;
-      }
-
-      const sessionData = {
-        sessionInfo: this._sessionInfo,
-        currentUser: this._currentUser,
-        isAuthenticated: this._isAuthenticated,
-        timestamp: Date.now()
-      };
-      
-      // Only save if we have valid session data
-      if (sessionData.sessionInfo.uid) {
-        localStorage.setItem('odoo_session', JSON.stringify(sessionData));
-        if (this._config.debug) {
-          console.log('Session saved to storage:', {
-            uid: sessionData.sessionInfo.uid,
-            username: sessionData.currentUser.username,
-            expiresAt: sessionData.sessionInfo.expires_at
-          });
-        }
-      } else {
-        await this.clearSession();
-      }
-    } catch (error) {
-      console.error('Error saving session to storage:', error);
-    }
-  }
-
-  // --- Public Getters ---
-    /**
-   * Gets the current session ID
-   */
-  public get sessionId(): string | null {
-    return this._sessionInfo?.session_id || null;
-  }
-
-  /**
-   * Clears the current session and authentication state
-   */
-  public clearSession = async (): Promise<void> => {
-    this._sessionInfo = null;
-    this._currentUser = null;
-    this._isAuthenticated = false;
-    this._authenticationPromise = null;
     
-    // Clear any stored session data
-    if (typeof window !== 'undefined') {
-      try {
-        // Clear cookies
-        document.cookie = 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        
-        // Clear localStorage and sessionStorage
-        localStorage.removeItem('odoo_session');
-        sessionStorage.removeItem('odoo_session');
-        
-        logger.info('Session cleared');
-      } catch (error) {
-        logger.error('Error clearing session storage', { error });
-      }
-    }
-    
-    // Notify listeners
-    this._onLogout?.();
-  };
-
-  /**
-   * Helper method to get user ID from session
-   * @private
-   */
-  private async getUserIdFromSession(sessionId: string): Promise<number | null> {
-    try {
-      const response = await this._client.post('/web/session/get_session_info', {
-        jsonrpc: '2.0',
-        method: 'call',
-        params: {}
-      }, {
-        headers: {
-          'X-Openerp-Session-Id': sessionId,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      return response.data?.result?.uid || null;
-    } catch (error) {
-      console.error('Error getting user ID from session:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Logs out the current user
-   */
-  public async logout(): Promise<void> {
-    try {
-      if (this._isAuthenticated) {
-        await this.call('web.session', 'destroy', []);
-      }
-    } catch (error) {
-      console.error('Error during logout:', error);
-      // Continue with cleanup even if logout fails
-    } finally {
-      await this.clearSession();
-    }
-  }
-
-  /**
-   * Alias for logout() for backward compatibility
-   */
-  public async logoutUser(): Promise<void> {
-    return this.logout();
-  }
-
-  /**
-   * Gets the current session information
-   */
   public get sessionInfo(): OdooSessionInfo | null {
     return this._sessionInfo;
   }
@@ -1579,11 +1519,11 @@ export default class OdooClientService {
     const payload: Record<string, unknown> = {
       name: plan.name,
       partner_id: plan.dogId,
-      date_start: plan.startDate,
-      date_deadline: plan.endDate,
+      create_date: plan.startDate,
+      date_end: plan.endDate,
       description: plan.description,
       // Optionally serialize tasks as JSON or create subtasks separately
-      tasks_json: JSON.stringify(plan.tasks),
+      x_tasks_json: JSON.stringify(plan.tasks),
     };
     // You may want to link to a specific project (e.g., training project)
     // If you have a training project, fetch its ID and add project_id

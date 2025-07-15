@@ -182,13 +182,44 @@ export default function BookAppointmentPage() {
     setConflictDetails(null);
     
     try {
-      // Prepare booking data
+      // Robustly parse selectedDate and selectedTime to construct valid local time strings
+      let startLocal = '';
+      let stopLocal = '';
+      try {
+        // Parse time string (e.g., "11:00 AM")
+        const timeMatch = bookingData.selectedTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!timeMatch) throw new Error(`Invalid time format: ${bookingData.selectedTime}`);
+        let hours = parseInt(timeMatch[1], 10);
+        const minutes = parseInt(timeMatch[2], 10);
+        const ampm = timeMatch[3].toUpperCase();
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+        // Build start Date object
+        const startDateObj = new Date(bookingData.selectedDate);
+        startDateObj.setHours(hours, minutes, 0, 0);
+        // Format local time string: 'YYYY-MM-DD HH:mm:ss'
+        const pad = (n: number) => String(n).padStart(2, '0');
+        startLocal = `${bookingData.selectedDate} ${pad(hours)}:${pad(minutes)}:00`;
+        // Calculate stop time using service duration (default 1 hour)
+        const durationHours = bookingData.selectedService?.duration ? parseFloat(bookingData.selectedService.duration) : 1;
+        const stopDateObj = new Date(startDateObj.getTime() + durationHours * 60 * 60 * 1000);
+        stopLocal = `${bookingData.selectedDate} ${pad(stopDateObj.getHours())}:${pad(stopDateObj.getMinutes())}:00`;
+      } catch (e) {
+        setError('Invalid date or time format for booking.');
+        setIsSubmitting(false);
+        console.error('Booking time parse error:', e, bookingData);
+        return {
+          success: false,
+          message: 'Invalid date or time format for booking.'
+        };
+      }
+
       const bookingPayload: BookingRequest = {
         type: bookingData.bookingType === 'personal' ? 'individual' : 'group',
         service: bookingData.selectedService?.name || bookingData.selectedEvent?.title || '',
         dateTime: {
-          start: `${bookingData.selectedDate}T${bookingData.selectedTime}`,
-          stop: new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}`).toISOString()
+          start: startLocal,
+          stop: stopLocal
         },
         termsAccepted: bookingData.agreedToTerms,
         dogs: bookingData.selectedDogs.map(dog => ({
@@ -197,8 +228,18 @@ export default function BookAppointmentPage() {
         })),
       };
 
+      // Debug log: booking payload
+      console.log('Booking payload:', bookingPayload);
+
       // Create the booking
-      const bookingId = await bookingService.createBooking(bookingPayload);
+      let bookingId;
+      try {
+        bookingId = await bookingService.createBooking(bookingPayload);
+        console.log('Booking result (ID):', bookingId);
+      } catch (err) {
+        console.error('BookingService.createBooking error:', err);
+        throw err;
+      }
       
       if (!bookingId) {
         throw new Error('No booking ID returned from the server');

@@ -230,97 +230,86 @@ export default function DashboardPage() {
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
 
   useEffect(() => {
-    // Check for odoo_session in localStorage
-    const sessionRaw = localStorage.getItem('odoo_session');
-    if (!sessionRaw) {
+    // Use AuthService for authentication check
+    const authService = ServiceFactory.getInstance().getAuthService();
+    if (!authService.isAuthenticated()) {
       window.location.href = '/client-area';
       return;
     }
-    try {
-      const session = JSON.parse(sessionRaw);
-      const isAuthenticated = session.isAuthenticated;
-      const expires = session.sessionInfo?.expires || session.currentUser?.expires_at;
-      if (!isAuthenticated || !expires || Date.now() > expires) {
-        localStorage.removeItem('odoo_session');
-        window.location.href = '/client-area';
-        return;
-      }
-      // Set user name from session
-      const currentUser = session.currentUser;
-      const displayName =
-        currentUser.displayName ||
-        currentUser.name ||
-        currentUser.username ||
-        (currentUser.email ? currentUser.email.split('@')[0] : null) ||
-        'User';
-      setUserName(displayName);
-      setIsAuthenticated(true);
-
-      // Now load user-specific data
-      const loadUserData = async () => {
-        try {
-          console.log("🔍 Loading user-specific data...");
-          // Load dogs
-          try {
-            const fetchedDogs = await odooClientService.getDogs();
-            console.log(`🐕 Loaded ${fetchedDogs.length} dogs for user`);
-            setDogs(fetchedDogs);
-          } catch (dogError) {
-            console.error("❌ Error fetching dogs:", dogError);
-          }
-          // Load training plans
-          try {
-            const fetchedPlans = await odooClientService.getTrainingPlans();
-            console.log(`📋 Loaded ${fetchedPlans.length} training plans for user`);
-            setTrainingPlans(fetchedPlans);
-          } catch (planError) {
-            console.error("❌ Error fetching training plans:", planError);
-          }
-          // Load upcoming calendar sessions
-          try {
-            const odooCalendarService = new OdooCalendarService(odooClientService);
-            const calendarEvents = await odooCalendarService.getUpcomingAppointments();
-            let filteredEvents = calendarEvents;
-            // Only filter for non-admin users
-            if (currentUser && !currentUser.isAdmin && currentUser.partnerId) {
-              filteredEvents = (calendarEvents as import('@/services/OdooCalendarService').CalendarEvent[]).filter(event => {
-                // @ts-expect-error partner_ids may exist on backend event object for filtering
-                if (!event.partner_ids) return true;
-                // @ts-expect-error partner_ids may exist on backend event object for filtering
-                return Array.isArray(event.partner_ids) && event.partner_ids.includes(currentUser.partnerId);
-              });
-            }
-            // Convert calendar events to session format - keep all for count, but limit display to 3
-            const allSessions = filteredEvents.map(event => ({
-              id: event.id,
-              title: event.name,
-              date: new Date(event.start).toLocaleDateString('en-US', { 
-                weekday: 'long',
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              location: event.location,
-              trainer: event.trainer_name,
-              start: event.start
-            }));
-            setUpcomingSessions(allSessions);
-          } catch (sessionError) {
-            console.error("❌ Error fetching upcoming sessions:", sessionError);
-            setUpcomingSessions([]);
-          }
-        } catch (error) {
-          console.error("❌ Error in loadUserData:", error);
-          throw error;
-        }
-      };
-      loadUserData();
-    } catch {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
       localStorage.removeItem('odoo_session');
       window.location.href = '/client-area';
       return;
     }
+    // Set user name from currentUser
+    const displayName =
+      currentUser.name ||
+      (currentUser.email ? currentUser.email.split('@')[0] : null) ||
+      'User';
+    setUserName(displayName);
+    setIsAuthenticated(true);
+
+    // Now load user-specific data
+    const loadUserData = async () => {
+      try {
+        console.log("🔍 Loading user-specific data...");
+        // Load dogs
+        try {
+          const fetchedDogs = await odooClientService.getDogs();
+          console.log(`🐕 Loaded ${fetchedDogs.length} dogs for user`);
+          setDogs(fetchedDogs);
+        } catch (dogError) {
+          console.error("❌ Error fetching dogs:", dogError);
+        }
+        // Load training plans
+        try {
+          const fetchedPlans = await odooClientService.getTrainingPlans();
+          console.log(`📋 Loaded ${fetchedPlans.length} training plans for user`);
+          setTrainingPlans(fetchedPlans);
+        } catch (planError) {
+          console.error("❌ Error fetching training plans:", planError);
+        }
+        // Load upcoming calendar sessions
+        try {
+          const odooCalendarService = new OdooCalendarService(odooClientService);
+          const calendarEvents = await odooCalendarService.getUpcomingAppointments();
+          let filteredEvents = calendarEvents;
+          // Only filter for non-admin users
+          if (currentUser && !currentUser.isAdmin && currentUser.partnerId) {
+            filteredEvents = (calendarEvents as import('@/services/OdooCalendarService').CalendarEvent[]).filter(event => {
+              // @ts-expect-error partner_ids may exist on backend event object for filtering
+              if (!event.partner_ids) return true;
+              // @ts-expect-error partner_ids may exist on backend event object for filtering
+              return Array.isArray(event.partner_ids) && event.partner_ids.includes(currentUser.partnerId);
+            });
+          }
+          // Convert calendar events to session format - keep all for count, but limit display to 3
+          const allSessions = filteredEvents.map(event => ({
+            id: event.id,
+            title: event.name,
+            date: new Date(event.start).toLocaleDateString('en-US', { 
+              weekday: 'long',
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            location: event.location,
+            trainer: event.trainer_name,
+            start: event.start
+          }));
+          setUpcomingSessions(allSessions);
+        } catch (sessionError) {
+          console.error("❌ Error fetching upcoming sessions:", sessionError);
+          setUpcomingSessions([]);
+        }
+      } catch (error) {
+        console.error("❌ Error in loadUserData:", error);
+        throw error;
+      }
+    };
+    loadUserData();
     setIsLoading(false);
   }, [odooClientService]);
 
