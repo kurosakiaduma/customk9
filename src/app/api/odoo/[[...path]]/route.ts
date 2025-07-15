@@ -24,18 +24,20 @@ const ODOO_URL = process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.nehemiaha
 console.log('🔌 ODOO_URL:', ODOO_URL);
 
 // Combined handler for both GET and POST requests
+
+// Next.js App Router expects the second argument to be context: { params: { [key: string]: string | string[] } }
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest('GET', request, params);
+  return handleRequest('GET', request, context.params);
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest('POST', request, params);
+  return handleRequest('POST', request, context.params);
 }
 
 async function handleRequest(
