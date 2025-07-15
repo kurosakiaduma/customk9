@@ -72,7 +72,7 @@ interface DogGoals {
 }
 
 interface Dog {
-  id: number;
+  id: number | string;
   name: string;
   breed: string;
   age: string;
@@ -85,6 +85,11 @@ interface Dog {
   history: Partial<DogHistory>;
   goals: Partial<DogGoals>;
   behaviorChecklist: string[];
+  behaviorDetails?: string;
+  undesirableBehavior?: string;
+  fearDescription?: string;
+  ownerId?: number | string;
+  notes?: string;
 }
 
 interface TrainingPlan {
@@ -306,94 +311,40 @@ export class OdooServerService {
   }
 
   // Dog Profile Management
-  async createDogProfile(dogData: {
-    name: string;
-    breed: string;
-    age: string;
-    gender: string;
-    sterilized: string;
-    dogSource: string;
-    timeWithDog: string;
-    medications: string;
-    currentDeworming: string;
-    tickFleaPreventative: string;
-    vetClinic: string;
-    vetName: string;
-    vetPhone: string;
-    medicalIssues: string;
-    lifestyle: {
-      homeAloneLocation: string;
-      sleepLocation: string;
-      hasCrate: string;
-      likesCrate: string;
-      crateLocation: string;
-      chewsCrate: string;
-      hoursAlone: string;
-      foodBrand: string;
-      feedingSchedule: string;
-      foodLeftOut: string;
-      allergies: string;
-      toyTypes: string;
-      toyPlayTime: string;
-      toyStorage: string;
-      walkFrequency: string;
-      walkPerson: string;
-      walkDuration: string;
-      otherExercise: string;
-      walkEquipment: string;
-      offLeash: string;
-      forestVisits: string;
-      pulling: string;
-      pullingPrevention: string;
-    };
-    history: {
-      previousTraining: string;
-      growled: string;
-      growlDetails: string;
-      bitten: string;
-      biteDetails: string;
-      fearful: string;
-      fearDetails: string;
-      newPeopleResponse: string;
-      groomingResponse: string;
-      ignoreReaction: string;
-      previousServices: string;
-      toolsUsed: string;
-    };
-    goals: {
-      trainingGoals: string;
-      idealDogBehavior: string;
-    };
-    behaviorChecklist: string[];
-    behaviorDetails: string;
-    undesirableBehavior: string;
-    fearDescription: string;
-  }) {
+  /**
+   * Creates a new dog profile as a child contact of the specified owner.
+   * @param dog Dog profile data (rich structure)
+   * @returns The new dog partner ID
+   */
+  async createDogProfile(dog: Partial<Dog> & { ownerId: number }): Promise<number> {
     try {
-      // Format the data as JSON for the comment field
+      // Prepare the comment field with all structured data
       const commentData = {
-        dogInfo: {
-          breed: dogData.breed,
-          age: dogData.age,
-          gender: dogData.gender,
-          sterilized: dogData.sterilized,
-          dogSource: dogData.dogSource,
-          timeWithDog: dogData.timeWithDog,
-          medications: dogData.medications,
-          currentDeworming: dogData.currentDeworming,
-          tickFleaPreventative: dogData.tickFleaPreventative,
-          vetClinic: dogData.vetClinic,
-          vetName: dogData.vetName,
-          vetPhone: dogData.vetPhone,
-          medicalIssues: dogData.medicalIssues
+        dogInfo: dog.dogInfo || {
+          breed: dog.breed,
+          age: dog.age,
+          gender: dog.gender,
+          level: dog.level,
+          progress: dog.progress,
+          sterilized: (dog.dogInfo && dog.dogInfo.sterilized) || "",
+          dogSource: (dog.dogInfo && dog.dogInfo.dogSource) || "",
+          timeWithDog: (dog.dogInfo && dog.dogInfo.timeWithDog) || "",
+          medications: (dog.dogInfo && dog.dogInfo.medications) || "",
+          currentDeworming: (dog.dogInfo && dog.dogInfo.currentDeworming) || "",
+          tickFleaPreventative: (dog.dogInfo && dog.dogInfo.tickFleaPreventative) || "",
+          vetClinic: (dog.dogInfo && dog.dogInfo.vetClinic) || "",
+          vetName: (dog.dogInfo && dog.dogInfo.vetName) || "",
+          vetPhone: (dog.dogInfo && dog.dogInfo.vetPhone) || "",
+          medicalIssues: (dog.dogInfo && dog.dogInfo.medicalIssues) || ""
         },
-        lifestyle: dogData.lifestyle,
-        history: dogData.history,
-        goals: dogData.goals,
-        behaviorChecklist: dogData.behaviorChecklist,
-        behaviorDetails: dogData.behaviorDetails,
-        undesirableBehavior: dogData.undesirableBehavior,
-        fearDescription: dogData.fearDescription
+        lifestyle: dog.lifestyle || {},
+        history: dog.history || {},
+        goals: dog.goals || {},
+        behaviorChecklist: dog.behaviorChecklist || [],
+        behaviorDetails: dog.behaviorDetails || "",
+        undesirableBehavior: dog.undesirableBehavior || "",
+        fearDescription: dog.fearDescription || "",
+        notes: dog.notes || ""
       };
 
       // Create the dog profile using the res.partner model
@@ -404,8 +355,8 @@ export class OdooServerService {
           model: "res.partner",
           method: "create",
           args: [{
-            name: dogData.name,
-            parent_id: 3, // Owner's partner ID
+            name: dog.name,
+            parent_id: dog.ownerId, // Owner's partner ID
             type: "contact",
             function: "Dog",
             comment: JSON.stringify(commentData)

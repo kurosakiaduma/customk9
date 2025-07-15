@@ -1,5 +1,6 @@
-import { OdooClientService } from './odoo/OdooClientService';
+import OdooClientService from './odoo/OdooClientService';
 import { AuthService } from './auth/AuthService';
+import { config } from '../config/config';
 
 interface ServiceConfig {
   odoo: {
@@ -9,32 +10,60 @@ interface ServiceConfig {
   };
   odooClient: { // New config for client-side Odoo service
     baseUrl: string; // This will be the relative path to the Next.js API route
+    db: string; // Database name for the Odoo client
   };
 }
 
-// Default configuration using environment variables
+// Default configuration using the config object
 const defaultConfig: ServiceConfig = {
   odoo: {
-    baseUrl: process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.vuna.io',
-    database: process.env.NEXT_PUBLIC_ODOO_DATABASE || 'Merican',
+    baseUrl: config.odoo.baseUrl,
+    database: config.odoo.database,
     apiKey: process.env.NEXT_PUBLIC_ODOO_API_KEY
   },
   odooClient: {
-    baseUrl: '/api/odoo' // Frontend calls its own API routes
+    baseUrl: '/api/odoo', // Frontend calls its own API routes
+    db: config.odoo.database // Use database name from config
   }
 };
 
 class ServiceFactory {
   private static instance: ServiceFactory;
   private config: ServiceConfig;
-  private odooClientService: OdooClientService; // Changed from odooService
-  private authService: AuthService;
+  private odooClientService: OdooClientService | null = null; 
+  private authService: AuthService | null = null;
 
   private constructor(config: ServiceConfig) {
     this.config = config;
-    // Initialize OdooClientService with the client-side base URL
-    this.odooClientService = new OdooClientService(config.odooClient);
-    this.authService = new AuthService(this.odooClientService); // AuthService now uses OdooClientService
+  }
+
+  private initializeServices() {
+    if (!this.odooClientService) {
+      // Ensure we have the required database configuration
+      const db = this.config.odooClient?.db || this.config.odoo?.database;
+      
+      if (!db) {
+        console.error('Missing database configuration in ServiceFactory:', this.config);
+        throw new Error('Database name is required in Odoo client configuration');
+      }
+      
+      console.log('Initializing OdooClientService with config:', {
+        baseUrl: this.config.odooClient.baseUrl,
+        db: db,
+        debug: process.env.NODE_ENV === 'development'
+      });
+      
+      this.odooClientService = new OdooClientService({
+        baseUrl: this.config.odooClient.baseUrl,
+        db: db,
+        debug: process.env.NODE_ENV === 'development',
+        timeout: 30000
+      });
+    }
+    
+    if (!this.authService && this.odooClientService) {
+      this.authService = new AuthService(this.odooClientService);
+    }
   }
 
   static getInstance(): ServiceFactory {
@@ -53,11 +82,17 @@ class ServiceFactory {
 
   // Rename this to be explicit about client-side use
   getOdooClientService(): OdooClientService {
-    return this.odooClientService;
+    if (!this.odooClientService) {
+      this.initializeServices();
+    }
+    return this.odooClientService!;
   }
 
   getAuthService(): AuthService {
-    return this.authService;
+    if (!this.authService) {
+      this.initializeServices();
+    }
+    return this.authService!;
   }
 }
 

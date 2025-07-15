@@ -1,4 +1,13 @@
 
+export interface OdooConfig {
+  odoo: {
+    baseUrl: string;
+    database: string;
+    adminUsername: string;
+    adminPassword: string;
+  };
+}
+
 // Debug environment variables in production
 if (typeof window === 'undefined') {
   console.log('🔍 Server Environment Check:', {
@@ -20,10 +29,10 @@ if (typeof window === 'undefined') {
 
 export const config = {
   odoo: {
-    baseUrl: process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.vuna.io',
-    database: process.env.NEXT_PUBLIC_ODOO_DATABASE || 'Customk9',
+    baseUrl: process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.nehemiahndwilliamsvuna.com',
+    database: process.env.NEXT_PUBLIC_ODOO_DATABASE || 'customk9',
     // Admin credentials for server-side operations
-    adminUsername: process.env.NEXT_PUBLIC_ODOO_ADMIN_USERNAME || 'info@customk9kenya.com',
-    adminPassword: process.env.NEXT_PUBLIC_ODOO_ADMIN_PASSWORD || 'Qwerty@254'
+    adminUsername: process.env.NEXT_PUBLIC_ODOO_ADMIN_USERNAME || 'admin',
+    adminPassword: process.env.NEXT_PUBLIC_ODOO_ADMIN_PASSWORD || 'admin'
   }
 };

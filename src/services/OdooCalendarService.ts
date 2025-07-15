@@ -1,4 +1,4 @@
-import { OdooClientService } from '@/services/odoo/OdooClientService';
+import OdooClientService from '@/services/odoo/OdooClientService';
 
 export interface CalendarEvent {
     id: number;
@@ -56,8 +56,8 @@ export class OdooCalendarService {
         let currentUser = this.odooClientService.getCurrentUser();
         if (!currentUser) {
             // Try to restore session (works on client-side)
-            if (typeof window !== 'undefined' && this.odooClientService.checkUserSession) {
-                currentUser = await this.odooClientService.checkUserSession();
+            if (typeof window !== 'undefined' && this.odooClientService.getCurrentUser()) {
+                currentUser = await this.odooClientService.getCurrentUser();
             }
         }
         if (!currentUser) {

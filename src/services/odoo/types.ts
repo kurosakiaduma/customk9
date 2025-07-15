@@ -63,7 +63,7 @@ export interface DogGoals {
 }
 
 export interface Dog {
-  id: number;
+  id: number | string;
   name: string;
   breed: string;
   age: string;
@@ -76,4 +76,9 @@ export interface Dog {
   history: Partial<DogHistory>;
   goals: Partial<DogGoals>;
   behaviorChecklist: string[];
-} 
+  behaviorDetails?: string;
+  undesirableBehavior?: string;
+  fearDescription?: string;
+  ownerId?: number | string;
+  notes?: string;
+}

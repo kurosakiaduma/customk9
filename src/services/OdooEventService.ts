@@ -1,4 +1,4 @@
-import { OdooClientService } from '@/services/odoo/OdooClientService';
+import OdooClientService from '@/services/odoo/OdooClientService';
 
 export interface ScheduleItem {
   time: string;

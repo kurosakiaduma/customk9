@@ -1,4 +1,4 @@
-import { OdooClientService } from '@/services/odoo/OdooClientService';
+import OdooClientService from '@/services/odoo/OdooClientService';
 
 export interface OdooService {
     id: number;
@@ -30,11 +30,17 @@ export class OdooProductService {
         try {
             console.log('🔍 Fetching training services from Odoo...');
             
-            // Search for products/services that are training-related
+            // Search for training services with specific category and add additional filters
             const result = await this.odooClientService.callOdooMethod(
                 'product.template', 
                 'search_read', 
-                [[['sale_ok', '=', true], ['type', '=', 'service']]], 
+                [[
+                    ['sale_ok', '=', true],
+                    ['type', '=', 'service'],
+                    ['categ_id.name', 'ilike', 'Training'],
+                    ['active', '=', true],
+                    ['is_published', '=', true]
+                ]], 
                 {
                     fields: [
                         'id', 
