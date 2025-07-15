@@ -1555,6 +1555,36 @@ export default class OdooClientService {
   ): Promise<T> {
     return this.call<T>(model, method, args, kwargs);
   }
+  
+  /**
+   * Creates a new training plan (project task) for a dog
+   * @param plan Training plan data
+   * @returns Promise with new training plan ID
+   */
+  public async createTrainingPlan(plan: {
+    name: string;
+    dogId: number;
+    startDate: string;
+    endDate: string;
+    description: string;
+    tasks: Array<{ name: string; description: string }>;
+  }): Promise<number> {
+    // You may need to adjust model/fields to match your Odoo backend
+    // Here, we create a project.task and link it to the dog (partner)
+    const payload: Record<string, unknown> = {
+      name: plan.name,
+      partner_id: plan.dogId,
+      date_start: plan.startDate,
+      date_deadline: plan.endDate,
+      description: plan.description,
+      // Optionally serialize tasks as JSON or create subtasks separately
+      tasks_json: JSON.stringify(plan.tasks),
+    };
+    // You may want to link to a specific project (e.g., training project)
+    // If you have a training project, fetch its ID and add project_id
+    // For now, this is omitted for simplicity
+    return this.create('project.task', payload);
+  }
 
   /**
    * Fetches training plans (project tasks) for the current user
