@@ -52,11 +52,11 @@ export default function AboutPage() {
         </div>
       </div>
       
-      {/* Amy's Profile Section */}
+      {/* Amy&apos; Profile Section */}
       <section id="amys-profile" className="py-16">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-sky-700 mb-8 text-center">Amy's Profile</h2>
+            <h2 className="text-3xl font-bold text-sky-700 mb-8 text-center">Amy&apos; Profile</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
               <div className="md:col-span-1">
@@ -77,7 +77,7 @@ export default function AboutPage() {
                     Amy grew up on a game farm in Indiana, so her lifelong association with animals started at a very early age. Her horses ran with the zebra, camels, buffalo and llama. Amy was nearly kicked out of kindergarten for telling her classmates the story of watching her Vet castrate a stud horse while she watched in the barnyard. The kindergarten administration felt it was unsuitable and unladylike knowledge for a 5 year old as she was using correct anatomical terminology!
                   </p>
                   <p className="mb-4 text-gray-700 leading-relaxed">
-                    Amy participated in 4-H with her horse and pony. Amy's family bred and raised working Australian Shepherds. She was also an active 4 year member of Future Farmers of America. Amy learned to judge crops, beef and dairy cattle as well as horses. After high school, Amy went to work for Radisson Hotels while attending Ivy Tech in Indianapolis, she then moved from The Radisson Plaza Hotel and Suites at Keystone at the Crossing, Indianapolis IN to the Radisson Mark Plaza Hotel in Alexandria, VA.
+                    Amy participated in 4-H with her horse and pony. Amy&apos; family bred and raised working Australian Shepherds. She was also an active 4 year member of Future Farmers of America. Amy learned to judge crops, beef and dairy cattle as well as horses. After high school, Amy went to work for Radisson Hotels while attending Ivy Tech in Indianapolis, she then moved from The Radisson Plaza Hotel and Suites at Keystone at the Crossing, Indianapolis IN to the Radisson Mark Plaza Hotel in Alexandria, VA.
                   </p>
                   <p className="mb-4 text-gray-700 leading-relaxed">
                     Amy then became one of the 15 expatriates selected to move to Moscow, working on the opening team of the first American managed hotel in the Soviet Union, the Radisson Slavjanskaya Hotel. She was recruited by Ambassador Pickering, the American Ambassador to Russia as his Estate Manager at Spaso House. Amy oversaw all events at the residence and dachas, including 7 visits of the US President and Vice President.
@@ -90,14 +90,14 @@ export default function AboutPage() {
             </div>
             
             <div className="bg-white/70 backdrop-blur-sm p-8 rounded-xl shadow-lg">
-              <h3 className="text-2xl font-bold text-sky-700 mb-4">Amy's Work with Dogs</h3>
+              <h3 className="text-2xl font-bold text-sky-700 mb-4">Amy&apos; Work with Dogs</h3>
               
               <p className="mb-4 text-gray-700 leading-relaxed">
                 She also raised puppies for the CETC (Canine Enforcement Training Center) in Front Royal VA. Five of the 6 puppies she raised went on to detect drugs and currency for US Customs and Border Patrol. Amy found the East African Kennel Club just days after her arrival and she has been an active member ever since. She also belongs to the Labrador Retriever Club of Kenya and the Ladies Kennel Association.
               </p>
               
               <p className="mb-4 text-gray-700 leading-relaxed">
-                She teaches the Wednesday morning socialization class for the Labrador Club, the beginner's obedience class on Saturday afternoons run by the German Shepard Dog League and has recently started teaching a communication class for the Kenya Police Dog Section for the new dog handling recruits. Amy has worked with the staff at the KSPCA to train dogs for their annual Shaggy Dog show so that they may showcase dogs that are up for adoption.
+                She teaches the Wednesday morning socialization class for the Labrador Club, the beginner&apos; obedience class on Saturday afternoons run by the German Shepard Dog League and has recently started teaching a communication class for the Kenya Police Dog Section for the new dog handling recruits. Amy has worked with the staff at the KSPCA to train dogs for their annual Shaggy Dog show so that they may showcase dogs that are up for adoption.
               </p>
               
               <p className="mb-4 text-gray-700 leading-relaxed">
@@ -105,7 +105,7 @@ export default function AboutPage() {
               </p>
               
               <p className="text-gray-700 leading-relaxed">
-                Amy arrived in Kenya with her yellow Lab that was a US Customs dog (yes, she kept her only "failed" pup) The Labrador has since passed on so now her dogs are an adolescent Rottweiler and a lovable Kenyan Shepherd AKA a shenzi dog that was born in Karura forest.
+                Amy arrived in Kenya with her yellow Lab that was a US Customs dog (yes, she kept her only &lquo;failed&rquo; pup) The Labrador has since passed on so now her dogs are an adolescent Rottweiler and a lovable Kenyan Shepherd AKA a shenzi dog that was born in Karura forest.
               </p>
             </div>
           </div>

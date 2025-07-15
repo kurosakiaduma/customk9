@@ -19,9 +19,7 @@ export interface AuthUser {
 }
 
 export class AuthService {
-  private static readonly TOKEN_KEY = 'customk9_auth_token';
-  private static readonly USER_KEY = 'customk9_user';
-  private static readonly SESSION_TOKEN_KEY = 'customk9_session_token';
+  private static readonly SESSION_KEY = 'odoo_session';
   private static readonly REMEMBER_ME_KEY = 'customk9_remember_me';
   
   private odooClientService: OdooClientService;
@@ -110,7 +108,7 @@ export class AuthService {
         email: userInfo.email || email,
         isAdmin,
         isSystem: userInfo.is_system,
-        token: odooClient.sessionId || '',
+        token: String(odooClient.currentUser?.partner_id) || '', // 
         partnerId: typeof userInfo.partner_id === 'number' ? userInfo.partner_id : undefined,
         context,
         groupsId: Array.isArray(userInfo.groups_id) ? userInfo.groups_id : []
@@ -121,18 +119,22 @@ export class AuthService {
       // Store user in memory
       this.currentUser = user;
 
-      // Store user in localStorage for persistence
+      // Store session info in odoo_session for persistence
       try {
-        localStorage.setItem(AuthService.USER_KEY, JSON.stringify(user));
-        if (result.session_id) {
-          localStorage.setItem(AuthService.TOKEN_KEY, result.session_id);
-          // Also store the session ID in sessionStorage for the current tab
-          sessionStorage.setItem(AuthService.SESSION_TOKEN_KEY, result.session_id);
-        }
-        console.log('AuthService: User data stored in localStorage');
+        // Calculate expiration timestamp: now + 40 minutes (in ms), UTC+3
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 40);
+        const utc3Timestamp = now.getTime() + (3 * 60 * 60 * 1000);
+
+        const sessionData = {
+          sessionInfo: odooClient.sessionInfo,
+          currentUser: odooClient.getCurrentUser,
+          timestamp: utc3Timestamp,
+        };
+        localStorage.setItem(AuthService.SESSION_KEY, JSON.stringify(sessionData));
+        console.log('AuthService: Session data stored in odoo_session');
       } catch (storageError) {
-        console.error('AuthService: Error storing user data in localStorage:', storageError);
-        // Don't fail the login if storage fails, but log it
+        console.error('AuthService: Error storing session data in odoo_session:', storageError);
       }
 
       return user;
@@ -150,7 +152,7 @@ export class AuthService {
   }): Promise<AuthUser> {
     try {
       console.log('Starting registration process for:', userData.email);
-      
+
       // Create a new partner in Odoo
       const partnerData: Record<string, unknown> = {
         name: userData.name,
@@ -158,7 +160,7 @@ export class AuthService {
         customer_rank: 1, // Mark as customer
         ...(userData.phone ? { phone: userData.phone } : {})
       };
-      
+
       const partnerId = await this.odooClientService.create('res.partner', partnerData);
 
       if (!partnerId) {
@@ -178,11 +180,18 @@ export class AuthService {
         throw new Error('Failed to create user account');
       }
 
-      // Log the user in after registration
-      const user = await this.login(userData.email, userData.password);
-      console.log('Registration and login successful for user ID:', userId);
-      
-      return user;
+      // Do NOT auto-login or set any custom session logic
+      // Just return a minimal AuthUser object for confirmation
+      return {
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        isAdmin: false,
+        token: '',
+        partnerId: partnerId,
+        context: undefined,
+        groupsId: [9]
+      };
     } catch (error) {
       console.error('Registration failed:', error);
       if (error instanceof Error) {
@@ -196,64 +205,47 @@ export class AuthService {
   async logout(): Promise<void> {
     try {
       // Clear Odoo session
-      await this.odooClientService.logout();
-      console.log('Odoo session cleared');
+      if (typeof this.odooClientService.clearSession === 'function') {
+        await this.odooClientService.clearSession();
+        console.log('Odoo session cleared');
+      }
     } catch (error) {
       console.error(' Error during Odoo logout:', error);
     }
 
-    // Always clear local storage - be thorough
+    // Always clear odoo_session and remember me
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(AuthService.TOKEN_KEY);
-      localStorage.removeItem(AuthService.USER_KEY);
+      localStorage.removeItem(AuthService.SESSION_KEY);
       localStorage.removeItem(AuthService.REMEMBER_ME_KEY);
-      localStorage.removeItem('customk9_user_session');
-      localStorage.removeItem('customk9_user_name');
-
-      // Clear any other potential auth-related storage
-      const keysToRemove = Object.keys(localStorage).filter(key =>
-        key.startsWith('customk9_') || key.includes('auth') || key.includes('session')
-      );
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-
-      console.log(' All local storage cleared');
+      console.log('odoo_session and remember me cleared');
     }
   }
 
   isAuthenticated(): boolean {
-    // Check if we have a valid user in memory
+    // Treat user as authenticated if currentUser exists, regardless of session_id value
     if (this.currentUser) {
-      console.log('AuthService: User found in memory');
       return true;
     }
-
-    // First check sessionStorage for the current tab's session
-    const sessionToken = sessionStorage.getItem(AuthService.SESSION_TOKEN_KEY);
-    if (sessionToken) {
-      console.log('AuthService: Found session token in sessionStorage');
-      // Try to load the user from localStorage
-      const user = this.getCurrentUser();
-      return user !== null;
+    if (typeof window === 'undefined') return false;
+    const sessionData = localStorage.getItem(AuthService.SESSION_KEY);
+    if (sessionData) {
+      const parsed = JSON.parse(sessionData);
+      if (parsed?.currentUser) {
+        this.currentUser = parsed.currentUser;
+        return true;
+      }
     }
-
-    // Then check localStorage for persistent sessions
-    const rememberMe = localStorage.getItem(AuthService.REMEMBER_ME_KEY) === 'true';
-    const token = localStorage.getItem(AuthService.TOKEN_KEY);
-
-    if (token && rememberMe) {
-      console.log('AuthService: Found remember me token in localStorage');
-      // Try to load the user from localStorage
-      const user = this.getCurrentUser();
-      return user !== null;
-    }
-
-    console.log('AuthService: No valid session found');
     return false;
   }
 
   getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(AuthService.TOKEN_KEY);
+    const sessionData = localStorage.getItem(AuthService.SESSION_KEY);
+    if (sessionData) {
+      const parsed = JSON.parse(sessionData);
+      return parsed?.sessionInfo?.session_id || null;
+    }
+    return null;
   }
 
   public getCurrentUser(): AuthUser | null {
@@ -261,25 +253,20 @@ export class AuthService {
     if (this.currentUser) {
       return this.currentUser;
     }
-    
-    // Try to load from localStorage
+    // Try to load from odoo_session
     try {
       if (typeof window === 'undefined') return null;
-      
-      const userData = localStorage.getItem(AuthService.USER_KEY);
-      const token = localStorage.getItem(AuthService.TOKEN_KEY);
-      
-      if (userData && token) {
-        const user = JSON.parse(userData);
-        // Add the token to the user object
-        user.token = token;
-        this.currentUser = user;
-        return user;
+      const sessionData = localStorage.getItem(AuthService.SESSION_KEY);
+      if (sessionData) {
+        const parsed = JSON.parse(sessionData);
+        if (parsed?.currentUser) {
+          this.currentUser = parsed.currentUser;
+          return parsed.currentUser;
+        }
       }
     } catch (error) {
-      console.error('Error loading user from storage:', error);
+      console.error('Error loading user from odoo_session:', error);
     }
-    
     return null;
   }
   
@@ -297,7 +284,12 @@ export class AuthService {
   // Remove this duplicate method
 
   private setAuthData(user: AuthUser): void {
-    localStorage.setItem(AuthService.TOKEN_KEY, user.token);
-    localStorage.setItem(AuthService.USER_KEY, JSON.stringify(user));
+    // Store user in odoo_session
+    const sessionData = {
+      sessionInfo: null,
+      currentUser: user,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(AuthService.SESSION_KEY, JSON.stringify(sessionData));
   }
-} 
+}
