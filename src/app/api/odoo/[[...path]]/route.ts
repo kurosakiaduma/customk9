@@ -7,10 +7,10 @@ export async function POST(request: NextRequest, { params }: { params: { path: s
     // Await params as required by Next.js App Router
     const awaitedParams = await params;
     const path = awaitedParams.path ? awaitedParams.path.join('/') : '';
-    
+   
     // Your Odoo server URL
     const odooUrl = process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.nehemiahandwilliams.com/';
-    
+   
     // Forward the request to Odoo
     const response = await fetch(`${odooUrl}/${path}`, {
       method: 'POST',
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: { path: s
       },
       body: JSON.stringify(body),
     });
-    
+   
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
@@ -35,9 +35,11 @@ export async function POST(request: NextRequest, { params }: { params: { path: s
 // Handle GET requests if needed
 export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
   try {
-    const path = params.path ? params.path.join('/') : '';
+    // Await params as required by Next.js App Router
+    const awaitedParams = await params;
+    const path = awaitedParams.path ? awaitedParams.path.join('/') : '';
     const odooUrl = process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.nehemiahandwilliams.com/';
-    
+   
     // Forward the request to Odoo
     const response = await fetch(`${odooUrl}/${path}`, {
       method: 'GET',
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
         'Content-Type': 'application/json',
       },
     });
-    
+   
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
@@ -57,11 +59,54 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
   }
 }
 
-// Add other HTTP methods as needed (PUT, DELETE, etc.)
+// Handle PUT requests
 export async function PUT(request: NextRequest, { params }: { params: { path: string[] } }) {
-  // Similar implementation for PUT requests
+  try {
+    const body = await request.json();
+    const awaitedParams = await params;
+    const path = awaitedParams.path ? awaitedParams.path.join('/') : '';
+    const odooUrl = process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.nehemiahandwilliams.com/';
+   
+    const response = await fetch(`${odooUrl}/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+   
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Odoo API Error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
+// Handle DELETE requests
 export async function DELETE(request: NextRequest, { params }: { params: { path: string[] } }) {
-  // Similar implementation for DELETE requests
+  try {
+    const awaitedParams = await params;
+    const path = awaitedParams.path ? awaitedParams.path.join('/') : '';
+    const odooUrl = process.env.NEXT_PUBLIC_ODOO_BASE_URL || 'https://erp.nehemiahandwilliams.com/';
+   
+    const response = await fetch(`${odooUrl}/${path}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+   
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Odoo API Error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
