@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { format, isValid } from 'date-fns';
 import Image from "next/image";
 import Link from "next/link";
 import ServiceFactory from "@/services/ServiceFactory";
@@ -153,22 +154,43 @@ const calculateProgress = (tasks: any[]) => {
 };
 
 const TrainingPlanCard = ({ plan }: { plan: any }) => {
-  const progress = calculateProgress(plan.tasks);
-  
+  const tasks = plan.tasks ?? [];
+  const progress = calculateProgress(tasks);
+
+  // Helper to check for valid date value
+  const getValidDate = (value: any) => {
+    if (!value || value === false || value === null || value === undefined || value === '') return null;
+    const d = new Date(value);
+    return isValid(d) ? d : null;
+  };
+
+  const dateStartRaw = plan.create_date;
+  const dateEndRaw = plan.date_end;
+  const dateStart = getValidDate(dateStartRaw);
+  const dateEnd = getValidDate(dateEndRaw);
+
+  // Log the raw values and parsed dates for debugging
+  if (!dateStart || !dateEnd) {
+    // Only log if one is invalid
+    console.log('[TrainingPlanCard] Raw create_date:', dateStartRaw, 'Parsed:', dateStart);
+    console.log('[TrainingPlanCard] Raw date_end:', dateEndRaw, 'Parsed:', dateEnd);
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-semibold text-gray-800">{plan.name}</h3>
           <p className="text-sm text-gray-600">
-            {new Date(plan.date_start).toLocaleDateString()} - {new Date(plan.date).toLocaleDateString()}
+            {dateStart ? format(dateStart, 'MMM d, yyyy') : 'N/A'} -{' '}
+            {dateEnd ? format(dateEnd, 'MMM d, yyyy') : 'N/A'}
           </p>
         </div>
         <span className="px-2 py-1 bg-sky-100 text-sky-700 rounded-full text-xs">
-          {plan.tasks.length} tasks
+          {tasks.length} tasks
         </span>
       </div>
-      
+
       <div className="mb-3">
         <div className="flex justify-between text-sm mb-1">
           <span className="text-gray-600">Overall Progress</span>
@@ -181,7 +203,7 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
           ></div>
         </div>
       </div>
-      
+
       <div className="mt-4">
         <Link 
           href="/client-area/dashboard/training"
@@ -197,7 +219,9 @@ const TrainingPlanCard = ({ plan }: { plan: any }) => {
 export default function DashboardPage() {
   const [userName, setUserName] = useState("Guest");
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);  const [isLoading, setIsLoading] = useState(true);
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);  
+  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);  
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -205,123 +229,98 @@ export default function DashboardPage() {
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
 
   useEffect(() => {
-    const checkAuthAndLoadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        // First check if user has a valid session        console.log("🔍 Dashboard: Checking user session...");
-        const currentUser = await odooClientService.checkUserSession();
-        if (!currentUser) {
-          console.log("❌ No valid user session found, redirecting to login");
-          window.location.href = "/client-area";
-          return;
-        }
-        console.log("✅ Valid user session found:", currentUser);
-        
-        // Set proper display name - prefer displayName from currentUser, then from session
-        let displayName = currentUser.displayName || currentUser.username;
-        
-        // If we still don't have a good display name, check session storage
-        if (!displayName || displayName.includes('@')) {
-          const userSession = localStorage.getItem('customk9_user_session');
-          if (userSession) {
-            try {
-              const session = JSON.parse(userSession);
-              displayName = session.displayName || 
-                          (session.username && !session.username.includes('@') ? session.username : null) ||
-                          (session.email ? session.email.split('@')[0] : null) ||
-                          'User';
-            } catch (e) {
-              console.warn('Could not parse user session for display name');
-              displayName = currentUser.username?.split('@')[0] || 'User';
-            }
-          }        }
-          setUserName(displayName);
-        setIsAuthenticated(true);
-        
-        // Now load user-specific data
-        await loadUserData();
-        
-      } catch (err) {        console.error("❌ Dashboard: Authentication/data loading error:", err);
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        
-        // If authentication fails, redirect to login
-        if (errorMessage.includes("authentication") || 
-            errorMessage.includes("session") ||
-            errorMessage.includes("login")) {
-          console.log("Authentication error, redirecting to login...");
-          window.location.href = "/client-area";
-          return;
-        }
-        
-        setError(`Error loading dashboard: ${errorMessage}`);
-      } finally {
-        setIsLoading(false);
+    // Check for odoo_session in localStorage
+    const sessionRaw = localStorage.getItem('odoo_session');
+    if (!sessionRaw) {
+      window.location.href = '/client-area';
+      return;
+    }
+    try {
+      const session = JSON.parse(sessionRaw);
+      const isAuthenticated = session.isAuthenticated;
+      const expires = session.sessionInfo?.expires || session.currentUser?.expires_at;
+      if (!isAuthenticated || !expires || Date.now() > expires) {
+        localStorage.removeItem('odoo_session');
+        window.location.href = '/client-area';
+        return;
       }
-    };
+      // Set user name from session
+      const currentUser = session.currentUser;
+      const displayName =
+        currentUser.displayName ||
+        currentUser.name ||
+        currentUser.username ||
+        (currentUser.email ? currentUser.email.split('@')[0] : null) ||
+        'User';
+      setUserName(displayName);
+      setIsAuthenticated(true);
 
-    const loadUserData = async () => {
-      try {
-        console.log("🔍 Loading user-specific data...");
-        
-        // Load dogs
+      // Now load user-specific data
+      const loadUserData = async () => {
         try {
-          const fetchedDogs = await odooClientService.getDogs();
-          console.log(`🐕 Loaded ${fetchedDogs.length} dogs for user`);
-          setDogs(fetchedDogs);
-        } catch (dogError) {
-          console.error("❌ Error fetching dogs:", dogError);
-        }
-
-        // Load training plans
-        try {
-          const fetchedPlans = await odooClientService.getTrainingPlans();
-          console.log(`📋 Loaded ${fetchedPlans.length} training plans for user`);
-          setTrainingPlans(fetchedPlans);
-        } catch (planError) {
-          console.error("❌ Error fetching training plans:", planError);
-        }        // Load upcoming calendar sessions
-        try {
-          const odooCalendarService = new OdooCalendarService(odooClientService);
-          const calendarEvents = await odooCalendarService.getUpcomingAppointments();
-          let filteredEvents = calendarEvents;
-          const currentUser = odooClientService.getCurrentUser();
-          // Only filter for non-admin users
-          if (currentUser && !currentUser.isAdmin && currentUser.partnerId) {
-            filteredEvents = (calendarEvents as import('@/services/OdooCalendarService').CalendarEvent[]).filter(event => {
-              // @ts-expect-error partner_ids may exist on backend event object for filtering
-              if (!event.partner_ids) return true;
-              // @ts-expect-error partner_ids may exist on backend event object for filtering
-              return Array.isArray(event.partner_ids) && event.partner_ids.includes(currentUser.partnerId);
-            });
+          console.log("🔍 Loading user-specific data...");
+          // Load dogs
+          try {
+            const fetchedDogs = await odooClientService.getDogs();
+            console.log(`🐕 Loaded ${fetchedDogs.length} dogs for user`);
+            setDogs(fetchedDogs);
+          } catch (dogError) {
+            console.error("❌ Error fetching dogs:", dogError);
           }
-          // Convert calendar events to session format - keep all for count, but limit display to 3
-          const allSessions = filteredEvents.map(event => ({
-            id: event.id,
-            title: event.name,
-            date: new Date(event.start).toLocaleDateString('en-US', { 
-              weekday: 'long',
-              month: 'short', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
-            location: event.location,
-            trainer: event.trainer_name,
-            start: event.start
-          }));
-          setUpcomingSessions(allSessions);
-        } catch (sessionError) {
-          console.error("❌ Error fetching upcoming sessions:", sessionError);
-          setUpcomingSessions([]);
+          // Load training plans
+          try {
+            const fetchedPlans = await odooClientService.getTrainingPlans();
+            console.log(`📋 Loaded ${fetchedPlans.length} training plans for user`);
+            setTrainingPlans(fetchedPlans);
+          } catch (planError) {
+            console.error("❌ Error fetching training plans:", planError);
+          }
+          // Load upcoming calendar sessions
+          try {
+            const odooCalendarService = new OdooCalendarService(odooClientService);
+            const calendarEvents = await odooCalendarService.getUpcomingAppointments();
+            let filteredEvents = calendarEvents;
+            // Only filter for non-admin users
+            if (currentUser && !currentUser.isAdmin && currentUser.partnerId) {
+              filteredEvents = (calendarEvents as import('@/services/OdooCalendarService').CalendarEvent[]).filter(event => {
+                // @ts-expect-error partner_ids may exist on backend event object for filtering
+                if (!event.partner_ids) return true;
+                // @ts-expect-error partner_ids may exist on backend event object for filtering
+                return Array.isArray(event.partner_ids) && event.partner_ids.includes(currentUser.partnerId);
+              });
+            }
+            // Convert calendar events to session format - keep all for count, but limit display to 3
+            const allSessions = filteredEvents.map(event => ({
+              id: event.id,
+              title: event.name,
+              date: new Date(event.start).toLocaleDateString('en-US', { 
+                weekday: 'long',
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              location: event.location,
+              trainer: event.trainer_name,
+              start: event.start
+            }));
+            setUpcomingSessions(allSessions);
+          } catch (sessionError) {
+            console.error("❌ Error fetching upcoming sessions:", sessionError);
+            setUpcomingSessions([]);
+          }
+        } catch (error) {
+          console.error("❌ Error in loadUserData:", error);
+          throw error;
         }
-      } catch (error) {
-        console.error("❌ Error in loadUserData:", error);
-        throw error;
-      }
-    };
-      checkAuthAndLoadData();
+      };
+      loadUserData();
+    } catch {
+      localStorage.removeItem('odoo_session');
+      window.location.href = '/client-area';
+      return;
+    }
+    setIsLoading(false);
   }, [odooClientService]);
 
   if (isLoading) {

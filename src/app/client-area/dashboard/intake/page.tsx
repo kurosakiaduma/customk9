@@ -1,94 +1,46 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import Link from "next/link";
+import { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Dog } from "@/types/dog";
 import ServiceFactory from "@/services/ServiceFactory";
 
-// Type definitions for the form data
-interface OtherPet {
-  name: string;
-  age: string;
-  ageUnit: string;
-  breed: string;
-  gender: string;
-  sterilized: string;
-}
+const defaultDogInfo = {
+  breed: '',
+  age: '',
+  gender: '',
+  level: 'Beginner',
+  progress: 0,
+  sterilized: '',
+  dogSource: '',
+  timeWithDog: '',
+  medications: '',
+  currentDeworming: '',
+  tickFleaPreventative: '',
+  vetClinic: '',
+  vetName: '',
+  vetPhone: '',
+  medicalIssues: '',
+};
 
-interface FormData {
-  // Dog Information
-  dogName: string;
-  dogAge: string;
-  breed: string;
-  gender: string;
-  sterilized: string;
-  dogSource: string;
-  timeWithDog: string;
-  medications: string;
-  currentDeworming: string;
-  tickFleaPreventative: string;
-  vetClinic: string;
-  vetName: string;
-  vetAddress: string;
-  vetPhone: string;
-  medicalIssues: string;
-  
-  // Other Pets
-  otherPets: OtherPet[];
-  
-  // Lifestyle
-  homeAloneLocation: string;
-  sleepLocation: string;
-  hasCrate: string;
-  likesCrate: string;
-  crateLocation: string;
-  chewsCrate: string;
-  hoursAlone: string;
-  foodBrand: string;
-  feedingSchedule: string;
-  foodLeftOut: string;
-  allergies: string;
-  toyTypes: string;
-  toyPlayTime: string;
-  toyStorage: string;
-  walkFrequency: string;
-  walkPerson: string;
-  walkDuration: string;
-  otherExercise: string;
-  walkEquipment: string;
-  offLeash: string;
-  forestVisits: string;
-  pulling: string;
-  pullingPrevention: string;
-  
-  // History
-  previousTraining: string;
-  growled: string;
-  growlDetails: string;
-  bitten: string;
-  biteDetails: string;
-  biteInjury: string;
-  fearful: string;
-  fearDetails: string;
-  newPeopleResponse: string;
-  groomingResponse: string;
-  ignoreReaction: string;
-  previousServices: string;
-  toolsUsed: string;
-  
-  // Likes/Dislikes & Goals
-  likesAboutDog: string[];
-  dislikesAboutDog: string[];
-  whyTraining: string;
-  trainingGoals: string;
-  idealDogBehavior: string;
-  
-  // Behavior Checklist
-  behaviorChecklist: string[];
-  behaviorDetails: string;
-  undesirableBehavior: string;
-  fearDescription: string;
-}
+const defaultDog: Partial<Dog> = {
+  name: '',
+  breed: '',
+  age: '',
+  gender: '',
+  level: 'Beginner',
+  progress: 0,
+  image: '/images/dog-placeholder.jpg',
+  dogInfo: { ...defaultDogInfo },
+  lifestyle: {},
+  history: {},
+  goals: {},
+  behaviorChecklist: [],
+  notes: '',
+  likesAboutDog: [],
+  dislikesAboutDog: [],
+  whyTraining: '',
+};
 
 export default function IntakeFormPage() {
   const router = useRouter();
@@ -101,82 +53,7 @@ export default function IntakeFormPage() {
   } | null>(null);
   
   // Form state
-  const [formData, setFormData] = useState<FormData>({
-    // Dog Information
-    dogName: "",
-    dogAge: "",
-    breed: "",
-    gender: "",
-    sterilized: "",
-    dogSource: "",
-    timeWithDog: "",
-    medications: "",
-    currentDeworming: "",
-    tickFleaPreventative: "",
-    vetClinic: "",
-    vetName: "",
-    vetAddress: "",
-    vetPhone: "",
-    medicalIssues: "",
-    
-    // Other Pets
-    otherPets: [
-      { name: "", age: "", ageUnit: "Y", breed: "", gender: "", sterilized: "" },
-    ],
-    
-    // Lifestyle
-    homeAloneLocation: "",
-    sleepLocation: "",
-    hasCrate: "",
-    likesCrate: "",
-    crateLocation: "",
-    chewsCrate: "",
-    hoursAlone: "",
-    foodBrand: "",
-    feedingSchedule: "",
-    foodLeftOut: "",
-    allergies: "",
-    toyTypes: "",
-    toyPlayTime: "",
-    toyStorage: "",
-    walkFrequency: "",
-    walkPerson: "",
-    walkDuration: "",
-    otherExercise: "",
-    walkEquipment: "",
-    offLeash: "",
-    forestVisits: "",
-    pulling: "",
-    pullingPrevention: "",
-    
-    // History
-    previousTraining: "",
-    growled: "",
-    growlDetails: "",
-    bitten: "",
-    biteDetails: "",
-    biteInjury: "",
-    fearful: "",
-    fearDetails: "",
-    newPeopleResponse: "",
-    groomingResponse: "",
-    ignoreReaction: "",
-    previousServices: "",
-    toolsUsed: "",
-    
-    // Likes/Dislikes & Goals
-    likesAboutDog: ["", "", "", "", ""],
-    dislikesAboutDog: ["", "", "", "", ""],
-    whyTraining: "",
-    trainingGoals: "",
-    idealDogBehavior: "",
-    
-    // Behavior Checklist
-    behaviorChecklist: [],
-    behaviorDetails: "",
-    undesirableBehavior: "",
-    fearDescription: "",
-  });
+  const [formData, setFormData] = useState<Partial<Dog>>(defaultDog);
   
   // Load saved data if it exists
   useEffect(() => {
@@ -205,59 +82,52 @@ export default function IntakeFormPage() {
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-  
-  // Handle checkbox changes for multi-select options
-  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, checked } = e.target;
-    if (checked) {
+    // For sterilized, always store as string
+    if (name === "sterilized" && formData.dogInfo) {
       setFormData({
         ...formData,
-        [name]: [...(formData[name as keyof FormData] as string[]), value]
+        dogInfo: {
+          ...formData.dogInfo,
+          sterilized: value
+        }
       });
     } else {
       setFormData({
         ...formData,
-        [name]: (formData[name as keyof FormData] as string[]).filter(item => item !== value)
+        [name]: value
+      });
+    }
+  };
+  
+  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value, checked } = e.target;
+    // Only allow array fields
+    if (
+      name === "behaviorChecklist" ||
+      name === "likesAboutDog" ||
+      name === "dislikesAboutDog"
+    ) {
+      const arr = Array.isArray(formData[name as keyof typeof formData])
+        ? (formData[name as keyof typeof formData] as string[])
+        : [];
+      setFormData({
+        ...formData,
+        [name]: checked
+          ? [...arr, value]
+          : arr.filter(item => item !== value),
       });
     }
   };
   
   // Handle likes/dislikes arrays
   const handleArrayItemChange = (arrayName: 'likesAboutDog' | 'dislikesAboutDog', index: number, value: string) => {
-    const newArray = [...formData[arrayName]];
+    const arr = Array.isArray(formData[arrayName]) ? formData[arrayName] as string[] : [];
+    const newArray = [...arr];
     newArray[index] = value;
     setFormData({
       ...formData,
       [arrayName]: newArray
     });
-  };
-  
-  // Handle other pets form
-  const handleOtherPetChange = (index: number, field: keyof OtherPet, value: string) => {
-    const newPets = [...formData.otherPets];
-    newPets[index] = { ...newPets[index], [field]: value };
-    setFormData({
-      ...formData,
-      otherPets: newPets
-    });
-  };
-  
-  // Add another pet to the form
-  const addAnotherPet = () => {
-    if (formData.otherPets.length < 3) {
-      setFormData({
-        ...formData,
-        otherPets: [
-          ...formData.otherPets,
-          { name: "", age: "", ageUnit: "Y", breed: "", gender: "", sterilized: "" }
-        ]
-      });
-    }
   };
   
   // Navigation between form pages
@@ -276,7 +146,8 @@ export default function IntakeFormPage() {
       window.scrollTo(0, 0);
     }
   };
-  
+  // Helper to ensure all fields in an object are non-undefined strings
+// ...existing code...
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -290,76 +161,94 @@ export default function IntakeFormPage() {
       setIsLoading(true);
       
       const odooService = ServiceFactory.getInstance().getOdooClientService();
-      
-      // Create the dog profile
+      // Prepare payload matching DogProfileCreateInput (all required fields at root)
+      // Serialize lifestyle, history, and goals as JSON and store in comment
+      const dogPayload = {
+        name: formData.name || '',
+        breed: formData.breed || '',
+        age: Number(formData.age) || 1,
+        gender: formData.gender || '',
+        dog_source: formData.dogInfo?.dogSource || '',
+        time_with_dog: formData.dogInfo?.timeWithDog || 1,
+        medications: formData.dogInfo?.medications || '',
+        current_deworming: formData.dogInfo?.currentDeworming || '',
+        tick_flea_preventative: formData.dogInfo?.tickFleaPreventative || '',
+        vet_clinic: formData.dogInfo?.vetClinic || '',
+        vet_name: formData.dogInfo?.vetName || '',
+        vet_phone: formData.dogInfo?.vetPhone || '',
+        vet_address: formData.dogInfo?.vetAddress || '',
+        medical_issues: formData.dogInfo?.medicalIssues || '',
+        // Lifestyle fields
+        home_alone_location: formData.lifestyle?.homeAloneLocation || '',
+        sleep_location: formData.lifestyle?.sleepLocation || '',
+        has_crate: formData.lifestyle?.hasCrate || '',
+        likes_crate: formData.lifestyle?.likesCrate || '',
+        crate_location: formData.lifestyle?.crateLocation || '',
+        chews_crate: formData.lifestyle?.chewsCrate || '',
+        hours_alone: formData.lifestyle?.hoursAlone || '',
+        food_brand: formData.lifestyle?.foodBrand || '',
+        feeding_schedule: formData.lifestyle?.feedingSchedule || '',
+        food_left_out: formData.lifestyle?.foodLeftOut || '',
+        allergies: formData.lifestyle?.allergies || '',
+        toy_types: formData.lifestyle?.toyTypes || '',
+        toy_play_time: formData.lifestyle?.toyPlayTime || '',
+        toy_storage: formData.lifestyle?.toyStorage || '',
+        walk_frequency: formData.lifestyle?.walkFrequency || '',
+        walk_person: formData.lifestyle?.walkPerson || '',
+        walk_duration: formData.lifestyle?.walkDuration || '',
+        other_exercise: formData.lifestyle?.otherExercise || '',
+        walk_equipment: formData.lifestyle?.walkEquipment || '',
+        off_leash: formData.lifestyle?.offLeash || '',
+        forest_visits: formData.lifestyle?.forestVisits || '',
+        pulling: formData.lifestyle?.pulling || '',
+        pulling_prevention: formData.lifestyle?.pullingPrevention || '',
+        // History fields
+        previous_training: formData.history?.previousTraining || '',
+        growled: formData.history?.growled || '',
+        growl_details: formData.history?.growlDetails || '',
+        bitten: formData.history?.bitten || '',
+        bite_details: formData.history?.biteDetails || '',
+        bite_injury: formData.history?.biteInjury || '',
+        fearful: formData.history?.fearful || '',
+        fear_details: formData.history?.fearDetails || '',
+        new_people_response: formData.history?.newPeopleResponse || '',
+        grooming_response: formData.history?.groomingResponse || '',
+        ignore_reaction: formData.history?.ignoreReaction || '',
+        previous_services: formData.history?.previousServices || '',
+        tools_used: formData.history?.toolsUsed || '',
+        // Goals fields
+        training_goals: formData.goals?.trainingGoals || '',
+        ideal_dog_behavior: formData.goals?.idealDogBehavior || '',
+        // Arrays as comma-separated strings
+        behavior_checklist: (formData.behaviorChecklist || []).join(','),
+        likes_about_dog: (formData.likesAboutDog || []).join(','),
+        dislikes_about_dog: (formData.dislikesAboutDog || []).join(','),
+        // Other fields
+        behavior_details: formData.behaviorDetails || '',
+        undesirable_behavior: formData.undesirableBehavior || '',
+        fear_description: formData.fearDescription || '',
+        notes: formData.notes || '',
+        why_training: formData.whyTraining || '',
+      };
+      const currentUser = odooService.getCurrentUser();
+      let ownerId: number | null = null;
+      if (currentUser && currentUser.partner_id) {
+        if (Array.isArray(currentUser.partner_id)) {
+          ownerId = currentUser.partner_id[0]; // [id, name]
+        } else {
+          ownerId = typeof currentUser.partner_id === "number" ? currentUser.partner_id : null;
+        }
+      }
+      const sterilizedValue = formData.dogInfo?.sterilized === "Yes" || formData.dogInfo?.sterilized === true ? true : false;
       await odooService.createDogProfile({
-        name: formData.dogName,
-        breed: formData.breed,
-        age: formData.dogAge,
-        gender: formData.gender,
-        sterilized: formData.sterilized,
-        dogSource: formData.dogSource,
-        timeWithDog: formData.timeWithDog,
-        medications: formData.medications,
-        currentDeworming: formData.currentDeworming,
-        tickFleaPreventative: formData.tickFleaPreventative,
-        vetClinic: formData.vetClinic,
-        vetName: formData.vetName,
-        vetPhone: formData.vetPhone,
-        medicalIssues: formData.medicalIssues,
-        lifestyle: {
-          homeAloneLocation: formData.homeAloneLocation,
-          sleepLocation: formData.sleepLocation,
-          hasCrate: formData.hasCrate,
-          likesCrate: formData.likesCrate,
-          crateLocation: formData.crateLocation,
-          chewsCrate: formData.chewsCrate,
-          hoursAlone: formData.hoursAlone,
-          foodBrand: formData.foodBrand,
-          feedingSchedule: formData.feedingSchedule,
-          foodLeftOut: formData.foodLeftOut,
-          allergies: formData.allergies,
-          toyTypes: formData.toyTypes,
-          toyPlayTime: formData.toyPlayTime,
-          toyStorage: formData.toyStorage,
-          walkFrequency: formData.walkFrequency,
-          walkPerson: formData.walkPerson,
-          walkDuration: formData.walkDuration,
-          otherExercise: formData.otherExercise,
-          walkEquipment: formData.walkEquipment,
-          offLeash: formData.offLeash,
-          forestVisits: formData.forestVisits,
-          pulling: formData.pulling,
-          pullingPrevention: formData.pullingPrevention
-        },
-        history: {
-          previousTraining: formData.previousTraining,
-          growled: formData.growled,
-          growlDetails: formData.growlDetails,
-          bitten: formData.bitten,
-          biteDetails: formData.biteDetails,
-          fearful: formData.fearful,
-          fearDetails: formData.fearDetails,
-          newPeopleResponse: formData.newPeopleResponse,
-          groomingResponse: formData.groomingResponse,
-          ignoreReaction: formData.ignoreReaction,
-          previousServices: formData.previousServices,
-          toolsUsed: formData.toolsUsed
-        },
-        goals: {
-          trainingGoals: formData.trainingGoals,
-          idealDogBehavior: formData.idealDogBehavior
-        },
-        behaviorChecklist: formData.behaviorChecklist,
-        behaviorDetails: formData.behaviorDetails,
-        undesirableBehavior: formData.undesirableBehavior,
-        fearDescription: formData.fearDescription
+        ...dogPayload,
+        sterilized: sterilizedValue,
+        owner_id: ownerId
       });
-
       // Show success message
       setSubmissionStatus({
         success: true,
-        message: "Your dog's profile has been created successfully! You will be redirected to the dashboard."
+        message: "Your dog&apos;s profile has been created successfully! You will be redirected to the dashboard."
       });
       
       // Clear form data from localStorage
@@ -374,7 +263,7 @@ export default function IntakeFormPage() {
       console.error("Error submitting form:", error);
       setSubmissionStatus({
         success: false,
-        message: "There was an error creating your dog's profile. Please try again."
+        message: "There was an error creating your dog&apos;s profile. Please try again."
       });
     } finally {
       setIsLoading(false);
@@ -442,24 +331,24 @@ export default function IntakeFormPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Dog's Name</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Dog&apos;s Name</label>
                 <input
                   type="text"
                   name="dogName"
-                  value={formData.dogName}
+                  value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Your Dog's Name"
+                  placeholder="Your Dog&apos;s Name"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Dog's Age</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Dog&apos;s Age</label>
                 <input
                   type="text"
                   name="dogAge"
-                  value={formData.dogAge}
+                  value={formData.age}
                   onChange={handleInputChange}
                   placeholder="Age (Years / Months)"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -474,14 +363,14 @@ export default function IntakeFormPage() {
                   name="breed"
                   value={formData.breed}
                   onChange={handleInputChange}
-                  placeholder="Dog's Breed"
+                  placeholder="Dog&apos;s Breed"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Female or Male? Is your dog sterilized?</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Female or Male?</label>
                 <div className="flex space-x-4 mt-2">
                   <label className="inline-flex items-center">
                     <input
@@ -506,29 +395,21 @@ export default function IntakeFormPage() {
                     <span className="ml-2 text-gray-700">Male</span>
                   </label>
                 </div>
-                <div className="flex space-x-4 mt-2">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="sterilized"
-                      value="Y"
-                      checked={formData.sterilized === "Y"}
-                      onChange={handleInputChange}
-                      className="form-radio h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Sterilized: Yes</span>
+                <div className="flex flex-col md:flex-row md:items-center mt-2 space-y-2 md:space-y-0 md:space-x-4">
+                  <label htmlFor="sterilized" className="block text-sm font-medium text-gray-700 mb-1 md:mb-0">
+                    Sterilized
                   </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="sterilized"
-                      value="N"
-                      checked={formData.sterilized === "N"}
-                      onChange={handleInputChange}
-                      className="form-radio h-4 w-4 text-sky-600"
-                    />
-                    <span className="ml-2 text-gray-700">Sterilized: No</span>
-                  </label>
+                  <select
+                    id="sterilized"
+                    name="sterilized"
+                    value={formData.dogInfo?.sterilized}
+                    onChange={handleInputChange}
+                    className="w-full md:w-auto p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  >
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
                 </div>
               </div>
               
@@ -537,7 +418,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="dogSource"
-                  value={formData.dogSource}
+                  value={formData.dogInfo?.dogSource}
                   onChange={handleInputChange}
                   placeholder="Breeder, Shelter, Friend, etc."
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -549,7 +430,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="timeWithDog"
-                  value={formData.timeWithDog}
+                  value={formData.dogInfo?.timeWithDog}
                   onChange={handleInputChange}
                   placeholder="Time period"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -562,7 +443,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="medications"
-                  value={formData.medications}
+                  value={formData.dogInfo?.medications}
                   onChange={handleInputChange}
                   rows={2}
                   placeholder="List current medications"
@@ -578,7 +459,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="currentDeworming"
                       value="Y"
-                      checked={formData.currentDeworming === "Y"}
+                      checked={formData.dogInfo?.currentDeworming === "Y"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -589,7 +470,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="currentDeworming"
                       value="N"
-                      checked={formData.currentDeworming === "N"}
+                      checked={formData.dogInfo?.currentDeworming === "N"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -603,7 +484,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="tickFleaPreventative"
-                  value={formData.tickFleaPreventative}
+                  value={formData.dogInfo?.tickFleaPreventative}
                   onChange={handleInputChange}
                   placeholder="Yes/No and type if applicable"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -615,7 +496,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="vetClinic"
-                  value={formData.vetClinic}
+                  value={formData.dogInfo?.vetClinic}
                   onChange={handleInputChange}
                   placeholder="Vet Clinic Name"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -623,11 +504,11 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Vet's Name</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Vet&apos;s Name</label>
                 <input
                   type="text"
                   name="vetName"
-                  value={formData.vetName}
+                  value={formData.dogInfo?.vetName}
                   onChange={handleInputChange}
                   placeholder="Veterinarian's Name"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -635,11 +516,11 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Vet's Address</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Vet&apos;s Address</label>
                 <input
                   type="text"
                   name="vetAddress"
-                  value={formData.vetAddress}
+                  value={formData.dogInfo?.vetAddress}
                   onChange={handleInputChange}
                   placeholder="Clinic Address"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -647,11 +528,11 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Vet's Phone</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Vet&apos;s Phone</label>
                 <input
                   type="tel"
                   name="vetPhone"
-                  value={formData.vetPhone}
+                  value={formData.dogInfo?.vetPhone}
                   onChange={handleInputChange}
                   placeholder="Clinic Phone Number"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -664,7 +545,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="medicalIssues"
-                  value={formData.medicalIssues}
+                  value={formData.dogInfo?.medicalIssues}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe any medical issues, surgeries, etc."
@@ -672,99 +553,13 @@ export default function IntakeFormPage() {
                 ></textarea>
               </div>
             </div>
-            
-            <h3 className="text-lg font-medium text-sky-700 mt-6 mb-3">Other Pets In The Home</h3>
-            {formData.otherPets.map((pet, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Name</label>
-                    <input
-                      type="text"
-                      value={pet.name}
-                      onChange={(e) => handleOtherPetChange(index, 'name', e.target.value)}
-                      placeholder="Pet's Name"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Age</label>
-                    <div className="flex">
-                      <input
-                        type="text"
-                        value={pet.age}
-                        onChange={(e) => handleOtherPetChange(index, 'age', e.target.value)}
-                        placeholder="Age"
-                        className="w-full p-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                      />
-                      <select
-                        value={pet.ageUnit}
-                        onChange={(e) => handleOtherPetChange(index, 'ageUnit', e.target.value)}
-                        className="p-2 border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                      >
-                        <option value="Y">Y</option>
-                        <option value="M">M</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Breed</label>
-                    <input
-                      type="text"
-                      value={pet.breed}
-                      onChange={(e) => handleOtherPetChange(index, 'breed', e.target.value)}
-                      placeholder="Pet's Breed"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-gray-700 text-sm font-medium mb-1">F/M, Sterilized?</label>
-                    <div className="flex space-x-2">
-                      <select
-                        value={pet.gender}
-                        onChange={(e) => handleOtherPetChange(index, 'gender', e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                      >
-                        <option value="">Select</option>
-                        <option value="F">F</option>
-                        <option value="M">M</option>
-                      </select>
-                      <select
-                        value={pet.sterilized}
-                        onChange={(e) => handleOtherPetChange(index, 'sterilized', e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                      >
-                        <option value="">Sterilized?</option>
-                        <option value="Y">Yes</option>
-                        <option value="N">No</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {formData.otherPets.length < 3 && (
-              <div className="mt-4">
-                <button 
-                  type="button" 
-                  onClick={addAnotherPet}
-                  className="text-sky-600 hover:text-sky-800 font-medium"
-                >
-                  + Add Another Pet
-                </button>
-              </div>
-            )}
           </div>
         )}
         
         {/* Page 2: Lifestyle */}
         {currentPage === 2 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog's Lifestyle</h2>
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog&apos;s Lifestyle</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -772,7 +567,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="homeAloneLocation"
-                  value={formData.homeAloneLocation}
+                  value={formData.lifestyle?.homeAloneLocation}
                   onChange={handleInputChange}
                   placeholder="Crate, specific room, etc."
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -784,7 +579,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="sleepLocation"
-                  value={formData.sleepLocation}
+                  value={formData.lifestyle?.sleepLocation}
                   onChange={handleInputChange}
                   placeholder="Your bed, Dog bed, Crate, etc."
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -796,7 +591,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="hasCrate"
-                  value={formData.hasCrate}
+                  value={formData.lifestyle?.hasCrate}
                   onChange={handleInputChange}
                   placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -808,7 +603,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="likesCrate"
-                  value={formData.likesCrate}
+                  value={formData.lifestyle?.likesCrate}
                   onChange={handleInputChange}
                   placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -820,7 +615,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="crateLocation"
-                  value={formData.crateLocation}
+                  value={formData.lifestyle?.crateLocation}
                   onChange={handleInputChange}
                   placeholder="Location in home"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -832,7 +627,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="chewsCrate"
-                  value={formData.chewsCrate}
+                  value={formData.lifestyle?.chewsCrate}
                   onChange={handleInputChange}
                   placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -844,7 +639,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="hoursAlone"
-                  value={formData.hoursAlone}
+                  value={formData.lifestyle?.hoursAlone}
                   onChange={handleInputChange}
                   placeholder="Number of hours"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -856,7 +651,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="foodBrand"
-                  value={formData.foodBrand}
+                  value={formData.lifestyle?.foodBrand}
                   onChange={handleInputChange}
                   placeholder="Brand and type"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -868,7 +663,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="feedingSchedule"
-                  value={formData.feedingSchedule}
+                  value={formData.lifestyle?.feedingSchedule}
                   onChange={handleInputChange}
                   placeholder="Amount and frequency"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -880,7 +675,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="foodLeftOut"
-                  value={formData.foodLeftOut}
+                  value={formData.lifestyle?.foodLeftOut}
                   onChange={handleInputChange}
                   placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -888,11 +683,11 @@ export default function IntakeFormPage() {
               </div>
               
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-1">Dog's allergies:</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">Dog&apos;s allergies:</label>
                 <input
                   type="text"
                   name="allergies"
-                  value={formData.allergies}
+                  value={formData.lifestyle?.allergies}
                   onChange={handleInputChange}
                   placeholder="List any known allergies"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -904,7 +699,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="toyTypes"
-                  value={formData.toyTypes}
+                  value={formData.lifestyle?.toyTypes}
                   onChange={handleInputChange}
                   placeholder="Types of toys"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -916,7 +711,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="toyPlayTime"
-                  value={formData.toyPlayTime}
+                  value={formData.lifestyle?.toyPlayTime}
                   onChange={handleInputChange}
                   placeholder="Duration"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -928,7 +723,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="toyStorage"
-                  value={formData.toyStorage}
+                  value={formData.lifestyle?.toyStorage}
                   onChange={handleInputChange}
                   placeholder="Storage location"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -940,7 +735,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="walkFrequency"
-                  value={formData.walkFrequency}
+                  value={formData.lifestyle?.walkFrequency}
                   onChange={handleInputChange}
                   placeholder="Frequency"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -952,7 +747,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="walkPerson"
-                  value={formData.walkPerson}
+                  value={formData.lifestyle?.walkPerson}
                   onChange={handleInputChange}
                   placeholder="Person responsible"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -964,7 +759,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="walkDuration"
-                  value={formData.walkDuration}
+                  value={formData.lifestyle?.walkDuration}
                   onChange={handleInputChange}
                   placeholder="Duration"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -976,7 +771,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="otherExercise"
-                  value={formData.otherExercise}
+                  value={formData.lifestyle?.otherExercise}
                   onChange={handleInputChange}
                   placeholder="Other activities"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -990,7 +785,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="walkEquipment"
-                  value={formData.walkEquipment}
+                  value={formData.lifestyle?.walkEquipment}
                   onChange={handleInputChange}
                   placeholder="Equipment used"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -1005,7 +800,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="offLeash"
                       value="Y"
-                      checked={formData.offLeash === "Y"}
+                      checked={formData.lifestyle?.offLeash === "Y"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -1016,7 +811,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="offLeash"
                       value="N"
-                      checked={formData.offLeash === "N"}
+                      checked={formData.lifestyle?.offLeash === "N"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -1030,7 +825,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="forestVisits"
-                  value={formData.forestVisits}
+                  value={formData.lifestyle?.forestVisits}
                   onChange={handleInputChange}
                   placeholder="Yes/No, frequency"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -1045,7 +840,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="pulling"
                       value="Y"
-                      checked={formData.pulling === "Y"}
+                      checked={formData.lifestyle?.pulling === "Y"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -1056,7 +851,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="pulling"
                       value="N"
-                      checked={formData.pulling === "N"}
+                      checked={formData.lifestyle?.pulling === "N"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -1071,7 +866,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="pullingPrevention"
-                  value={formData.pullingPrevention}
+                  value={formData.lifestyle?.pullingPrevention}
                   onChange={handleInputChange}
                   rows={2}
                   placeholder="Describe methods tried"
@@ -1085,7 +880,7 @@ export default function IntakeFormPage() {
         {/* Page 3: History */}
         {currentPage === 3 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog's History</h2>
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog&apos;s History</h2>
             
             <div className="grid grid-cols-1 gap-4">
               <div>
@@ -1094,7 +889,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="previousTraining"
-                  value={formData.previousTraining}
+                  value={formData.history?.previousTraining}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe previous training experience and trainer/organization"
@@ -1112,7 +907,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="growled"
                       value="Y"
-                      checked={formData.growled === "Y"}
+                      checked={formData.history?.growled === "Y"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -1123,7 +918,7 @@ export default function IntakeFormPage() {
                       type="radio"
                       name="growled"
                       value="N"
-                      checked={formData.growled === "N"}
+                      checked={formData.history?.growled === "N"}
                       onChange={handleInputChange}
                       className="form-radio h-4 w-4 text-sky-600"
                     />
@@ -1138,7 +933,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="growlDetails"
-                  value={formData.growlDetails}
+                  value={formData.history?.growlDetails}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe the growling incident(s)"
@@ -1153,7 +948,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="bitten"
-                  value={formData.bitten}
+                  value={formData.history?.bitten}
                   onChange={handleInputChange}
                   placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -1166,7 +961,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="biteDetails"
-                  value={formData.biteDetails}
+                  value={formData.history?.biteDetails}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe the biting incident(s)"
@@ -1180,7 +975,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="biteInjury"
-                  value={formData.biteInjury}
+                  value={formData.history?.biteInjury}
                   onChange={handleInputChange}
                   rows={2}
                   placeholder="Describe any injuries caused"
@@ -1195,7 +990,7 @@ export default function IntakeFormPage() {
                 <input
                   type="text"
                   name="fearful"
-                  value={formData.fearful}
+                  value={formData.history?.fearful}
                   onChange={handleInputChange}
                   placeholder="Yes/No"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -1208,7 +1003,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="fearDetails"
-                  value={formData.fearDetails}
+                  value={formData.history?.fearDetails}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe fearful behaviors and triggers"
@@ -1222,7 +1017,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="newPeopleResponse"
-                  value={formData.newPeopleResponse}
+                  value={formData.history?.newPeopleResponse}
                   onChange={handleInputChange}
                   rows={2}
                   placeholder="Describe how your dog reacts to visitors"
@@ -1236,7 +1031,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="groomingResponse"
-                  value={formData.groomingResponse}
+                  value={formData.history?.groomingResponse}
                   onChange={handleInputChange}
                   rows={2}
                   placeholder="Describe reaction to grooming/bathing"
@@ -1250,7 +1045,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="ignoreReaction"
-                  value={formData.ignoreReaction}
+                  value={formData.history?.ignoreReaction}
                   onChange={handleInputChange}
                   rows={2}
                   placeholder="Describe your typical response"
@@ -1264,7 +1059,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="previousServices"
-                  value={formData.previousServices}
+                  value={formData.history?.previousServices}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="List previous services used"
@@ -1281,7 +1076,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="toolsUsed"
-                  value={formData.toolsUsed}
+                  value={formData.history?.toolsUsed}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="List tools you've used with your dog"
@@ -1295,7 +1090,7 @@ export default function IntakeFormPage() {
         {/* Page 4: Goals */}
         {currentPage === 4 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog's Training Goals</h2>
+            <h2 className="text-xl font-semibold text-sky-700 border-b pb-2">About Your Dog&apos;s Training Goals</h2>
             
             <div className="space-y-6">
               <div>
@@ -1306,7 +1101,7 @@ export default function IntakeFormPage() {
                       <span className="mr-2 font-medium">{num}.</span>
                       <input
                         type="text"
-                        value={formData.likesAboutDog[index]}
+                        value={formData.likesAboutDog?.[index]}
                         onChange={(e) => handleArrayItemChange('likesAboutDog', index, e.target.value)}
                         placeholder={`Like #${num}`}
                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -1324,7 +1119,7 @@ export default function IntakeFormPage() {
                       <span className="mr-2 font-medium">{num}.</span>
                       <input
                         type="text"
-                        value={formData.dislikesAboutDog[index]}
+                        value={formData.dislikesAboutDog?.[index]}
                         onChange={(e) => handleArrayItemChange('dislikesAboutDog', index, e.target.value)}
                         placeholder={`Thing to change #${num}`}
                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
@@ -1354,7 +1149,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="trainingGoals"
-                  value={formData.trainingGoals}
+                  value={formData.goals?.trainingGoals}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe your training goals"
@@ -1368,7 +1163,7 @@ export default function IntakeFormPage() {
                 </label>
                 <textarea
                   name="idealDogBehavior"
-                  value={formData.idealDogBehavior}
+                  value={formData.goals?.idealDogBehavior}
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Describe how you would like your dog to behave"
@@ -1412,7 +1207,7 @@ export default function IntakeFormPage() {
                       id={`behavior-${index}`}
                       name="behaviorChecklist"
                       value={behavior}
-                      checked={formData.behaviorChecklist.includes(behavior)}
+                      checked={formData.behaviorChecklist?.includes(behavior)}
                       onChange={handleCheckboxChange}
                       className="h-5 w-5 mt-0.5 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
                     />

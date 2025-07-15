@@ -26,7 +26,8 @@ const sanitizeHtml = (html: string) => {
 
 // Components
 const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; isSelected: boolean; onClick: () => void }) => {
-  const progress = calculateProgress(plan.tasks);
+  const tasks = plan.tasks ?? [];
+  const progress = calculateProgress(tasks);  
   
   return (
     <div 
@@ -38,7 +39,7 @@ const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; i
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-xl font-semibold">{plan.name}</h3>
         <span className="text-sm text-gray-500">
-          {format(new Date(plan.date_start), 'MMM d, yyyy')} - {format(new Date(plan.date), 'MMM d, yyyy')}
+          {format(new Date(plan.create_date), 'MMM d, yyyy')} - {format(new Date(plan.date_end), 'MMM d, yyyy')}
         </span>
       </div>
       <div className="mb-4">
@@ -54,7 +55,7 @@ const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; i
         </div>
       </div>
       <div className="mt-2">
-        <span className="text-sm text-gray-500">{plan.tasks.length} Tasks</span>
+        <span className="text-sm text-gray-500">{tasks.length} Tasks</span>
       </div>
     </div>
   );
@@ -86,7 +87,8 @@ const TaskStatus = ({ status }: { status: number }) => {
 
 // Component for the detailed view of a training plan
 const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
-  const progress = calculateProgress(plan.tasks);
+  const tasks = plan.tasks ?? [];
+  const progress = calculateProgress(tasks);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -94,7 +96,7 @@ const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
         <h2 className="text-2xl font-bold mb-2">{plan.name}</h2>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">
-            {format(new Date(plan.date_start), 'MMM d, yyyy')} - {format(new Date(plan.date), 'MMM d, yyyy')}
+            {format(new Date(plan.create_date), 'MMM d, yyyy')} - {format(new Date(plan.date_end), 'MMM d, yyyy')}
           </span>
           <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
             {progress}% Complete
@@ -112,7 +114,7 @@ const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
       <div>
         <h3 className="text-lg font-semibold mb-4">Tasks & Skills</h3>
         <div className="space-y-4">
-          {plan.tasks.map((task: any) => (
+          {tasks.map((task: any) => (
             <div key={task.id} className="bg-gray-50 rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div>

@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircleIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { CalendarIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
-import { ensureValidAppointmentImage, Appointment } from "@/types/appointment";
+import { useRouter } from 'next/navigation';
+import { CheckCircleIcon, ChevronRightIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, UserIcon } from '@heroicons/react/24/solid';
 import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService } from "@/services/OdooCalendarService";
 import { OdooProductService, Service } from "@/services/OdooProductService";
+import { BookingService, BookingRequest, BookingResult, BookingConflictError } from "@/services/booking";
 import { Dog } from '@/types/odoo';
+
 
 // Define interfaces for our data
 interface PublicEvent {
@@ -40,10 +41,48 @@ interface BookingData {
   paymentMethod: string;
 }
 
-// Available time slots (these would normally come from the server based on date)
-const TIME_SLOTS = [
-  '9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
-];
+// Function to generate fallback time slots for a given date
+const generateFallbackTimeSlots = (): string[] => {
+  const slots: string[] = [];
+  const startHour = 9; // 9 AM
+  const endHour = 17; // 5 PM
+  const lunchStart = 12; // 12 PM
+
+  for (let hour = startHour; hour < endHour; hour++) {
+    // Skip lunch hours
+    if (hour === lunchStart) {
+      continue;
+    }
+    
+    const timeString = `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+    slots.push(timeString);
+  }
+  
+  return slots;
+};
+
+// Generate calendar days
+const generateCalendarDays = () => {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDay = firstDay.getDay();
+  
+  const days = [];
+  
+  // Add empty cells for the days of the previous month
+  for (let i = 0; i < startingDay; i++) {
+    days.push(null);
+  }
+  
+  // Add days of the current month
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(new Date(today.getFullYear(), today.getMonth(), i));
+  }
+  
+  return days;
+};
 
 // Calendar Data
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -52,33 +91,227 @@ const monthsOfYear = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+
 export default function BookAppointmentPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const typeParam = searchParams.get('type');
-
+  
+  // Initialize services
+  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+  const bookingService = useMemo(() => new BookingService(odooClientService), [odooClientService]);
+  const odooCalendarService = useMemo(() => new OdooCalendarService(odooClientService), [odooClientService]);
+  const odooProductService = useMemo(() => new OdooProductService(odooClientService), [odooClientService]);
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [publicEvents, setPublicEvents] = useState<PublicEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [conflictDetails, setConflictDetails] = useState<{message: string; conflicts: Array<{id: number; start: string; stop: string}>} | null>(null);
   const [bookingData, setBookingData] = useState<BookingData>({
-    bookingType: typeParam === 'personal' ? 'personal' : typeParam === 'public' ? 'public' : null,
+    bookingType: null,
     selectedService: null,
     selectedEvent: null,
     selectedDate: '',
     selectedTime: '',
     selectedDogs: [],
     agreedToTerms: false,
-    paymentMethod: ''
+    paymentMethod: 'credit_card',
   });
+  
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isBookingComplete, setIsBookingComplete] = useState(false);
-    // Get the OdooClientService and OdooCalendarService from the ServiceFactory
-  const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-  const odooCalendarService = useMemo(() => new OdooCalendarService(odooClientService), [odooClientService]);
-  const odooProductService = new OdooProductService(odooClientService);
+  const [bookingResult] = useState<BookingResult | null>(null);
+
+  // Function to get available dates for booking
+  const getAvailableDates = () => {
+    // This is a placeholder implementation - replace with actual API call
+    const today = new Date();
+    const dates = [];
+    
+    // Show next 7 days
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      dates.push({
+        dateString: date.toISOString().split('T')[0],
+        formattedDate: `${monthsOfYear[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+      });
+    }
+    
+    return dates;
+  };
+  
+  // Function to check if current step is complete
+  const isStepComplete = useCallback((step: number): boolean => {
+    switch (step) {
+      case 1:
+        return !!bookingData.bookingType;
+      case 2:
+        return !!bookingData.selectedService || !!bookingData.selectedEvent;
+      case 3:
+        return !!bookingData.selectedDate;
+      case 4:
+        return !!bookingData.selectedTime;
+      case 5:
+        return bookingData.selectedDogs.length > 0;
+      case 6:
+        return bookingData.agreedToTerms;
+      default:
+        return false;
+    }
+  }, [bookingData]);
+  
+
+  // Function to handle the final booking step
+  const completeBooking = useCallback(async (): Promise<BookingResult> => {
+    if (!isStepComplete(6)) {
+      return {
+        success: false,
+        message: 'Please complete all required fields before submitting.'
+      };
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+    setConflictDetails(null);
+    
+    try {
+      // Prepare booking data
+      const bookingPayload: BookingRequest = {
+        type: bookingData.bookingType === 'personal' ? 'individual' : 'group',
+        service: bookingData.selectedService?.name || bookingData.selectedEvent?.title || '',
+        dateTime: {
+          start: `${bookingData.selectedDate}T${bookingData.selectedTime}`,
+          stop: new Date(`${bookingData.selectedDate}T${bookingData.selectedTime}`).toISOString()
+        },
+        termsAccepted: bookingData.agreedToTerms,
+        dogs: bookingData.selectedDogs.map(dog => ({
+          name: dog.name,
+          breed: dog.breed
+        })),
+      };
+
+      // Create the booking
+      const bookingId = await bookingService.createBooking(bookingPayload);
+      
+      if (!bookingId) {
+        throw new Error('No booking ID returned from the server');
+      }
+      
+      const result: BookingResult = {
+        success: true,
+        bookingId: bookingId.toString(),
+        message: 'Your booking has been confirmed successfully!'
+      };
+      
+      setIsBookingComplete(true);
+      
+      // Reset form state
+      setBookingData({
+        bookingType: null,
+        selectedService: null,
+        selectedEvent: null,
+        selectedDate: '',
+        selectedTime: '',
+        selectedDogs: [],
+        agreedToTerms: false,
+        paymentMethod: 'credit_card'
+      });
+      
+      // Redirect to booking confirmation page
+      router.push(`/client-area/dashboard/calendar/book/confirmation?bookingId=${bookingId}`);
+      
+      return result;
+      
+    } catch (error: unknown) {
+      console.error('Booking error:', error);
+      
+      // Type guard to check for BookingConflictError
+      const isBookingConflictError = (err: unknown): err is BookingConflictError => {
+        return (err as BookingConflictError)?.type === 'CONFLICT';
+      };
+      
+      // Handle booking conflict error specifically
+      if (isBookingConflictError(error)) {
+        const conflictMessage = 'The selected time slot is no longer available. Please choose another time.';
+        setError(conflictMessage);
+        
+        // Store conflict details for UI display
+        setConflictDetails({
+          message: 'Time slot conflict',
+          conflicts: error.conflicts || []
+        });
+        
+        // Move user back to the time selection step
+        setCurrentStep(3);
+        
+        return {
+          success: false,
+          message: conflictMessage,
+          errorCode: 'CONFLICT',
+          conflictDetails: error.conflicts
+        };
+      }
+      
+      // Handle other errors
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const userFriendlyMessage = 'We encountered an issue processing your booking. Please try again or contact support if the problem persists.';
+      
+      setError(userFriendlyMessage);
+      
+      return {
+        success: false,
+        message: userFriendlyMessage,
+        errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
+        errorDetails: errorMessage
+      };
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [bookingData, bookingService, router, isStepComplete]);
+
+  // Function to handle payment method selection
+  const selectPaymentMethod = (method: string) => {
+    setBookingData({ ...bookingData, paymentMethod: method });
+  };
+
+  // Function to fetch available time slots
+  const fetchAvailableSlots = useCallback(async () => {
+    try {
+      const today = new Date();
+      
+      // First, set loading state
+      setIsCheckingAvailability(true);
+      
+      // Fetch available slots from the API
+      const slots = await bookingService.getAvailableTimeSlots(today);
+      
+      // If no slots are returned from the API, use fallback slots
+      if (slots && slots.length > 0) {
+        setAvailableSlots(slots);
+      } else {
+        console.warn('No available slots returned from API, using fallback slots');
+        setAvailableSlots(generateFallbackTimeSlots());
+      }
+    } catch (error) {
+      console.error('Error fetching available time slots:', error);
+      // Fallback to generated slots if there's an error
+      setAvailableSlots(generateFallbackTimeSlots());
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  }, [bookingService]);
+
+  // Fetch available time slots when component mounts or when the selected date changes
+  useEffect(() => {
+    fetchAvailableSlots();
+  }, [fetchAvailableSlots]);
 
   // Load data from API on initial load
   useEffect(() => {
@@ -87,49 +320,71 @@ export default function BookAppointmentPage() {
         setIsLoading(true);
         
         // Load dogs
-        const fetchedDogs = await odooClientService.getDogs();
+        const [fetchedDogs, fetchedServices] = await Promise.all([
+          odooClientService.getDogs(),
+          odooProductService.getTrainingServices()
+        ]);
+        
         setDogs(fetchedDogs);
-        
-        // Load services
-        const fetchedServices = await odooProductService.getTrainingServices();
         setServices(fetchedServices);
-        
-        // For now, use empty array for public events (can be enhanced later with real calendar events)
-        setPublicEvents([]);
+        setPublicEvents([]); // For now, use empty array for public events
         
         setIsLoading(false);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to load data. Please try again later.');
+        setError('Failed to load booking data. Please try again later.');
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [odooClientService]);
-  
-  // --- Double-booking prevention: fetch available slots for selected date ---
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  }, [odooClientService, odooProductService]);
+
+  // Load available time slots when date or booking type changes
   useEffect(() => {
-    const fetchSlots = async () => {
-      if (bookingData.bookingType === 'personal' && bookingData.selectedDate) {
-        setIsLoading(true);
-        try {
-          const mappedType = bookingData.bookingType === 'personal' ? 'individual' : 'group';
-          const slots = await odooCalendarService.getAvailableSlots(bookingData.selectedDate, mappedType);
-          setAvailableSlots(slots);
-        } catch {
-          setAvailableSlots([]);
-        } finally {
-          setIsLoading(false);
+    // Return early if no booking type is selected
+    if (!bookingData.bookingType) {
+      setTimeSlots([]);
+      return;
+    }
+    
+    const loadTimeSlots = async () => {
+      try {
+        setIsCheckingAvailability(true);
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        
+        // Map booking types to match the expected values in the booking service
+        const bookingTypeMap = {
+          'personal': 'individual',
+          'public': 'group'
+        } as const;
+        
+        // Get the mapped booking type (we've already checked that bookingType is not null)
+        const mappedType = bookingTypeMap[bookingData.bookingType as keyof typeof bookingTypeMap];
+        
+        const slots = await bookingService.getAvailableSlots(dateStr, mappedType);
+        setTimeSlots(slots);
+        
+        // Clear any selected time if it's no longer available
+        if (bookingData.selectedTime && !slots.includes(bookingData.selectedTime)) {
+          setBookingData(prev => ({ ...prev, selectedTime: '' }));
         }
-      } else {
-        setAvailableSlots([]);
+      } catch (err) {
+        console.error('Error loading time slots:', err);
+        setError('Failed to load available time slots. Please try again.');
+        setTimeSlots([]);
+      } finally {
+        setIsCheckingAvailability(false);
       }
     };
-    fetchSlots();
-  }, [bookingData.bookingType, bookingData.selectedDate, odooCalendarService]);
+    
+    loadTimeSlots();
+  }, [selectedDate, bookingData.bookingType, bookingService]);
 
+  // Navigation functions
+  const goToPrevStep = useCallback(() => {
+    setCurrentStep(prev => Math.max(1, prev - 1));
+  }, []);
   // Move to next step if data for current step is valid
   const goToNextStep = async () => {
     console.log('Current step:', currentStep);
@@ -194,77 +449,7 @@ export default function BookAppointmentPage() {
     } else {
       console.log('Cannot proceed: current step is not complete');
     }
-  };
-  
-  // Go back to previous step
-  const goToPrevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      window.scrollTo(0, 0);
-    }
-  };
-  
-  // Check if current step is complete
-  const isStepComplete = (step: number): boolean => {
-    switch (step) {
-      case 1: // Select booking type 
-        return bookingData.bookingType !== null;
-      case 2: // Select service or event
-        return bookingData.bookingType === 'personal' 
-          ? bookingData.selectedService !== null 
-          : bookingData.selectedEvent !== null;
-      case 3: // Select date and time (for personal) or dog (for public)
-        if (bookingData.bookingType === 'personal') {
-          return bookingData.selectedDate !== '' && bookingData.selectedTime !== '';
-        } else {
-          return bookingData.selectedDogs.length > 0;
-        }
-      case 4: // Select dog (for personal) or terms (for public)
-        if (bookingData.bookingType === 'personal') {
-          return bookingData.selectedDogs.length > 0;
-        } else {
-          // Always allow proceeding from terms page for public booking
-          return true;
-        }
-      case 5: // Terms (for personal) or payment (for public)
-        if (bookingData.bookingType === 'personal') {
-          // Always allow proceeding from terms page for personal booking
-          return true;
-        } else {
-          return bookingData.paymentMethod !== '';
-        }
-      case 6: // Payment (for personal only)
-        return bookingData.bookingType === 'public' || bookingData.paymentMethod !== '';
-      default:
-        return false;
-    }
-  };
-  
-  // Get step label based on booking type
-  const getStepLabel = (index: number): string => {
-    if (bookingData.bookingType === 'personal') {
-      const personalSteps = [
-        'Select Booking Type',
-        'Select Service',
-        'Choose Date & Time',
-        'Select Dogs',
-        'Terms & Conditions',
-        'Payment',
-        'Confirmation'
-      ];
-      return personalSteps[index];
-    } else {
-      const publicSteps = [
-        'Select Booking Type',
-        'Select Class/Event',
-        'Select Dogs',
-        'Terms & Conditions',
-        'Payment',
-        'Confirmation'
-      ];
-      return publicSteps[index];
-    }
-  };
+  };  
   
   // Select booking type
   const selectBookingType = (type: 'personal' | 'public') => {
@@ -291,240 +476,128 @@ export default function BookAppointmentPage() {
     setBookingData({ 
       ...bookingData, 
       selectedEvent: event,
-      // Set date and time automatically from the event
       selectedDate: event.date,
       selectedTime: event.time
     });
   };
-  
-  // Handle date selection
-  const selectDate = (date: string) => {
-    setBookingData({ ...bookingData, selectedDate: date });
-  };
-  
-  // Handle time selection
-  const selectTime = (time: string) => {
-    setBookingData({ ...bookingData, selectedTime: time });
-  };
-  
-  // Handle dog selection
-  const selectDog = (dog: Dog) => {
-    // Check if dog is already selected
-    const isSelected = bookingData.selectedDogs.some(selectedDog => selectedDog.id === dog.id);
-    
-    if (isSelected) {
-      // If already selected, remove it
-      const updatedDogs = bookingData.selectedDogs.filter(selectedDog => selectedDog.id !== dog.id);
-      setBookingData({ ...bookingData, selectedDogs: updatedDogs });
-    } else {
-      // If not selected, add it
-      setBookingData({ ...bookingData, selectedDogs: [...bookingData.selectedDogs, dog] });
-    }
-  };
-  
-  // Handle terms agreement
-  const toggleTermsAgreement = () => {
-    setBookingData({ ...bookingData, agreedToTerms: !bookingData.agreedToTerms });
-  };
-  
-  // Handle payment method selection
-  const selectPaymentMethod = (method: string) => {
-    setBookingData({ ...bookingData, paymentMethod: method });
-  };
-  
-  // Complete booking process
-  const completeBooking = async () => {
-    setIsLoading(true);
-    try {
-      // Map bookingType from 'personal'/'public' to 'individual'/'group'
-      const mappedBookingType: 'individual' | 'group' = 
-        bookingData.bookingType === 'personal' ? 'individual' : 'group';
 
-      // Call OdooCalendarService to create the appointment in Odoo
-      await odooCalendarService.createBooking({
-        type: mappedBookingType,
-        service: bookingData.selectedService?.name || bookingData.selectedEvent?.title || 'Unknown Service',
-        dateTime: {
-          start: bookingData.selectedDate + ' ' + bookingData.selectedTime,
-          stop: bookingData.selectedDate + ' ' + (new Date(new Date(`2000-01-01T${bookingData.selectedTime}`).getTime() + (bookingData.selectedService?.duration ? parseFloat(bookingData.selectedService.duration) : 1) * 60 * 60 * 1000).toTimeString().substring(0, 5)),
-        },
-        dogs: bookingData.selectedDogs.map(dog => ({ name: dog.name, breed: dog.breed })),
-        termsAccepted: bookingData.agreedToTerms
-      });
-      setIsBookingComplete(true);
-      setCurrentStep(bookingData.bookingType === 'personal' ? 7 : 6);
-      window.scrollTo(0, 0);
-    } catch (error) {
-      // If Odoo fails, fallback to localStorage for demo resilience
-      console.error('Error saving appointment to Odoo, falling back to localStorage:', error);
-      // Generate a random appointment ID
-      const appointmentId = Math.floor(Math.random() * 10000);
-      const dogImage = bookingData.selectedDogs.length > 0 
-        ? (bookingData.selectedDogs[0].image || "/images/dog-placeholder.jpg") 
-        : "/images/dog-placeholder.jpg";
-      const dogName = bookingData.selectedDogs.length > 0 
-        ? bookingData.selectedDogs[0].name 
-        : "Unknown Dog";
-      const newAppointment = bookingData.bookingType === 'personal' 
-        ? {
-            id: appointmentId,
-            title: bookingData.selectedService?.name || "Personal Training Session",
-            date: bookingData.selectedDate,
-            time: bookingData.selectedTime,
-            duration: bookingData.selectedService?.duration || "60 min",
-            location: 'CustomK9 Training Center',
-            trainer: 'John Doe',
-            dogName: dogName,
-            dogImage: dogImage,
-            dogNames: bookingData.selectedDogs.map(dog => dog.name),
-            dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
-            status: 'confirmed' as const,
-            totalPrice: bookingData.selectedService?.price || 0,
-            paymentMethod: bookingData.paymentMethod || "Cash",
-            createdAt: new Date().toISOString()
-          }
-        : {
-            id: appointmentId,
-            title: bookingData.selectedEvent?.title || "Group Training Event",
-            date: bookingData.selectedEvent?.date || bookingData.selectedDate,
-            time: bookingData.selectedEvent?.time || bookingData.selectedTime,
-            duration: bookingData.selectedEvent?.duration || "90 min",
-            location: bookingData.selectedEvent?.location || 'CustomK9 Training Center',
-            trainer: bookingData.selectedEvent?.trainer || 'John Doe',
-            dogName: dogName,
-            dogImage: dogImage,
-            dogNames: bookingData.selectedDogs.map(dog => dog.name),
-            dogImages: bookingData.selectedDogs.map(dog => dog.image || "/images/dog-placeholder.jpg"),
-            status: 'confirmed' as const,
-            totalPrice: bookingData.selectedEvent?.price || 0,
-            paymentMethod: bookingData.paymentMethod || "Cash",
-            createdAt: new Date().toISOString()
-          };
-      const validatedAppointment = ensureValidAppointmentImage(newAppointment as Appointment);
-      try {
-        const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-        const validatedExistingAppointments = existingAppointments.map((apt: any) => 
-          ensureValidAppointmentImage(apt)
-        );
-        validatedExistingAppointments.push(validatedAppointment);
-        localStorage.setItem('appointments', JSON.stringify(validatedExistingAppointments));
-        setIsBookingComplete(true);
-        setCurrentStep(bookingData.bookingType === 'personal' ? 7 : 6);
-        window.scrollTo(0, 0);
-      } catch (storageError) {
-        console.error('Error saving appointment to localStorage:', storageError);
-        alert('There was an error saving your appointment. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+// Handle date selection
+const selectDate = (date: string) => {
+  setBookingData({ ...bookingData, selectedDate: date });
+};
+
+// Handle time selection
+const selectTime = (time: string) => {
+  setBookingData({ ...bookingData, selectedTime: time });
+};
+
+// Handle dog selection
+const selectDog = (dog: Dog) => {
+  // Check if dog is already selected
+  const isSelected = bookingData.selectedDogs.some(selectedDog => selectedDog.id === dog.id);
   
-  // Get available dates (next 14 days)
-  const getAvailableDates = () => {
-    const dates = [];
-    const today = new Date();
-    
-    for (let i = 1; i <= 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      
-      // Skip Sundays (closed)
-      if (date.getDay() !== 0) {
-        dates.push({
-          dateString: date.toISOString().split('T')[0],
-          formattedDate: date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric'
-          })
-        });
-      }
-    }
-    
-    return dates;
-  };
-  
-  // Generate calendar days
-  const generateCalendarDays = (): (Date | null)[] => {
-    const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-    const lastDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay();
-    
-    const days: (Date | null)[] = [];
-    
-    // Add empty cells for the days of the previous month
-    for (let i = 0; i < startingDay; i++) {
-      days.push(null);
-    }
-    
-    // Add days of the current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i));
-    }
-    
-    return days;
-  };
-  
-  // Render booking completion screen
-  if (isBookingComplete) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
-            <CheckCircleIcon className="w-12 h-12 text-green-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Booking Confirmed!</h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Your appointment has been successfully scheduled. You will receive a confirmation email shortly.
-          </p>
-          <div className="bg-white p-8 rounded-xl shadow-md mb-8 text-left">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Appointment Details</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-sm text-gray-500">Service</p>
-                <p className="font-medium">{bookingData.selectedService?.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Date & Time</p>
-                <p className="font-medium">{bookingData.selectedDate} at {bookingData.selectedTime}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Duration</p>
-                <p className="font-medium">{bookingData.selectedService?.duration}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Location</p>
-                <p className="font-medium">CustomK9 Training Center</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Dogs</p>
-                <p className="font-medium">{bookingData.selectedDogs.map(dog => dog.name).join(', ')}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Price</p>
-                <p className="font-medium">KSh {bookingData.selectedService?.price.toLocaleString()}</p>
-              </div>
+  if (isSelected) {
+    // If already selected, remove it
+    const updatedDogs = bookingData.selectedDogs.filter(selectedDog => selectedDog.id !== dog.id);
+    setBookingData({ ...bookingData, selectedDogs: updatedDogs });
+  } else {
+    // If not selected, add it
+    setBookingData({ ...bookingData, selectedDogs: [...bookingData.selectedDogs, dog] });
+  }
+};
+
+// Handle terms agreement
+const toggleTermsAgreement = () => {
+  setBookingData({ ...bookingData, agreedToTerms: !bookingData.agreedToTerms });
+};
+
+// Render booking completion screen
+if (isBookingComplete) {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
+          <CheckCircleIcon className="w-12 h-12 text-green-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Booking Confirmed!</h1>
+        <p className="text-lg text-gray-600 mb-8">
+          Your appointment has been successfully scheduled. You will receive a confirmation email shortly.
+        </p>
+        <div className="bg-white p-8 rounded-xl shadow-md mb-8 text-left">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Appointment Details</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-sm text-gray-500">Service</p>
+              <p className="font-medium">{bookingData.selectedService?.name}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Date & Time</p>
+              <p className="font-medium">{bookingData.selectedDate} at {bookingData.selectedTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Duration</p>
+              <p className="font-medium">{bookingData.selectedService?.duration}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Location</p>
+              <p className="font-medium">CustomK9 Training Center</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Dogs</p>
+              <p className="font-medium">{bookingData.selectedDogs.map(dog => dog.name).join(', ')}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total Price</p>
+              <p className="font-medium">KSh {bookingData.selectedService?.price.toLocaleString()}</p>
             </div>
           </div>
-          <Link 
-            href="/client-area/dashboard/calendar" 
-            className="px-6 py-3 bg-sky-600 text-white rounded-md font-medium hover:bg-sky-700 transition-colors"
-          >
-            View All Appointments
-          </Link>
+        </div>
+        <Link 
+          href="/client-area/dashboard/calendar" 
+          className="px-6 py-3 bg-sky-600 text-white rounded-md font-medium hover:bg-sky-700 transition-colors"
+        >
+          View All Appointments
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Render booking status message if available
+const renderStatusMessage = () => {
+  if (!bookingResult) return null;
+
+  return (
+    <div className={`mb-6 p-4 rounded-md ${bookingResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
+      <div className="flex">
+        <div className="flex-shrink-0">
+          {bookingResult.success ? (
+            <CheckCircleIcon className="h-5 w-5 text-green-400" aria-hidden="true" />
+          ) : (
+            <ExclamationTriangleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+          )}
+        </div>
+        <div className="ml-3">
+          <p className={`text-sm font-medium ${bookingResult.success ? 'text-green-800' : 'text-red-800'}`}>
+            {bookingResult.message}
+            {bookingResult.bookingId && (
+              <span className="block mt-1 text-sm">Booking ID: {bookingResult.bookingId}</span>
+            )}
+          </p>
         </div>
       </div>
-    );
-  }
-  
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Book New Appointment</h1>
-        <p className="text-gray-600">Complete the steps below to schedule your appointment</p>
+    </div>
+  );
+};
+
+return (
+  <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Book an Appointment</h1>
+        <p className="mt-2 text-lg text-gray-600">Schedule your dog&apos;s training session</p>
       </div>
+      {renderStatusMessage()}
       
       {/* Progress indicator */}
       <div className="mb-6">
@@ -594,7 +667,7 @@ export default function BookAppointmentPage() {
                 </li>
               </>
             ) : (
-              // Public event booking flow (6 steps including confirmation)
+              // Public event flow (fewer steps)
               <>
                 <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-gray-500'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
@@ -603,7 +676,7 @@ export default function BookAppointmentPage() {
                   }`}>
                     {currentStep > 1 ? <CheckCircleIcon className="w-4 h-4" /> : 1}
                   </span>
-                  <span className="ml-2 text-sm">Booking Type</span>
+                  <span className="ml-2 text-sm">Event</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
                 <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-gray-500'}`}>
@@ -613,7 +686,7 @@ export default function BookAppointmentPage() {
                   }`}>
                     {currentStep > 2 ? <CheckCircleIcon className="w-4 h-4" /> : 2}
                   </span>
-                  <span className="hidden sm:inline ml-2 text-sm">Class/Event</span>
+                  <span className="hidden sm:inline ml-2 text-sm">Dogs</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
                 <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-gray-500'}`}>
@@ -622,26 +695,6 @@ export default function BookAppointmentPage() {
                     currentStep > 3 ? 'bg-sky-600 text-white' : 'bg-gray-200'
                   }`}>
                     {currentStep > 3 ? <CheckCircleIcon className="w-4 h-4" /> : 3}
-                  </span>
-                  <span className="hidden sm:inline ml-2 text-sm">Dogs</span>
-                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
-                </li>
-                <li className={`flex items-center ${currentStep > 4 ? 'text-sky-600' : 'text-gray-500'}`}>
-                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
-                    currentStep === 4 ? 'bg-sky-100 text-sky-800' : 
-                    currentStep > 4 ? 'bg-sky-600 text-white' : 'bg-gray-200'
-                  }`}>
-                    {currentStep > 4 ? <CheckCircleIcon className="w-4 h-4" /> : 4}
-                  </span>
-                  <span className="hidden sm:inline ml-2 text-sm">Terms</span>
-                  <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
-                </li>
-                <li className={`flex items-center ${currentStep > 5 ? 'text-sky-600' : 'text-gray-500'}`}>
-                  <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
-                    currentStep === 5 ? 'bg-sky-100 text-sky-800' : 
-                    currentStep > 5 ? 'bg-sky-600 text-white' : 'bg-gray-200'
-                  }`}>
-                    {currentStep > 5 ? <CheckCircleIcon className="w-4 h-4" /> : 5}
                   </span>
                   <span className="hidden sm:inline ml-2 text-sm">Payment</span>
                 </li>
@@ -670,7 +723,7 @@ export default function BookAppointmentPage() {
               </div>
               <h3 className="text-lg font-medium mb-2">Personal Training</h3>
               <p className="text-center text-gray-500 text-sm">
-                Schedule a one-on-one session with our trainers tailored to your dogs' needs.
+                Schedule a one-on-one session with our trainers tailored to your dogs&apos; needs.
               </p>
               <ul className="mt-4 text-sm text-gray-600 space-y-2">
                 <li className="flex items-center">
@@ -791,6 +844,7 @@ export default function BookAppointmentPage() {
                       setSelectedDate(newDate);
                     }}
                     className="p-2 rounded-full hover:bg-gray-100"
+                    aria-label="Previous month"
                   >
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"></path>
@@ -808,6 +862,7 @@ export default function BookAppointmentPage() {
                       setSelectedDate(newDate);
                     }}
                     className="p-2 rounded-full hover:bg-gray-100"
+                    aria-label="Next month"
                   >
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
@@ -968,12 +1023,14 @@ export default function BookAppointmentPage() {
             <button
               onClick={goToPrevStep}
               className="px-6 py-2 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Go back to previous step"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
               disabled={!isStepComplete(2)}
+              aria-label={isStepComplete(2) ? 'Continue to next step' : 'Please complete the current step to continue'}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
                 isStepComplete(2) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
@@ -996,6 +1053,7 @@ export default function BookAppointmentPage() {
                   key={date.dateString}
                   onClick={() => selectDate(date.dateString)}
                   title={`Select date ${date.formattedDate}`}
+                  aria-label={`Select date ${date.formattedDate}`}
                   className={`p-3 rounded-md text-center transition-colors ${
                     bookingData.selectedDate === date.dateString
                       ? 'bg-sky-600 text-white'
@@ -1011,7 +1069,7 @@ export default function BookAppointmentPage() {
             <div>
               <h3 className="font-medium text-gray-800 mb-3">Available Times</h3>
               <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
-                {TIME_SLOTS.map((time) => {
+                {timeSlots.map((time) => {
                   const isAvailable = availableSlots.includes(time);
                   return (
                     <button
@@ -1019,6 +1077,7 @@ export default function BookAppointmentPage() {
                       onClick={() => isAvailable && selectTime(time)}
                       disabled={!isAvailable}
                       title={isAvailable ? `Select time ${time}` : `Time ${time} is already booked`}
+                      aria-label={isAvailable ? `Select time ${time}` : `Time ${time} is not available`}
                       className={`p-2 rounded-md text-center text-sm transition-colors ${
                         bookingData.selectedTime === time && isAvailable
                           ? 'bg-sky-600 text-white'
@@ -1041,12 +1100,14 @@ export default function BookAppointmentPage() {
             <button
               onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Go back to previous step"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
               disabled={!isStepComplete(3)}
+              aria-label={isStepComplete(3) ? 'Continue to select dogs' : 'Please complete the current step to continue'}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
                 isStepComplete(3) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
@@ -1131,12 +1192,14 @@ export default function BookAppointmentPage() {
             <button
               onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Go back to previous step"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
               disabled={!isStepComplete(bookingData.bookingType === 'personal' ? 4 : 3)}
+              aria-label={isStepComplete(bookingData.bookingType === 'personal' ? 4 : 3) ? 'Continue to terms and conditions' : 'Please complete the current step to continue'}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
                 isStepComplete(bookingData.bookingType === 'personal' ? 4 : 3) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
@@ -1188,12 +1251,14 @@ export default function BookAppointmentPage() {
             <button
               onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Go back to previous step"
             >
               Back
             </button>
             <button
               onClick={goToNextStep}
               disabled={!isStepComplete(bookingData.bookingType === 'personal' ? 5 : 4)}
+              aria-label={isStepComplete(bookingData.bookingType === 'personal' ? 5 : 4) ? 'Continue to payment' : 'Please complete the current step to continue'}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
                 isStepComplete(bookingData.bookingType === 'personal' ? 5 : 4) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
@@ -1266,12 +1331,14 @@ export default function BookAppointmentPage() {
             <button
               onClick={goToPrevStep}
               className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="Go back to previous step"
             >
               Back
             </button>
             <button
               onClick={completeBooking}
               disabled={!isStepComplete(6)}
+              aria-label={isStepComplete(6) ? 'Complete your booking' : 'Please complete all required fields to book'}
               className={`px-6 py-2 rounded-md text-white font-medium transition-colors ${
                 isStepComplete(6) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
@@ -1390,6 +1457,7 @@ export default function BookAppointmentPage() {
             <Link 
               href="/client-area/dashboard/calendar" 
               className="px-6 py-3 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              aria-label="View my calendar"
             >
               View My Calendar
             </Link>
@@ -1397,6 +1465,7 @@ export default function BookAppointmentPage() {
             <Link 
               href="/client-area/dashboard" 
               className="px-6 py-3 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition-colors"
+              aria-label="Go to dashboard"
             >
               Return to Dashboard
             </Link>
@@ -1416,5 +1485,6 @@ export default function BookAppointmentPage() {
         </div>
       )}
     </div>
+  </div>
   );
-}
+};

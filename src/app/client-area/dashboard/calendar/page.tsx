@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Appointment, ensureValidAppointmentImage } from "@/types/appointment";
+import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService, CalendarEvent } from "@/services/OdooCalendarService";
-import { OdooClientService } from "@/services/odoo/OdooClientService";
 
 // Calendar Data
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -44,53 +44,52 @@ export default function CalendarPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
   // Load appointments from Odoo Calendar on initial load
   useEffect(() => {
-    const loadAppointments = async () => {
+  const loadAppointments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Use the singleton service (handles auth/session/cookies)
+      const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+      const calendarService = new OdooCalendarService(odooClientService);
+
+      // Fetch real calendar events
+      const calendarEvents = await calendarService.getUpcomingAppointments();
+      console.log('📅 Loaded calendar events:', calendarEvents);
+
+      // Convert to Appointment format
+      const convertedAppointments = calendarEvents.map(convertCalendarEventToAppointment);
+
+      // Also check for any locally stored appointments
       try {
-        setLoading(true);
-        setError(null);
-          // Initialize Odoo services
-        const odooClient = new OdooClientService({ baseUrl: '/api/odoo' });
-        const calendarService = new OdooCalendarService(odooClient);
-        
-        // Fetch real calendar events
-        const calendarEvents = await calendarService.getUpcomingAppointments();
-        console.log('📅 Loaded calendar events:', calendarEvents);
-        
-        // Convert to Appointment format
-        const convertedAppointments = calendarEvents.map(convertCalendarEventToAppointment);
-        
-        // Also check for any locally stored appointments
-        try {
-          const storedAppointments = localStorage.getItem('appointments');
-          if (storedAppointments) {
-            const parsedAppointments = JSON.parse(storedAppointments);
-            const validatedAppointments = parsedAppointments.map((apt: Appointment) => 
-              ensureValidAppointmentImage(apt)
-            );
-            // Combine real Odoo events with local appointments
-            setAppointments([...convertedAppointments, ...validatedAppointments]);
-          } else {
-            setAppointments(convertedAppointments);
-          }
-        } catch (localError) {
-          console.error('Error loading local appointments:', localError);
+        const storedAppointments = localStorage.getItem('appointments');
+        if (storedAppointments) {
+          const parsedAppointments = JSON.parse(storedAppointments);
+          const validatedAppointments = parsedAppointments.map((apt: Appointment) => 
+            ensureValidAppointmentImage(apt)
+          );
+          setAppointments([...convertedAppointments, ...validatedAppointments]);
+        } else {
           setAppointments(convertedAppointments);
         }
-        
-      } catch (error) {
-        console.error('❌ Error loading appointments:', error);
-        setError('Failed to load appointments. Please try again later.');
-        setAppointments([]); // Start with empty array instead of dummy data
-      } finally {
-        setLoading(false);
+      } catch (localError) {
+        console.error('Error loading local appointments:', localError);
+        setAppointments(convertedAppointments);
       }
-    };
-    
-    loadAppointments();
-  }, []);
+
+    } catch (error) {
+      console.error('❌ Error loading appointments:', error);
+      setError('Failed to load appointments. Please try again later.');
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadAppointments();
+}, []);
   
   // Get current month and year
   const currentMonth = selectedDate.getMonth();

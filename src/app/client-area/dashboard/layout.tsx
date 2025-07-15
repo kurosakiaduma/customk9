@@ -93,11 +93,40 @@ export default function DashboardLayout({
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const pathname = usePathname();
 
-  // Get current user on mount
+  // Get current user on mount and check authentication
   useEffect(() => {
-    const authService = ServiceFactory.getInstance().getAuthService();
-    const user = authService.getCurrentUser();
-    setCurrentUser(user);
+    const checkAuth = async () => {
+      try {
+        const authService = ServiceFactory.getInstance().getAuthService();
+        const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+        
+        // First check if we have a valid session
+        const hasValidSession = odooClientService.isAuthenticated;
+        
+        if (!hasValidSession) {
+          // If no valid session, check for token-based auth (backward compatibility)
+          const hasToken = authService.isAuthenticated();
+          
+          if (!hasToken) {
+            // No valid session or token, redirect to login
+            console.log('No valid session or token found, redirecting to login');
+            window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname);
+            return;
+          }
+        }
+        
+        // If we get here, we have a valid session or token
+        const user = authService.getCurrentUser();
+        setCurrentUser(user);
+        
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        // On error, redirect to login
+        window.location.href = '/client-area?redirect=' + encodeURIComponent(pathname);
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   // Get user initials for avatar

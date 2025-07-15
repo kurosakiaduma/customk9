@@ -135,32 +135,89 @@ export default function AddDogPage() {
     setErrors({});
     try {
       const odooService = ServiceFactory.getInstance().getOdooClientService();
-      // Prepare payload matching DogProfileCreateInput (all required fields at root)
+      // Prepare payload matching Odoo model fields
       const dogPayload = {
         name: formData.name || '',
         breed: formData.breed || '',
-        age: formData.age || '',
+        age: Number(formData.age) || 1,
         gender: formData.gender || '',
-        sterilized: formData.dogInfo?.sterilized || '',
-        dogSource: formData.dogInfo?.dogSource || '',
-        timeWithDog: formData.dogInfo?.timeWithDog || '',
+        dog_source: formData.dogInfo?.dogSource || '',
+        time_with_dog: formData.dogInfo?.timeWithDog || 1,
         medications: formData.dogInfo?.medications || '',
-        currentDeworming: formData.dogInfo?.currentDeworming || '',
-        tickFleaPreventative: formData.dogInfo?.tickFleaPreventative || '',
-        vetClinic: formData.dogInfo?.vetClinic || '',
-        vetName: formData.dogInfo?.vetName || '',
-        vetPhone: formData.dogInfo?.vetPhone || '',
-        medicalIssues: formData.dogInfo?.medicalIssues || '',
-        lifestyle: fillDefaults(formData.lifestyle || {}, defaultLifestyle),
-        history: fillDefaults(formData.history || {}, defaultHistory),
-        goals: fillDefaults(formData.goals || {}, defaultGoals),
-        behaviorChecklist: formData.behaviorChecklist || [],
-        behaviorDetails: formData.behaviorDetails || '',
-        undesirableBehavior: formData.undesirableBehavior || '',
-        fearDescription: formData.fearDescription || '',
+        current_deworming: formData.dogInfo?.currentDeworming || '',
+        tick_flea_preventative: formData.dogInfo?.tickFleaPreventative || '',
+        vet_clinic: formData.dogInfo?.vetClinic || '',
+        vet_name: formData.dogInfo?.vetName || '',
+        vet_phone: formData.dogInfo?.vetPhone || '',
+        vet_address: formData.dogInfo?.vetAddress || '',
+        medical_issues: formData.dogInfo?.medicalIssues || '',
+        // Lifestyle fields
+        home_alone_location: formData.lifestyle?.homeAloneLocation || '',
+        sleep_location: formData.lifestyle?.sleepLocation || '',
+        has_crate: formData.lifestyle?.hasCrate || '',
+        likes_crate: formData.lifestyle?.likesCrate || '',
+        crate_location: formData.lifestyle?.crateLocation || '',
+        chews_crate: formData.lifestyle?.chewsCrate || '',
+        hours_alone: formData.lifestyle?.hoursAlone || '',
+        food_brand: formData.lifestyle?.foodBrand || '',
+        feeding_schedule: formData.lifestyle?.feedingSchedule || '',
+        food_left_out: formData.lifestyle?.foodLeftOut || '',
+        allergies: formData.lifestyle?.allergies || '',
+        toy_types: formData.lifestyle?.toyTypes || '',
+        toy_play_time: formData.lifestyle?.toyPlayTime || '',
+        toy_storage: formData.lifestyle?.toyStorage || '',
+        walk_frequency: formData.lifestyle?.walkFrequency || '',
+        walk_person: formData.lifestyle?.walkPerson || '',
+        walk_duration: formData.lifestyle?.walkDuration || '',
+        other_exercise: formData.lifestyle?.otherExercise || '',
+        walk_equipment: formData.lifestyle?.walkEquipment || '',
+        off_leash: formData.lifestyle?.offLeash || '',
+        forest_visits: formData.lifestyle?.forestVisits || '',
+        pulling: formData.lifestyle?.pulling || '',
+        pulling_prevention: formData.lifestyle?.pullingPrevention || '',
+        // History fields
+        previous_training: formData.history?.previousTraining || '',
+        growled: formData.history?.growled || '',
+        growl_details: formData.history?.growlDetails || '',
+        bitten: formData.history?.bitten || '',
+        bite_details: formData.history?.biteDetails || '',
+        bite_injury: formData.history?.biteInjury || '',
+        fearful: formData.history?.fearful || '',
+        fear_details: formData.history?.fearDetails || '',
+        new_people_response: formData.history?.newPeopleResponse || '',
+        grooming_response: formData.history?.groomingResponse || '',
+        ignore_reaction: formData.history?.ignoreReaction || '',
+        previous_services: formData.history?.previousServices || '',
+        tools_used: formData.history?.toolsUsed || '',
+        // Goals fields
+        training_goals: formData.goals?.trainingGoals || '',
+        ideal_dog_behavior: formData.goals?.idealDogBehavior || '',
+        // Arrays as comma-separated strings
+        behavior_checklist: (formData.behaviorChecklist || []).join(','),
+        likes_about_dog: (formData.likesAboutDog || []).join(','),
+        dislikes_about_dog: (formData.dislikesAboutDog || []).join(','),
+        // Other fields
+        behavior_details: formData.behaviorDetails || '',
+        undesirable_behavior: formData.undesirableBehavior || '',
+        fear_description: formData.fearDescription || '',
         notes: formData.notes || '',
+        why_training: formData.whyTraining || '',
       };
-      await odooService.createDogProfile(dogPayload);
+      const currentUser = odooService.getCurrentUser();
+      let ownerId: number | null = null;
+      if (currentUser && currentUser.partner_id) {
+        if (Array.isArray(currentUser.partner_id)) {
+          ownerId = currentUser.partner_id[0]; // [id, name]
+        } else {
+          ownerId = typeof currentUser.partner_id === "number" ? currentUser.partner_id : null;
+        }
+      }
+      const sterilizedValue = formData.dogInfo?.sterilized === "Yes" || formData.dogInfo?.sterilized === true ? true : false;
+      await odooService.createDogProfile({
+        ...dogPayload,
+        sterilized: sterilizedValue,
+        owner_id: ownerId
+      });
       setSubmitSuccess(true);
       setTimeout(() => {
         router.push('/client-area/dashboard/dogs');
