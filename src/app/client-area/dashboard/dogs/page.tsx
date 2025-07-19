@@ -13,8 +13,8 @@ const DogDetailCard = ({ dog }: { dog: Dog }) => {
 
   // Since data is now stored flat in Odoo, we access it directly from the dog object
   // Convert behavior_checklist string back to array if needed
-  const behaviorChecklist = typeof dog.behavior_checklist === 'string' 
-    ? dog.behavior_checklist.split(', ').filter(item => item.trim()) 
+  const behaviorChecklist = (dog.behavior_checklist && typeof dog.behavior_checklist === 'string')
+    ? dog.behavior_checklist.split(', ').filter(item => item.trim())
     : (dog.behaviorChecklist || []);
 
   return (
@@ -206,7 +206,7 @@ export default function DogsPage() {
         setError(null);
         const currentUser = await odooClientService.getCurrentUser();
         if (currentUser && currentUser.partner_id) {
-                    const partnerId = Array.isArray(currentUser.partner_id) ? currentUser.partner_id[0] : currentUser.partner_id;
+          const partnerId = Array.isArray(currentUser.partner_id) ? currentUser.partner_id[0] : currentUser.partner_id;
           const fetchedDogs = await odooClientService.getDogs(partnerId);
           console.log("Fetched dogs in DogsPage:", fetchedDogs);
           setDogs(fetchedDogs);
@@ -232,7 +232,7 @@ export default function DogsPage() {
   }, [odooClientService]);
 
   // Filter dogs based on search term
-  const filteredDogs = dogs.filter((dog) => 
+  const filteredDogs = dogs.filter((dog) =>
     dog.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dog.breed.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -241,8 +241,8 @@ export default function DogsPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold text-sky-800">My Dogs</h1>
-        <Link 
-          href="/client-area/dashboard/intake" 
+        <Link
+          href="/client-area/dashboard/intake"
           className="px-4 py-2 bg-sky-600 text-white rounded-md text-sm font-medium hover:bg-sky-700 transition-colors flex items-center"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -251,7 +251,7 @@ export default function DogsPage() {
           Register New Dog
         </Link>
       </div>
-      
+
       {/* Search bar */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -267,7 +267,7 @@ export default function DogsPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      
+
       {/* Dogs List */}
       <div className="space-y-6">
         {isLoading ? (
@@ -286,32 +286,32 @@ export default function DogsPage() {
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
             {error}
-          </div>        ) : filteredDogs.length > 0 ? (
-          filteredDogs.map((dog) => (
-            <DogDetailCard key={dog.id} dog={dog} />
-          ))
-        ) : dogs.length === 0 && !searchTerm ? (
-          // No dogs registered yet - friendly empty state
-          <div className="text-center py-12 bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl border border-sky-100">            <div className="mx-auto w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+          </div>) : filteredDogs.length > 0 ? (
+            filteredDogs.map((dog) => (
+              <DogDetailCard key={dog.id} dog={dog} />
+            ))
+          ) : dogs.length === 0 && !searchTerm ? (
+            // No dogs registered yet - friendly empty state
+            <div className="text-center py-12 bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl border border-sky-100">            <div className="mx-auto w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mb-6">
               <svg className="w-10 h-10 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 6.5h15a2 2 0 012 2v7a2 2 0 01-2 2h-15a2 2 0 01-2-2v-7a2 2 0 012-2zm8.25 4.5c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25-.56 1.25-1.25 1.25-1.25-.56-1.25-1.25zm-4.5 0c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25-.56 1.25-1.25 1.25-1.25-.56-1.25-1.25zm1.5-6.5s-1.5 3-3 3 3-3 3-3zm6 0s1.5 3 3 3-3-3-3-3z"></path>
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CustomK9!</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              You haven&apos;t registered any dogs yet. Start your training journey by registering your first furry friend!
-            </p>
-            <Link 
-              href="/client-area/dashboard/intake" 
-              className="px-6 py-3 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-all duration-200 hover:shadow-lg inline-flex items-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Register Your First Dog
-            </Link>
-          </div>
-        ) : (
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CustomK9!</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                You haven&apos;t registered any dogs yet. Start your training journey by registering your first furry friend!
+              </p>
+              <Link
+                href="/client-area/dashboard/intake"
+                className="px-6 py-3 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-all duration-200 hover:shadow-lg inline-flex items-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Register Your First Dog
+              </Link>
+            </div>
+          ) : (
           // Search returned no results
           <div className="text-center py-10 bg-gray-50 rounded-lg">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -321,7 +321,7 @@ export default function DogsPage() {
             <p className="mt-1 text-sm text-gray-500">
               No dogs match &quot;{searchTerm}&quot;. Try a different search term or clear the search.
             </p>
-            <button 
+            <button
               onClick={() => setSearchTerm('')}
               className="mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors"
             >
