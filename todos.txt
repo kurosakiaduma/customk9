@@ -1,0 +1,26 @@
+1. Load customK9 on local machine
+
+2. Portal user and Portal admin; separation of these two personas for their specific permissions.
+
+3. Client Group ID for Customk9 is 57
+
+
+Remote server: root@194.37.81.10
+Password: K!l0T3st@123456
+
+curl -X POST 'https://erp.vuna.io/web/dataset/call_kw' -H 'Content-Type: application/json' -b cookies.txt -d '{
+    "jsonrpc": "2.0",
+    "method": "call",
+    "params": {
+      "model": "product.template",
+      "method": "search_read",
+      "args": [[
+        ["sale_ok", "=", true],
+        ["type", "=", "service"]
+      ]],
+      "kwargs": {
+        "fields": ["id", "name", "description", "list_price", "categ_id"],
+        "limit": 20
+      }
+    }
+  }'

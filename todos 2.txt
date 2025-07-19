@@ -1,0 +1,7 @@
+1. Calendar needs an update; Understand the flow of data -> How to display data in a minimalistic still being informative to the user.
+
+2. Dog Events Page also needs to be refactored;
+
+3. Update the Overview/Dashboard, My Dogs section, Training Plans section and Appointments sections. 
+
+4. 
