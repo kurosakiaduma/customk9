@@ -5,7 +5,6 @@ export interface OdooSessionInfo {
   name?: string;
   is_admin: boolean;
   is_system: boolean;
-  session_id: string;
   partner_id?: number | null;
   context: Record<string, unknown>;
   groups_id?: number[];
@@ -17,19 +16,27 @@ export interface OdooSessionInfo {
   [key: string]: unknown; // Allow additional properties
 }
 
+export type OdooUserContext = {
+  lang?: string;
+  tz?: string;
+  [key: string]: unknown;
+};
+
 export interface OdooUser {
   id: number;
-  uid?: number; // Add uid as an optional property
-  name: string;
+  uid?: number;
+  name?: string;
+  login?: string;
   email: string;
-  partner_id?: [number, string] | number | null;
+  display_name?: string;
+  partner_id?: number | false | null;
+  company_id?: [number, string] | number | false | null;
   is_admin: boolean;
   is_system: boolean;
-  session_id: string;
-  context: Record<string, unknown>;
-  user_context?: Record<string, unknown>; // Add user_context property
-  groups_id: number[];
-  [key: string]: unknown; // Allow additional properties
+  context?: OdooUserContext;
+  user_context?: OdooUserContext;
+  groups_id?: number[];
+  [key: string]: unknown;
 }
 
 export interface OdooError {
@@ -195,4 +202,12 @@ export interface CalendarEvent {
 }
 
 // Alias for backward compatibility
-export type TrainingPlan = ProjectTask;
+export interface SubTask {
+  name: string;
+  description: string;
+  is_completed?: boolean;
+  stage_id?: [number, string];
+}
+
+export interface TrainingPlan extends ProjectTask {
+}

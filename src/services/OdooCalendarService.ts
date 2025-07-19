@@ -1,4 +1,4 @@
-import OdooClientService from '@/services/odoo/OdooClientService';
+import OdooClientService, { OdooDomain } from '@/services/odoo/OdooClientService';
 
 export interface CalendarEvent {
     id: number;
@@ -38,12 +38,7 @@ export class OdooCalendarService {
     async testCalendarConnection(): Promise<boolean> {
         try {
             console.log('🔍 Testing calendar.event model access...');
-            const result = await this.odooClientService.callOdooMethod(
-                'calendar.event', 
-                'search', 
-                [[]], // Fix: domain should be empty array wrapped in array
-                { limit: 1 }
-            );
+            const result = await this.odooClientService.callOdooMethod('calendar.event', 'search', [[]], { limit: 1 });
             console.log('✅ Calendar model accessible:', result);
             return true;
         } catch (error) {
@@ -53,51 +48,39 @@ export class OdooCalendarService {
     }   
     
     async getUpcomingAppointments(): Promise<CalendarEvent[]> {
-        let currentUser = this.odooClientService.getCurrentUser();
-        if (!currentUser) {
-            // Try to restore session (works on client-side)
-            if (typeof window !== 'undefined' && this.odooClientService.getCurrentUser()) {
-                currentUser = await this.odooClientService.getCurrentUser();
-            }
-        }
-        if (!currentUser) {
-            console.error('❌ No current user found (even after session restore attempt)');
+        const currentUser = await this.odooClientService.getCurrentUser();
+        if (!currentUser || !currentUser.partner_id) {
+            console.error('❌ No current user or partner_id found for fetching appointments.');
             return [];
         }
 
         try {
-            console.log('🔍 Fetching calendar events for user:', currentUser);
+            console.log('🔍 Fetching calendar events for user:', currentUser.name);
 
-            // Build date filters
             const now = new Date();
             const oneMonthFromNow = new Date();
             oneMonthFromNow.setMonth(now.getMonth() + 1);
-            
-            // FIXED: Construct domain filter properly for Odoo
-            const domainFilter = [
-                '&',
-                '&',
+
+            const partnerId = Array.isArray(currentUser.partner_id) ? currentUser.partner_id[0] : currentUser.partner_id;
+
+            const domain: OdooDomain = [
                 ['start', '>=', now.toISOString()],
                 ['start', '<=', oneMonthFromNow.toISOString()],
-                '|',
-                ['partner_ids', 'in', [currentUser.partnerId || 0]],
-                ['user_id', '=', currentUser.id]
+                ['partner_ids', 'in', [partnerId]],
             ];
 
-            console.log('🔍 Calendar domain filter (fixed):', domainFilter);
+            const fields = [
+                'id', 'name', 'start', 'stop', 'duration', 'location',
+                'partner_ids', 'description', 'user_id'
+            ];
 
-            const result = await this.odooClientService.callOdooMethod(
+            const result = await this.odooClientService.searchRead(
                 'calendar.event',
-                'search_read',
-                [domainFilter], // Wrap domainFilter in array
-                {
-                    fields: [
-                        'id', 'name', 'start', 'stop', 'duration', 'location',
-                        'partner_ids', 'description', 'user_id'
-                    ],
-                    limit: 20,
-                    order: 'start ASC'
-                }
+                domain,
+                fields,
+                20, // limit
+                0, // offset
+                'start ASC' // order
             );
 
             console.log('📅 Calendar events fetched:', result);
@@ -113,10 +96,11 @@ export class OdooCalendarService {
                 partner_ids?: number[];
                 description?: string | false;
                 user_id?: number;
+                state?: string;
             };
             
             const odooEvents = result as OdooEvent[];
-            console.log(`📅 Found ${odooEvents.length} events for user ${currentUser.username}`);
+            console.log(`📅 Found ${odooEvents.length} events for user ${currentUser.name}`);
             
             // Transform the data to match our interface
             return odooEvents.map((event) => ({
@@ -129,7 +113,7 @@ export class OdooCalendarService {
                 trainer_name: this.getTrainerName(event.partner_ids),
                 dog_name: this.getDogNameFromDescription(event.description),
                 dog_image: '/images/dog-placeholder.jpg',
-                state: 'confirmed' as const
+                state: 'confirmed' // Defaulting state as it's no longer fetched
             }));
         } catch (error) {
             console.error('❌ Calendar model not accessible:', error);
@@ -152,37 +136,27 @@ export class OdooCalendarService {
         return dogMatch ? dogMatch[1].trim() : 'Training Dog';
     }
 
-    private mapOdooStatus(status: string): 'confirmed' | 'pending' | 'cancelled' {
-        switch (status) {
-            case 'confirmed':
-                return 'confirmed';
-            case 'tentative':
-                return 'pending';
-            case 'cancelled':
-                return 'cancelled';
-            default:
-                return 'confirmed';
-        }
-    }
-
     async createBooking(details: BookingDetails): Promise<number> {
         const eventData = this.convertBookingToEvent(details);
+        console.log('📦 Creating booking with event data:', eventData);
+
         try {
-            console.log('📅 Creating calendar event:', eventData);
-            // Get current user info to link the appointment properly
-            const currentUser = this.odooClientService.getCurrentUser();
-            if (currentUser?.partnerId && currentUser?.id) {
-                // Always set the booking user as the event owner and participant
-                eventData.partner_ids = [[6, 0, [currentUser.partnerId]]];
+            const currentUser = await this.odooClientService.getCurrentUser();
+            if (currentUser && currentUser.partner_id) {
+                // Add current user's partner_id to the event
+                eventData.partner_ids = [[6, 0, [currentUser.partner_id]]];
                 eventData.user_id = currentUser.id;
+            } else {
+                // Add a default partner if no user is logged in, for guest bookings
+                eventData.partner_ids = [[6, 0, [this.odooClientService.getGuestPartnerId()]]];
             }
-            const result = await this.odooClientService.callOdooMethod(
+            const bookingId = await this.odooClientService.callOdooMethod<number>(
                 'calendar.event',
                 'create',
                 [eventData]
             );
-            console.log('✅ Calendar event created with ID:', result);
-            return result as number;
+            console.log('✅ Calendar event created with ID:', bookingId);
+            return bookingId;
         } catch (error) {
             console.error('❌ Error creating booking:', error);
             throw new Error(`Failed to create appointment: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -241,16 +215,14 @@ export class OdooCalendarService {
                 return this.getDefaultSlots(type);
             }
 
-            const events = await this.odooClientService.callOdooMethod(
+            const domain: OdooDomain = [
+                ['start', '>=', `${date} 00:00:00`],
+                ['start', '<=', `${date} 23:59:59`],
+            ];
+            const events = await this.odooClientService.searchRead<{ start: string; stop: string }>(
                 'calendar.event',
-                'search_read',
-                [[
-                    ['start', '>=', `${date} 00:00:00`],
-                    ['start', '<=', `${date} 23:59:59`]
-                ]],
-                {
-                    fields: ['start', 'stop']
-                }
+                domain,
+                ['start', 'stop']
             );
 
             console.log('📅 Existing events for date:', events);

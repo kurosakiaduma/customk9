@@ -39,30 +39,15 @@ class ServiceFactory {
 
   private initializeServices() {
     if (!this.odooClientService) {
-      // Ensure we have the required database configuration
-      const db = this.config.odooClient?.db || this.config.odoo?.database;
-      
-      if (!db) {
-        console.error('Missing database configuration in ServiceFactory:', this.config);
-        throw new Error('Database name is required in Odoo client configuration');
-      }
-      
-      console.log('Initializing OdooClientService with config:', {
-        baseUrl: this.config.odooClient.baseUrl,
-        db: db,
-        debug: process.env.NODE_ENV === 'development'
-      });
-      
-      this.odooClientService = new OdooClientService({
-        baseUrl: this.config.odooClient.baseUrl,
-        db: db,
-        debug: process.env.NODE_ENV === 'development',
-        timeout: 30000
-      });
+      const proxyBaseURL = '/api/odoo';
+      console.log(`Initializing OdooClientService with proxy baseURL: ${proxyBaseURL}`);
+      this.odooClientService = new OdooClientService(proxyBaseURL);
     }
-    
+
     if (!this.authService && this.odooClientService) {
       this.authService = new AuthService(this.odooClientService);
+      // Now, inject the authService back into the odooClientService to break the circular dependency
+      this.odooClientService.setAuthService(this.authService);
     }
   }
 

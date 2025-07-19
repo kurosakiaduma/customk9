@@ -13,7 +13,7 @@ export default function RefresherObediencePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Refresher Obedience */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -68,10 +68,10 @@ export default function RefresherObediencePage() {
               
               <div className="prose prose-lg max-w-none">
                 <p>
-                  Our Refresher Obedience course is designed for dogs who have previously learned basic commands but need reinforcement and practice. Whether your training has become inconsistent or you want to sharpen your dog's skills, this course helps rebuild and strengthen their obedience foundation.
+                  Our Refresher Obedience course is designed for dogs who have previously learned basic commands but need reinforcement and practice. Whether your training has become inconsistent or you want to sharpen your dog&apos;s skills, this course helps rebuild and strengthen their obedience foundation.
                 </p>
                 
-                <h3>What You'll Learn</h3>
+                <h3>What You&apos;ll Learn</h3>
                 <ul>
                   <li>Reinforcement of basic commands: sit, stay, down, come, leave it</li>
                   <li>Improved reliability and response times</li>
@@ -109,7 +109,7 @@ export default function RefresherObediencePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Schedule & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Schedule & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -135,7 +135,7 @@ export default function RefresherObediencePage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">What to Bring</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">What to Bring</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>

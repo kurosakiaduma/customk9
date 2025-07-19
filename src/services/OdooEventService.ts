@@ -34,24 +34,18 @@ export class OdooEventService {
     try {
       console.log('🔍 Fetching events from Odoo calendar...');
       
-      // Get calendar events that are public or group events
-      const result = await this.odooClientService.callOdooMethod(
-        'calendar.event', 
-        'search_read', 
-        [[['start', '>=', new Date().toISOString().split('T')[0]]]], 
-        {
-          fields: [
-            'id', 
-            'name', 
-            'start', 
-            'stop', 
-            'location',
-            'description',
-            'partner_ids'
-          ],
-          order: 'start asc',
-          limit: 20
-        }
+      const domain = [['start', '>=', new Date().toISOString().split('T')[0]]];
+      const fields = ['id', 'name', 'start', 'stop', 'location', 'description', 'partner_ids'];
+      const limit = 20;
+      const order = 'start asc';
+
+      const result = await this.odooClientService.searchRead(
+        'calendar.event',
+        domain,
+        fields,
+        limit,
+        0, // offset
+        order
       );
 
       console.log('📅 Events fetched:', result);

@@ -1,84 +1,27 @@
-import OdooClientService from '../odoo/OdooClientService';
+import { OdooUserContext } from '../odoo/odoo.types';
+import OdooClientService, { OdooUser } from '../odoo/OdooClientService';
 
-
+/**
+ * Represents the user object within the application's auth context.
+ * This is a sanitized version of the OdooUser, tailored for the frontend.
+ */
 export interface AuthUser {
   id: number;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   isAdmin: boolean;
   isSystem?: boolean;
-  token: string;
   partnerId?: number;
-  context?: {
-    lang: string;
-    tz: string;
-    id: number;
-    [key: string]: unknown;
-  };
+  context?: OdooUserContext;
   groupsId?: number[];
 }
 
+/**
+ * AuthService provides a high-level interface for user authentication and session management.
+ * It orchestrates the stateless OdooClientService and manages the client-side session state,
+ * including a custom readable cookie for synchronous UI updates.
+ */
 export class AuthService {
-  private static readonly SESSION_KEY = 'odoo_session';
-  private static readonly REMEMBER_ME_KEY = 'customk9_remember_me';
-  
-  /**
-   * Gets a cookie value by name
-   */
-  private static getCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
-    
-    const nameEQ = name + '=';
-    const cookies = document.cookie.split(';');
-    
-    for (let i = 0; i < cookies.length; i++) {
-      let cookie = cookies[i];
-      while (cookie.charAt(0) === ' ') {
-        cookie = cookie.substring(1, cookie.length);
-      }
-      if (cookie.indexOf(nameEQ) === 0) {
-        return decodeURIComponent(cookie.substring(nameEQ.length, cookie.length));
-      }
-    }
-    return null;
-  }
-  
-  /**
-   * Sets a cookie with the given name, value, and options
-   */
-  private static setCookie(
-    name: string,
-    value: string,
-    days: number = 7,
-    path: string = '/',
-    domain?: string,
-    secure: boolean = false
-  ): void {
-    if (typeof document === 'undefined') return;
-
-    let expires = '';
-    if (days) {
-      const date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      expires = '; expires=' + date.toUTCString();
-    }
-
-    let cookieString = 
-      encodeURIComponent(name) + '=' + encodeURIComponent(value) + 
-      expires + '; path=' + path;
-
-    if (domain) {
-      cookieString += '; domain=' + domain;
-    }
-
-    if (secure) {
-      cookieString += '; secure';
-    }
-
-    // Set the cookie
-    document.cookie = cookieString;
-  }
-  
   private odooClientService: OdooClientService;
   private currentUser: AuthUser | null = null;
 
@@ -86,128 +29,52 @@ export class AuthService {
     this.odooClientService = odooClientService;
   }
 
+  /**
+   * Authenticates a user with Odoo, then creates a custom session cookie for the Next.js app.
+   * @param email The user's email (login).
+   * @param password The user's password.
+   * @returns A promise that resolves to the authenticated user.
+   */
   async login(email: string, password: string): Promise<AuthUser> {
+    const db = process.env.NEXT_PUBLIC_ODOO_DATABASE;
+    if (!db) {
+      throw new Error('Odoo database name is not configured. Please set NEXT_PUBLIC_ODOO_DATABASE.');
+    }
+
     try {
-      console.log('AuthService: Starting login for', email);
-
-      // Get Odoo client service
-      const odooClient = this.odooClientService;
-
-      // Authenticate with Odoo using the login method
-      const result = await odooClient.login(email, password);
-      
-      // Log the full Odoo response structure for debugging
-      console.group('🔍 AuthService: Odoo Login Response');
-      console.log('Raw response object:', JSON.stringify(result, null, 2));
-      
-      // Log the response structure with types
-      console.log('Response structure:', {
-        'result.id (number)': result?.id,
-        'result.name (string)': result?.name,
-        'result.email (string)': result?.email,
-        'result.partner_id (number | [number, string] | null)': result?.partner_id,
-        'result.is_admin (boolean)': result?.is_admin,
-        'result.is_system (boolean)': result?.is_system,
-        'result.session_id (string)': result?.session_id,
-        'result.groups_id (number[])': result?.groups_id,
-        'result.context (object)': result?.context ? '(object - see below)' : 'undefined',
-        'result.user_context (object)': result?.user_context ? '(object - see below)' : 'undefined'
-      });
-      
-      if (result?.context) {
-        console.log('result.context:', result.context);
-      }
-      if (result?.user_context) {
-        console.log('result.user_context:', result.user_context);
-      }
-      console.groupEnd();
-
-      // Check if the result contains a valid user ID
-      const userId = result?.id || result?.id;
-      if (!userId) {
-        console.error('❌ AuthService: Authentication failed - no user ID in response');
-        throw new Error('Authentication failed: Invalid credentials or server error');
+      console.log('AuthService: Starting Odoo login for', email);
+      const odooUser = await this.odooClientService.login(db, email, password);
+      console.log('AuthService: Odoo login successful. This is the odooUser object', odooUser);
+      if (!odooUser?.uid) {
+        throw new Error('Authentication failed: Invalid response from Odoo.');
       }
 
-      console.log('✅ AuthService: Authentication successful', {
-        userId,
-        username: result?.name || 'N/A',
-        email: result?.email || 'N/A',
-        isAdmin: result?.is_admin || false,
-        hasSessionId: !!result?.session_id
+      const user = this._createAuthUser(odooUser);
+
+      // Set the custom session cookie via our API route
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user }),
       });
 
-      // The Odoo login response already contains all the user info we need
-      const userInfo = result;
-      
-      // Check if user is admin (use the is_admin flag from the login response)
-      const isAdmin = Boolean(userInfo?.is_admin);
-      
-      // Get the user's name, defaulting to email if name is not available
-      const displayName = userInfo?.name || email;
-
-      // Safely extract context with proper types
-      let context: AuthUser['context'] = undefined;
-      if (userInfo.context) {
-        const { lang, tz, ...rest } = userInfo.context;
-        context = {
-          lang: typeof lang === 'string' ? lang : 'en_US',
-          tz: typeof tz === 'string' ? tz : 'UTC',
-          id: userId,
-          ...rest
-        };
-      }
-
-      const user: AuthUser = {
-        id: userId,
-        name: displayName,
-        email: userInfo.email || email,
-        isAdmin,
-        isSystem: userInfo.is_system,
-        token: String(odooClient.currentUser?.partner_id) || '',
-        partnerId: typeof userInfo.partner_id === 'number' ? userInfo.partner_id : undefined,
-        context,
-        groupsId: Array.isArray(userInfo.groups_id) ? userInfo.groups_id : []
-      };
-
-      console.log('AuthService: User data loaded:', user);
-
-      // Store user in memory
       this.currentUser = user;
-
-      // Store session info in cookie for persistence
-      try {
-        const sessionData = {
-          sessionInfo: odooClient.sessionInfo,
-          currentUser: user, // Use the user object, not the getter function
-          timestamp: Date.now(),
-        };
-        
-        // Set cookie with 1 day expiration
-        const domain = window.location.hostname;
-        const isProduction = process.env.NODE_ENV === 'production';
-        const expiresInDays = 1;
-        
-        // Set the cookie
-        document.cookie = `${AuthService.SESSION_KEY}=${encodeURIComponent(JSON.stringify(sessionData))}; ` +
-          `max-age=${expiresInDays * 24 * 60 * 60}; ` +
-          `path=/; ` +
-          `domain=${domain}; ` +
-          `${isProduction ? 'Secure; ' : ''}` +
-          'SameSite=Lax';
-          
-        console.log('AuthService: Session data stored in cookie');
-      } catch (storageError) {
-        console.error('AuthService: Error storing session data in cookie:', storageError);
-      }
-
+      console.log('✅ AuthService: Login successful, user data loaded and session cookie set.');
       return user;
     } catch (error) {
-      console.error('Authentication failed:', error);
-      throw new Error('Authentication failed');
+      console.error('❌ AuthService: Login failed', error);
+      this.currentUser = null;
+      // Attempt to clear any lingering session state
+      await this.logout();
+      throw new Error(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Registers a new user and partner in Odoo and then logs them in.
+   * @param userData The data for the new user.
+   * @returns A promise that resolves to the authenticated user.
+   */
   async register(userData: {
     name: string;
     email: string;
@@ -215,204 +82,154 @@ export class AuthService {
     phone?: string;
   }): Promise<AuthUser> {
     try {
-      console.log('Starting registration process for:', userData.email);
+      console.log('AuthService: Registering new user', userData.email);
 
-      // Create a new partner in Odoo
-      const partnerData: Record<string, unknown> = {
+      // Step 1: Create the partner record
+      const partnerData = {
         name: userData.name,
         email: userData.email,
-        customer_rank: 1, // Mark as customer
-        ...(userData.phone ? { phone: userData.phone } : {})
+        phone: userData.phone,
+        company_type: 'person',
       };
-
-      const partnerId = await this.odooClientService.create('res.partner', partnerData);
+      const partnerId = await this.odooClientService.callOdooMethod<number>('res.partner', 'create', [partnerData]);
 
       if (!partnerId) {
-        throw new Error('Failed to create user profile');
+        throw new Error('Failed to create partner record in Odoo.');
       }
 
-      // Create user account
-      const userId = await this.odooClientService.create('res.users', {
+      // Step 2: Create the user record, linked to the partner
+      const newUserData = {
         name: userData.name,
         login: userData.email,
         password: userData.password,
         partner_id: partnerId,
-        groups_id: [9] // Add to portal group (ID 9 is portal user in Odoo)
-      });
-
-      if (!userId) {
-        throw new Error('Failed to create user account');
-      }
-
-      // Do NOT auto-login or set any custom session logic
-      // Just return a minimal AuthUser object for confirmation
-      return {
-        id: userId,
-        name: userData.name,
-        email: userData.email,
-        isAdmin: false,
-        token: '',
-        partnerId: partnerId,
-        context: undefined,
-        groupsId: [9]
+        groups_id: [[6, 0, [2]]], // Add to 'Internal User' group by default
       };
+      await this.odooClientService.callOdooMethod('res.users', 'create', [newUserData]);
+
+      // Step 3: Log the new user in to establish a session
+      console.log('AuthService: Registration successful, logging in new user.');
+      return this.login(userData.email, userData.password);
     } catch (error) {
-      console.error('Registration failed:', error);
-      if (error instanceof Error) {
-        throw new Error(`Registration failed: ${error.message}`);
-      } else {
-        throw new Error('Registration failed: An unexpected error occurred');
-      }
+      console.error('❌ AuthService: Registration failed', error);
+      throw new Error(`Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Clears the user's session from Odoo and removes the custom session cookie.
+   */
   async logout(): Promise<void> {
+    // Clear the Odoo session on the server side (best effort)
+    // This tells Odoo to invalidate its session_id
     try {
-      // Clear Odoo session
-      if (typeof this.odooClientService.clearSession === 'function') {
-        await this.odooClientService.clearSession();
-        console.log('Odoo session cleared');
-      }
+      await this.odooClientService.clearSession();
     } catch (error) {
-      console.error('Error during Odoo logout:', error);
+      console.error('Error during Odoo server-side logout:', error);
     }
 
-    // Clear cookies and localStorage
-    if (typeof document !== 'undefined') {
-      const domain = window.location.hostname;
-      
-      // Clear session cookie
-      document.cookie = `${AuthService.SESSION_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
-      
-      // Clear remember me cookie
-      document.cookie = `${AuthService.REMEMBER_ME_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
-      
-      // Clear localStorage for backward compatibility
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(AuthService.SESSION_KEY);
-        localStorage.removeItem(AuthService.REMEMBER_ME_KEY);
-      }
-      
-      console.log('Session cookies and localStorage cleared');
+    // Clear our custom session cookie via our API route
+    try {
+      await fetch('/api/auth/session', { method: 'DELETE' });
+    } catch (error) {
+      console.error('Error clearing custom session cookie:', error);
     }
-    
-    // Clear in-memory user
+
+    // Clear the user from memory
     this.currentUser = null;
+    console.log('AuthService: Logout complete, user data and session cookie cleared.');
   }
 
+  /**
+   * Checks if the user is authenticated by verifying the presence of the session_id cookie.
+   */
   isAuthenticated(): boolean {
-    // Check in-memory user first
-    if (this.currentUser) {
-      return true;
-    }
-    
-    // Check cookie
-    if (typeof document === 'undefined') return false;
-    
-    try {
-      // Get the session cookie
-      const cookieValue = AuthService.getCookie(AuthService.SESSION_KEY);
-      if (!cookieValue) {
-        return false;
-      }
-      
-      // Parse the cookie value
-      const sessionData = JSON.parse(cookieValue);
-      if (sessionData?.currentUser) {
-        // Restore user from cookie
-        this.currentUser = sessionData.currentUser;
-        return true;
-      }
-    } catch (error) {
-      console.error('Error checking authentication status:', error);
-    }
-    
-    return false;
+    return this.getToken() !== null;
   }
 
-  getToken(): string | null {
+  /**
+   * Retrieves the user session data from the custom 'customk9_session' cookie.
+   */
+  getToken(): AuthUser | null {
     if (typeof document === 'undefined') return null;
-    
+
+    const match = document.cookie.match(/customk9_session=([^;]+)/);
+    if (match && match[1]) {
+      try {
+        // Decode and parse the cookie value
+        const decodedValue = decodeURIComponent(match[1]);
+        return JSON.parse(decodedValue);
+      } catch (error) {
+        console.error('Failed to parse session cookie:', error);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the current user. It prioritizes in-memory data, then the custom session cookie,
+   * and finally falls back to an async check with Odoo.
+   */
+  async getCurrentUser(): Promise<AuthUser | null> {
+    // 1. Check for user in memory
+    if (this.currentUser) {
+      return this.currentUser;
+    }
+
+    // 2. Check for the custom session cookie
+    const userFromCookie = this.getToken();
+    if (userFromCookie) {
+      console.log('Restored user from session cookie.');
+      this.currentUser = userFromCookie;
+      return this.currentUser;
+    }
+
+    // 3. Fallback: If no cookie, check Odoo for a valid HttpOnly session_id.
+    // This covers cases where the custom cookie expired or was cleared, but the Odoo session is still valid.
     try {
-      const cookieValue = AuthService.getCookie(AuthService.SESSION_KEY);
-      if (!cookieValue) return null;
-      
-      const sessionData = JSON.parse(cookieValue);
-      return sessionData?.sessionInfo?.session_id || null;
+      console.log('No session cookie found, attempting to restore session from Odoo...');
+      const sessionInfo = await this.odooClientService.getSessionInfo();
+      if (sessionInfo && sessionInfo.uid) {
+        const odooUser = await this.odooClientService.getUser(sessionInfo.uid);
+        // Note: When restoring a session, we don't get a new session_id from getUser.
+        // The valid HttpOnly cookie is our authentication. We use a placeholder for the token.
+        if (odooUser) {
+          const user = this._createAuthUser(odooUser);
+          // Restore the session by re-creating the custom readable cookie
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user }),
+          });
+          this.currentUser = user;
+          console.log('✅ AuthService: Session restored from Odoo and custom cookie recreated.');
+          return this.currentUser;
+        }
+      }
+      return null;
     } catch (error) {
-      console.error('Error getting token from cookie:', error);
+      console.error('Failed to restore session from Odoo:', error);
       return null;
     }
   }
 
-  public getCurrentUser(): AuthUser | null {
-    // Return from memory if available
-    if (this.currentUser) {
-      return this.currentUser;
-    }
-    
-    // Try to load from cookie
-    try {
-      if (typeof document === 'undefined') return null;
-      
-      const cookieValue = AuthService.getCookie(AuthService.SESSION_KEY);
-      if (!cookieValue) return null;
-      
-      const sessionData = JSON.parse(cookieValue);
-      if (sessionData?.currentUser) {
-        this.currentUser = sessionData.currentUser;
-        return this.currentUser;
-      }
-    } catch (error) {
-      console.error('Error loading user from cookie:', error);
-    }
-    
-    return null;
-  }
-  
-  setRememberMe(remember: boolean): void {
-    if (typeof document === 'undefined') return;
-    
-    const domain = window.location.hostname;
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    if (remember) {
-      // Set remember me cookie for 30 days
-      AuthService.setCookie(
-        AuthService.REMEMBER_ME_KEY, 
-        'true', 
-        30, // days
-        '/', // path
-        domain, // domain
-        isProduction // secure in production
-      );
-    } else {
-      // Clear remember me cookie
-      document.cookie = `${AuthService.REMEMBER_ME_KEY}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
-    }
-  }
+  /**
+   * A private helper to transform an OdooUser into an AuthUser, handling type inconsistencies.
+   */
+  private _createAuthUser(odooUser: OdooUser): AuthUser {
+    const partnerId = Array.isArray(odooUser.partner_id)
+      ? Number(odooUser.partner_id[0])
+      : Number(odooUser.partner_id);
 
-  private setAuthData(user: AuthUser): void {
-    // Get session info from Odoo client
-    const sessionInfo = this.odooClientService.getSessionInfo();
-
-    // Store user and session in cookie
-    const sessionData = {
-      sessionInfo: sessionInfo,
-      currentUser: user,
-      timestamp: Date.now(),
+    return {
+      id: odooUser.id,
+      name: odooUser.name,
+      email: odooUser.email,
+      isAdmin: odooUser.is_admin,
+      isSystem: odooUser.is_system,
+      partnerId: partnerId,
+      context: odooUser.context as OdooUserContext,
     };
-    
-    const domain = typeof window !== 'undefined' ? window.location.hostname : '';
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    AuthService.setCookie(
-      AuthService.SESSION_KEY,
-      JSON.stringify(sessionData),
-      1, // 1 day
-      '/', // path
-      domain, // domain
-      isProduction // secure in production
-    );
   }
 }

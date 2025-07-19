@@ -8,6 +8,7 @@ import ServiceFactory from "@/services/ServiceFactory";
 import { OdooCalendarService } from "@/services/OdooCalendarService";
 import { Dog } from "@/types/dog";
 import { TrainingPlan } from "@/services/odoo/odoo.types";
+import { AuthUser } from "@/services/auth/AuthService";
 import styles from './Dashboard.module.css';
 
 // Components
@@ -226,94 +227,79 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   // Get services from the ServiceFactory
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
 
   useEffect(() => {
-    // Use AuthService for authentication check
-    const authService = ServiceFactory.getInstance().getAuthService();
-    if (!authService.isAuthenticated()) {
-      window.location.href = '/client-area';
-      return;
-    }
-    const currentUser = authService.getCurrentUser();
-    if (!currentUser) {
-      // Clear invalid cookie
-      const domain = window.location.hostname;
-      document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
-      window.location.href = '/client-area';
-      return;
-    }
-    // Set user name from currentUser
-    const displayName =
-      currentUser.name ||
-      (currentUser.email ? currentUser.email.split('@')[0] : null) ||
-      'User';
-    setUserName(displayName);
-    setIsAuthenticated(true);
+    const checkAuth = async (): Promise<AuthUser | null> => {
+      console.log("🔍 Checking auth status...");
+      const authService = ServiceFactory.getInstance().getAuthService();
+      if (!authService.isAuthenticated()) {
+        console.log("🚫 Not authenticated, redirecting to /client-area");
+        if (typeof window !== 'undefined') window.location.href = '/client-area';
+        return null;
+      }
+      const currentUser = await authService.getCurrentUser();
+      if (!currentUser) {
+        console.log("🚫 Current user is invalid, clearing cookie and redirecting");
+        if (typeof window !== 'undefined') {
+          const domain = window.location.hostname;
+          document.cookie = `customk9_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
+          window.location.href = '/client-area';
+        }
+        return null;
+      }
+      const displayName =
+        currentUser.name ||
+        (currentUser.email ? currentUser.email.split('@')[0] : 'User');
+      setUserName(displayName);
+      setUser(currentUser);
+      setIsAuthenticated(true);
+      return currentUser;
+    };
 
-    // Now load user-specific data
-    const loadUserData = async () => {
+    const loadUserData = async (currentUser: AuthUser) => {
       try {
-        console.log("🔍 Loading user-specific data...");
-        // Load dogs
-        try {
-          const fetchedDogs = await odooClientService.getDogs();
-          console.log(`🐕 Loaded ${fetchedDogs.length} dogs for user`);
-          setDogs(fetchedDogs);
-        } catch (dogError) {
-          console.error("❌ Error fetching dogs:", dogError);
-        }
-        // Load training plans
-        try {
-          const fetchedPlans = await odooClientService.getTrainingPlans();
-          console.log(`📋 Loaded ${fetchedPlans.length} training plans for user`);
-          setTrainingPlans(fetchedPlans);
-        } catch (planError) {
-          console.error("❌ Error fetching training plans:", planError);
-        }
-        // Load upcoming calendar sessions
-        try {
+        setUserName(currentUser.name || 'Guest');
+
+        if (currentUser.partnerId) {
+          console.log(`🐶 Fetching data for partner ID: ${currentUser.partnerId}`);
+
+          // Fetch dogs
+          const userDogs = await odooClientService.getDogs(currentUser.partnerId);
+          setDogs(userDogs);
+
+          // Fetch training plans
+          const plans = await odooClientService.getTrainingPlans(currentUser.partnerId);
+          setTrainingPlans(plans);
+
+          // Fetch upcoming appointments
           const odooCalendarService = new OdooCalendarService(odooClientService);
-          const calendarEvents = await odooCalendarService.getUpcomingAppointments();
-          let filteredEvents = calendarEvents;
-          // Only filter for non-admin users
-          if (currentUser && !currentUser.isAdmin && currentUser.partnerId) {
-            filteredEvents = (calendarEvents as import('@/services/OdooCalendarService').CalendarEvent[]).filter(event => {
-              // @ts-expect-error partner_ids may exist on backend event object for filtering
-              if (!event.partner_ids) return true;
-              // @ts-expect-error partner_ids may exist on backend event object for filtering
-              return Array.isArray(event.partner_ids) && event.partner_ids.includes(currentUser.partnerId);
-            });
-          }
-          // Convert calendar events to session format - keep all for count, but limit display to 3
-          const allSessions = filteredEvents.map(event => ({
-            id: event.id,
-            title: event.name,
-            date: new Date(event.start).toLocaleDateString('en-US', { 
-              weekday: 'long',
-              month: 'short', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
-            location: event.location,
-            trainer: event.trainer_name,
-            start: event.start
-          }));
-          setUpcomingSessions(allSessions);
-        } catch (sessionError) {
-          console.error("❌ Error fetching upcoming sessions:", sessionError);
-          setUpcomingSessions([]);
+          const fetchedCalendarEvents = await odooCalendarService.getUpcomingAppointments();
+          setUpcomingSessions(fetchedCalendarEvents);
+
+        } else {
+          console.warn('🐶 Cannot fetch data, missing partnerId.');
+          setError("Could not retrieve your data. Please try again.");
         }
       } catch (error) {
-        console.error("❌ Error in loadUserData:", error);
-        throw error;
+        console.error("❌ Error loading user data:", error);
+        setError("Failed to load dashboard data.");
       }
     };
-    loadUserData();
-    setIsLoading(false);
+
+    const init = async () => {
+      setIsLoading(true);
+      const user = await checkAuth();
+      if (user) {
+        await loadUserData(user);
+      }
+      setIsLoading(false);
+    };
+
+    init();
   }, [odooClientService]);
 
   if (isLoading) {

@@ -13,7 +13,7 @@ export default function LooseLeashWalkingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Loose Leash Walking */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -71,11 +71,11 @@ export default function LooseLeashWalkingPage() {
                   Our Loose Leash Walking class specifically targets one of the most common challenges dog owners face – pulling on the leash. This focused training will teach you and your dog how to walk calmly together without tension, making daily walks enjoyable rather than stressful.
                 </p>
                 
-                <h3>What You'll Learn</h3>
+                <h3>What You&apos;ll Learn</h3>
                 <ul>
                   <li>Understanding why dogs pull and how to address the root causes</li>
                   <li>Proper leash handling techniques and body mechanics</li>
-                  <li>Methods to gain and maintain your dog's attention during walks</li>
+                  <li>Methods to gain and maintain your dog&apos;s attention during walks</li>
                   <li>Positive reinforcement strategies to reward good walking behavior</li>
                   <li>How to gradually build duration of loose leash walking</li>
                   <li>Techniques for managing distractions in various environments</li>
@@ -110,7 +110,7 @@ export default function LooseLeashWalkingPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Schedule & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Schedule & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -136,7 +136,7 @@ export default function LooseLeashWalkingPage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Benefits</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Benefits</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>

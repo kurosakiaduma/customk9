@@ -13,7 +13,7 @@ export default function SupervisedPlaytimePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Supervised Playtime */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -84,7 +84,7 @@ export default function SupervisedPlaytimePage() {
                 
                 <h3>How It Works</h3>
                 <p>
-                  Before joining our playtime sessions, all dogs undergo a temperament assessment to ensure they're a good fit for group play. We carefully match dogs based on size, play style, and energy level to create the most positive experience for everyone.
+                  Before joining our playtime sessions, all dogs undergo a temperament assessment to ensure they&apos;re a good fit for group play. We carefully match dogs based on size, play style, and energy level to create the most positive experience for everyone.
                 </p>
                 <ul>
                   <li>Sessions are limited to small groups (maximum 8 dogs)</li>
@@ -97,7 +97,7 @@ export default function SupervisedPlaytimePage() {
                 
                 <h3>Requirements</h3>
                 <ul>
-                  <li>Dogs must be at least 4 months old and fully vaccinated</li>
+                  <li>All dogs must be up-to-date on vaccinations.</li>
                   <li>Completion of temperament assessment (one-time, 30-minute evaluation)</li>
                   <li>Free from contagious conditions</li>
                   <li>Spayed/neutered if over 8 months old (exceptions considered case-by-case)</li>
@@ -112,7 +112,7 @@ export default function SupervisedPlaytimePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Schedule & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Schedule & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -142,7 +142,7 @@ export default function SupervisedPlaytimePage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">What to Know</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">What to Know</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -154,11 +154,11 @@ export default function SupervisedPlaytimePage() {
                     </li>
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
-                      <span>Bring your dog's favorite toys (if they share well)</span>
+                      <span>Bring your dog&apos;s favorite toys (if they share well)</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
-                      <span>We provide water, but feel free to bring your dog's water bowl</span>
+                      <span>We provide water, but feel free to bring your dog&apos;s water bowl</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>

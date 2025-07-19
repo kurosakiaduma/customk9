@@ -2,33 +2,28 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { useSearchParams } from "next/navigation";
 import ServiceFactory from "@/services/ServiceFactory";
 import { format } from "date-fns";
-import { TrainingPlan } from "@/services/odoo/odoo.types";
+import { TrainingPlan, SubTask } from "@/services/odoo/odoo.types";
 
-const calculateProgress = (tasks: any[]) => {
+
+
+// Extend the TrainingPlan type to include our parsed tasks
+interface ProcessedTrainingPlan extends TrainingPlan {
+  tasks: SubTask[];
+}
+
+
+const calculateProgress = (tasks: SubTask[]) => {
   if (!tasks || tasks.length === 0) return 0;
-  const completedTasks = tasks.filter(task => task.stage_id[0] === 4).length;
+  const completedTasks = tasks.filter((task) => task.stage_id && task.stage_id[0] === 4).length;
   return Math.round((completedTasks / tasks.length) * 100);
 };
 
-const sanitizeHtml = (html: string) => {
-  if (!html) return '';
-  return html
-    .replace(/<\/?[^>]+(>|$)/g, "") // Remove HTML tags
-    .replace(/&lt;p&gt;|&lt;\/p&gt;/g, "") // Remove encoded <p> tags
-    .replace(/"<p>"|"<\/p>"/g, "") // Remove quoted <p> tags
-    .replace(/<p>|<\/p>/g, "") // Remove literal <p> tags
-    .trim(); // Remove extra whitespace
-};
+const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: ProcessedTrainingPlan; isSelected: boolean; onClick: () => void }) => {
+  const tasks = plan.tasks || [];
+  const progress = calculateProgress(tasks);
 
-// Components
-const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; isSelected: boolean; onClick: () => void }) => {
-  const tasks = Array.isArray(plan.tasks) ? plan.tasks : [];
-  const progress = calculateProgress(tasks);  
-  
   return (
     <div 
       onClick={onClick}
@@ -37,66 +32,39 @@ const TrainingPlanCard = ({ plan, isSelected, onClick }: { plan: TrainingPlan; i
       }`}
     >
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-xl font-semibold">{plan.name}</h3>
-        <span className="text-sm text-gray-500">
-          {format(new Date(plan.create_date), 'MMM d, yyyy')} - {format(new Date(plan.date_end), 'MMM d, yyyy')}
+        <h3 className="text-xl font-semibold text-black">{plan.name}</h3>
+        <span className="text-sm text-black">
+          {plan.create_date ? format(new Date(plan.create_date), 'MMM d, yyyy') : 'N/A'} - {plan.date_deadline ? format(new Date(plan.date_deadline), 'MMM d, yyyy') : 'Ongoing'}
         </span>
       </div>
       <div className="mb-4">
         <div className="flex justify-between mb-1">
-          <span className="text-sm font-medium">Progress</span>
-          <span className="text-sm font-medium">{progress}%</span>
+          <span className="text-sm font-medium text-black">Progress</span>
+          <span className="text-sm font-medium text-black">{progress}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
+        <p className="text-sm text-black">{progress}% complete</p>
       </div>
       <div className="mt-2">
-        <span className="text-sm text-gray-500">{tasks.length} Tasks</span>
+        <span className="text-sm text-black">{tasks.length} Tasks</span>
       </div>
     </div>
   );
 };
 
-// Component for displaying the task status
-const TaskStatus = ({ status }: { status: number }) => {
-  switch (status) {
-    case 4: // Done
-      return (
-        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-          Completed
-        </span>
-      );
-    case 2: // In Progress
-      return (
-        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-          In Progress
-        </span>
-      );
-    default: // To Do
-      return (
-        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-          Not Started
-        </span>
-      );
-  }
-};
+
 
 // Component for the detailed view of a training plan
-const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
-  const tasks = Array.isArray(plan.tasks) ? plan.tasks : [];
+const TrainingPlanDetail = ({ plan }: { plan: ProcessedTrainingPlan }) => {
+    const tasks = plan.tasks || [];
   const progress = calculateProgress(tasks);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="border-b pb-4 mb-6">
-        <h2 className="text-2xl font-bold mb-2">{plan.name}</h2>
+        <h2 className="text-2xl font-bold mb-2 text-black">{plan.name}</h2>
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">
-            {format(new Date(plan.create_date), 'MMM d, yyyy')} - {format(new Date(plan.date_end), 'MMM d, yyyy')}
+          <span className="text-black">
+            {plan.create_date ? format(new Date(plan.create_date), 'MMM d, yyyy') : 'N/A'} - {plan.date_deadline ? format(new Date(plan.date_deadline), 'MMM d, yyyy') : 'Ongoing'}
           </span>
           <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
             {progress}% Complete
@@ -106,33 +74,18 @@ const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
       
       {plan.description && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Description</h3>
-          <p className="text-gray-600">{sanitizeHtml(plan.description)}</p>
+          <h3 className="text-lg font-semibold mb-2 text-black">Description</h3>
+          <div className="prose max-w-none text-black" dangerouslySetInnerHTML={{ __html: plan.description || '' }} />
         </div>
       )}
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Tasks & Skills</h3>
+        <h3 className="text-lg font-semibold mb-4 text-black">Tasks & Skills</h3>
         <div className="space-y-4">
-          {tasks.map((task: any) => (
-            <div key={task.id} className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-medium text-lg mb-1">{task.name}</h4>
-                  {task.description && (
-                    <p className="text-gray-600">{sanitizeHtml(task.description)}</p>
-                  )}
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  task.stage_id[0] === 4 
-                    ? 'bg-green-100 text-green-800'
-                    : task.stage_id[0] === 2
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {task.stage_id[1] || 'Not Started'}
-                </span>
-              </div>
+          {tasks.map((task, index) => (
+            <div key={index} className="bg-gray-50 p-4 rounded-lg border">
+              <h4 className="font-semibold text-black">{task.name}</h4>
+              <p className="text-sm text-black mt-1">{task.description}</p>
             </div>
           ))}
         </div>
@@ -144,25 +97,41 @@ const TrainingPlanDetail = ({ plan }: { plan: TrainingPlan }) => {
 // TrainingContent is a client component that uses useSearchParams
 const TrainingContent = () => {
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<ProcessedTrainingPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+  const authService = ServiceFactory.getInstance().getAuthService();
+
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         setLoading(true);
         setError(null);
-        const trainingPlans = await odooClientService.getTrainingPlans();
-        setPlans(trainingPlans);
-        if (trainingPlans.length > 0 && !selectedPlanId) {
-          setSelectedPlanId(trainingPlans[0].id);
+
+        if (!authService.isAuthenticated()) {
+          setError("You must be logged in to view training plans.");
+          setLoading(false);
+          return;
         }
-      } catch (err: any) {
-        console.error('Error fetching training plans:', err);
-        // Only show error for authentication issues, not for empty results
-        if (err.message?.includes('authentication') || err.message?.includes('Access Denied')) {
+
+        const currentUser = await authService.getCurrentUser();
+
+        if (currentUser && currentUser.partnerId) {
+          const trainingPlans = await odooClientService.getTrainingPlans(currentUser.partnerId);
+          setPlans(trainingPlans);
+          if (trainingPlans.length > 0 && !selectedPlanId) {
+            setSelectedPlanId(trainingPlans[0].id);
+          }
+        } else {
+          setError("Could not retrieve your training plans. Partner ID is missing.");
+        }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.error('Error fetching training plans:', error.message);
+        if (error.message?.includes('authentication') || error.message?.includes('Access Denied')) {
           setError('Unable to access training plans. Please try logging in again.');
         } else {
           setError('Unable to connect to server. Please check your connection and try again.');
@@ -173,7 +142,27 @@ const TrainingContent = () => {
     };
 
     fetchPlans();
-  }, [odooClientService, selectedPlanId]);
+  }, [authService, odooClientService, selectedPlanId]);
+
+  useEffect(() => {
+    const fetchPlanDetails = async () => {
+      if (!selectedPlanId) return;
+
+      const planSummary = plans.find(p => p.id === selectedPlanId);
+      if (!planSummary) return;
+
+      try {
+        const tasks = await odooClientService.getTrainingPlanTasks(selectedPlanId);
+        setSelectedPlan({ ...planSummary, tasks });
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.error('Error fetching plan details:', error.message);
+        setError('Could not load details for the selected plan.');
+      }
+    };
+
+    fetchPlanDetails();
+  }, [selectedPlanId, plans, odooClientService]);
 
   if (loading) {
     return <div className="p-4">Loading training plans...</div>;
@@ -183,12 +172,10 @@ const TrainingContent = () => {
     return <div className="p-4 text-red-600">Error: {error}</div>;
   }
 
-  const selectedPlan = plans.find(plan => plan.id === selectedPlanId);
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Your Plans</h1>
+        <h1 className="text-2xl font-bold text-black">Your Plans</h1>
         <Link 
           href="/client-area/dashboard/training/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -202,7 +189,7 @@ const TrainingContent = () => {
           {plans.map(plan => (
             <TrainingPlanCard
               key={plan.id}
-              plan={plan}
+              plan={plan as ProcessedTrainingPlan} // Cast here, tasks will be added when selected
               isSelected={selectedPlanId === plan.id}
               onClick={() => setSelectedPlanId(plan.id)}
             />
@@ -212,7 +199,7 @@ const TrainingContent = () => {
           {selectedPlan ? (
             <TrainingPlanDetail plan={selectedPlan} />
           ) : (
-            <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+            <div className="bg-white rounded-lg shadow-md p-6 text-center text-black">
               Select a training plan to view details.
             </div>
           )}

@@ -5,17 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 import ServiceFactory from "@/services/ServiceFactory";
 import { Dog } from "@/types/dog";
+import styles from "./dogs.module.css";
 
 // Dog profile detail component
 const DogDetailCard = ({ dog }: { dog: Dog }) => {
   const [imageError, setImageError] = useState(false);
 
-  // Accessing nested properties directly from the structured Dog object
-  const dogInfo = dog.dogInfo || {};
-  const lifestyle = dog.lifestyle || {};
-  const history = dog.history || {};
-  const goals = dog.goals || {};
-  const behaviorChecklist = dog.behaviorChecklist || [];
+  // Since data is now stored flat in Odoo, we access it directly from the dog object
+  // Convert behavior_checklist string back to array if needed
+  const behaviorChecklist = typeof dog.behavior_checklist === 'string' 
+    ? dog.behavior_checklist.split(', ').filter(item => item.trim()) 
+    : (dog.behaviorChecklist || []);
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -33,23 +33,23 @@ const DogDetailCard = ({ dog }: { dog: Dog }) => {
         <div className="flex justify-between items-start">
           <h2 className="text-2xl font-bold text-sky-800">{dog.name}</h2>
           <span className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-sm font-medium">
-            {dogInfo.level || 'Beginner'}
+            {dog.level || 'Beginner'}
           </span>
         </div>
-        <p className="text-gray-600 text-base mb-4">
+        <p className="text-black text-base mb-4">
           {dog.breed || 'Mixed Breed'}, {dog.age || 'Unknown Age'}, {dog.gender || 'Unknown Gender'}
         </p>
 
         {/* Overall Progress */}
         <div>
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-600">Overall Training Progress</span>
-            <span className="font-medium">{dogInfo.progress || 0}%</span>
+            <span className="text-black">Overall Training Progress</span>
+            <span className="font-medium text-black">{dog.progress || 0}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-sky-600 h-2 rounded-full"
-              style={{ width: `${dogInfo.progress || 0}%` }}
+              className={`bg-sky-600 h-2 rounded-full ${styles.progressBarInner}`}
+              style={{ '--progress-width': `${dog.progress || 0}%` } as React.CSSProperties}
             ></div>
           </div>
         </div>
@@ -57,23 +57,23 @@ const DogDetailCard = ({ dog }: { dog: Dog }) => {
         {/* Key Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-2">General Info</h3>
+            <h3 className="font-medium mb-2 text-black">General Info</h3>
             <div className="space-y-2">
-              <p><span className="text-gray-500">Source:</span> {dogInfo.dogSource || 'Not specified'}</p>
-              <p><span className="text-gray-500">Time with you:</span> {dogInfo.timeWithDog || 'Not specified'}</p>
-              <p><span className="text-gray-500">Sterilized:</span> {dogInfo.sterilized === 'Y' ? 'Yes' : 'No'}</p>
-              <p><span className="text-gray-500">Medications:</span> {dogInfo.medications || 'None'}</p>
-              <p><span className="text-gray-500">Current Deworming:</span> {dogInfo.currentDeworming || 'Not specified'}</p>
-              <p><span className="text-gray-500">Tick/Flea Preventative:</span> {dogInfo.tickFleaPreventative || 'Not specified'}</p>
+              <p><span className="text-black font-medium">Source:</span> <span className="text-black">{dog.dog_source || 'Not specified'}</span></p>
+              <p><span className="text-black font-medium">Time with you:</span> <span className="text-black">{dog.time_with_dog || 'Not specified'}</span></p>
+              <p><span className="text-black font-medium">Sterilized:</span> <span className="text-black">{dog.sterilized ? 'Yes' : 'No'}</span></p>
+              <p><span className="text-black font-medium">Medications:</span> <span className="text-black">{dog.medications || 'None'}</span></p>
+              <p><span className="text-black font-medium">Current Deworming:</span> <span className="text-black">{dog.current_deworming || 'Not specified'}</span></p>
+              <p><span className="text-black font-medium">Tick/Flea Preventative:</span> <span className="text-black">{dog.tick_flea_preventative || 'Not specified'}</span></p>
             </div>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-2">Veterinary Details</h3>
+            <h3 className="font-medium mb-2 text-black">Veterinary Details</h3>
             <div className="space-y-2">
-              <p><span className="text-gray-500">Clinic:</span> {dogInfo.vetClinic || 'Not specified'}</p>
-              <p><span className="text-gray-500">Vet Name:</span> {dogInfo.vetName || 'Not specified'}</p>
-              <p><span className="text-gray-500">Vet Phone:</span> {dogInfo.vetPhone || 'Not specified'}</p>
-              <p><span className="text-gray-500">Medical Issues:</span> {dogInfo.medicalIssues || 'None'}</p>
+              <p><span className="text-black font-medium">Clinic:</span> <span className="text-black">{dog.vet_clinic || 'Not specified'}</span></p>
+              <p><span className="text-black font-medium">Vet Name:</span> <span className="text-black">{dog.vet_name || 'Not specified'}</span></p>
+              <p><span className="text-black font-medium">Vet Phone:</span> <span className="text-black">{dog.vet_phone || 'Not specified'}</span></p>
+              <p><span className="text-black font-medium">Medical Issues:</span> <span className="text-black">{dog.medical_issues || 'None'}</span></p>
             </div>
           </div>
         </div>
@@ -83,46 +83,46 @@ const DogDetailCard = ({ dog }: { dog: Dog }) => {
           <h3 className="text-lg font-semibold mb-4 text-sky-800">Lifestyle</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Daily Routine</h4>
+              <h4 className="font-medium mb-2 text-black">Daily Routine</h4>
               <div className="space-y-2">
-                <p><span className="text-gray-500">Home Alone:</span> {lifestyle.homeAloneLocation || 'Not specified'}</p>
-                <p><span className="text-gray-500">Sleep Location:</span> {lifestyle.sleepLocation || 'Not specified'}</p>
-                <p><span className="text-gray-500">Has Crate:</span> {lifestyle.hasCrate === 'Y' ? 'Yes' : 'No'}</p>
-                {lifestyle.hasCrate === 'Y' && (
+                <p><span className="text-black font-medium">Home Alone:</span> <span className="text-black">{dog.home_alone_location || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Sleep Location:</span> <span className="text-black">{dog.sleep_location || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Has Crate:</span> <span className="text-black">{dog.has_crate === 'Y' ? 'Yes' : 'No'}</span></p>
+                {dog.has_crate === 'Y' && (
                   <>
-                    <p><span className="text-gray-500">Likes Crate:</span> {lifestyle.likesCrate === 'Y' ? 'Yes' : 'No'}</p>
-                    <p><span className="text-gray-500">Crate Location:</span> {lifestyle.crateLocation || 'Not specified'}</p>
-                    <p><span className="text-gray-500">Chews Crate:</span> {lifestyle.chewsCrate === 'Y' ? 'Yes' : 'No'}</p>
+                    <p><span className="text-black font-medium">Likes Crate:</span> <span className="text-black">{dog.likes_crate === 'Y' ? 'Yes' : 'No'}</span></p>
+                    <p><span className="text-black font-medium">Crate Location:</span> <span className="text-black">{dog.crate_location || 'Not specified'}</span></p>
+                    <p><span className="text-black font-medium">Chews Crate:</span> <span className="text-black">{dog.chews_crate === 'Y' ? 'Yes' : 'No'}</span></p>
                   </>
                 )}
-                <p><span className="text-gray-500">Hours Alone:</span> {lifestyle.hoursAlone || 'Not specified'}</p>
+                <p><span className="text-black font-medium">Hours Alone:</span> <span className="text-black">{dog.hours_alone || 'Not specified'}</span></p>
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Feeding & Play</h4>
+              <h4 className="font-medium mb-2 text-black">Feeding & Play</h4>
               <div className="space-y-2">
-                <p><span className="text-gray-500">Food Brand:</span> {lifestyle.foodBrand || 'Not specified'}</p>
-                <p><span className="text-gray-500">Schedule:</span> {lifestyle.feedingSchedule || 'Not specified'}</p>
-                <p><span className="text-gray-500">Food Left Out:</span> {lifestyle.foodLeftOut === 'Y' ? 'Yes' : 'No'}</p>
-                <p><span className="text-gray-500">Allergies:</span> {lifestyle.allergies || 'None'}</p>
-                <p><span className="text-gray-500">Toy Types:</span> {lifestyle.toyTypes || 'Not specified'}</p>
-                <p><span className="text-gray-500">Toy Play Time:</span> {lifestyle.toyPlayTime || 'Not specified'}</p>
-                <p><span className="text-gray-500">Toy Storage:</span> {lifestyle.toyStorage || 'Not specified'}</p>
+                <p><span className="text-black font-medium">Food Brand:</span> <span className="text-black">{dog.food_brand || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Schedule:</span> <span className="text-black">{dog.feeding_schedule || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Food Left Out:</span> <span className="text-black">{dog.food_left_out === 'Y' ? 'Yes' : 'No'}</span></p>
+                <p><span className="text-black font-medium">Allergies:</span> <span className="text-black">{dog.allergies || 'None'}</span></p>
+                <p><span className="text-black font-medium">Toy Types:</span> <span className="text-black">{dog.toy_types || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Toy Play Time:</span> <span className="text-black">{dog.toy_play_time || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Toy Storage:</span> <span className="text-black">{dog.toy_storage || 'Not specified'}</span></p>
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Exercise & Walks</h4>
+              <h4 className="font-medium mb-2 text-black">Exercise & Walks</h4>
               <div className="space-y-2">
-                <p><span className="text-gray-500">Walk Frequency:</span> {lifestyle.walkFrequency || 'Not specified'}</p>
-                <p><span className="text-gray-500">Walk Person:</span> {lifestyle.walkPerson || 'Not specified'}</p>
-                <p><span className="text-gray-500">Walk Duration:</span> {lifestyle.walkDuration || 'Not specified'}</p>
-                <p><span className="text-gray-500">Other Exercise:</span> {lifestyle.otherExercise || 'Not specified'}</p>
-                <p><span className="text-gray-500">Walk Equipment:</span> {lifestyle.walkEquipment || 'Not specified'}</p>
-                <p><span className="text-gray-500">Off Leash:</span> {lifestyle.offLeash === 'Y' ? 'Yes' : 'No'}</p>
-                <p><span className="text-gray-500">Forest Visits:</span> {lifestyle.forestVisits || 'Not specified'}</p>
-                <p><span className="text-gray-500">Pulling:</span> {lifestyle.pulling === 'Y' ? 'Yes' : 'No'}</p>
-                {lifestyle.pulling === 'Y' && (
-                  <p><span className="text-gray-500">Pulling Prevention:</span> {lifestyle.pullingPrevention || 'Not specified'}</p>
+                <p><span className="text-black font-medium">Walk Frequency:</span> <span className="text-black">{dog.walk_frequency || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Walk Person:</span> <span className="text-black">{dog.walk_person || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Walk Duration:</span> <span className="text-black">{dog.walk_duration || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Other Exercise:</span> <span className="text-black">{dog.other_exercise || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Walk Equipment:</span> <span className="text-black">{dog.walk_equipment || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Off Leash:</span> <span className="text-black">{dog.off_leash === 'Y' ? 'Yes' : 'No'}</span></p>
+                <p><span className="text-black font-medium">Forest Visits:</span> <span className="text-black">{dog.forest_visits || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Pulling:</span> <span className="text-black">{dog.pulling === 'Y' ? 'Yes' : 'No'}</span></p>
+                {dog.pulling === 'Y' && (
+                  <p><span className="text-black font-medium">Pulling Prevention:</span> <span className="text-black">{dog.pulling_prevention || 'Not specified'}</span></p>
                 )}
               </div>
             </div>
@@ -134,28 +134,28 @@ const DogDetailCard = ({ dog }: { dog: Dog }) => {
           <h3 className="text-lg font-semibold mb-4 text-sky-800">Training History</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Previous Training</h4>
-              <p>{history.previousTraining || 'No previous training'}</p>
-              <p className="mt-2"><span className="text-gray-500">Tools Used:</span> {history.toolsUsed || 'None'}</p>
+              <h4 className="font-medium mb-2 text-black">Previous Training</h4>
+              <p className="text-black">{dog.previous_training || 'No previous training'}</p>
+              <p className="mt-2"><span className="text-black font-medium">Tools Used:</span> <span className="text-black">{dog.tools_used || 'None'}</span></p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Behavior History</h4>
+              <h4 className="font-medium mb-2 text-black">Behavior History</h4>
               <div className="space-y-2">
-                <p><span className="text-gray-500">Has Growled:</span> {history.growled === 'Y' ? 'Yes' : 'No'}</p>
-                {history.growled === 'Y' && (
-                  <p><span className="text-gray-500">Growl Details:</span> {history.growlDetails}</p>
+                <p><span className="text-black font-medium">Has Growled:</span> <span className="text-black">{dog.growled === 'Y' ? 'Yes' : 'No'}</span></p>
+                {dog.growled === 'Y' && (
+                  <p><span className="text-black font-medium">Growl Details:</span> <span className="text-black">{dog.growl_details}</span></p>
                 )}
-                <p><span className="text-gray-500">Has Bitten:</span> {history.bitten === 'Y' ? 'Yes' : 'No'}</p>
-                {history.bitten === 'Y' && (
-                  <p><span className="text-gray-500">Bite Details:</span> {history.biteDetails}</p>
+                <p><span className="text-black font-medium">Has Bitten:</span> <span className="text-black">{dog.bitten === 'Y' ? 'Yes' : 'No'}</span></p>
+                {dog.bitten === 'Y' && (
+                  <p><span className="text-black font-medium">Bite Details:</span> <span className="text-black">{dog.bite_details}</span></p>
                 )}
-                <p><span className="text-gray-500">Is Fearful:</span> {history.fearful === 'Y' ? 'Yes' : 'No'}</p>
-                {history.fearful === 'Y' && (
-                  <p><span className="text-gray-500">Fear Details:</span> {history.fearDetails}</p>
+                <p><span className="text-black font-medium">Is Fearful:</span> <span className="text-black">{dog.fearful === 'Y' ? 'Yes' : 'No'}</span></p>
+                {dog.fearful === 'Y' && (
+                  <p><span className="text-black font-medium">Fear Details:</span> <span className="text-black">{dog.fear_details}</span></p>
                 )}
-                <p><span className="text-gray-500">Response to New People:</span> {history.newPeopleResponse || 'Not specified'}</p>
-                <p><span className="text-gray-500">Grooming Response:</span> {history.groomingResponse || 'Not specified'}</p>
-                <p><span className="text-gray-500">Ignore Reaction:</span> {history.ignoreReaction || 'Not specified'}</p>
+                <p><span className="text-black font-medium">Response to New People:</span> <span className="text-black">{dog.new_people_response || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Grooming Response:</span> <span className="text-black">{dog.grooming_response || 'Not specified'}</span></p>
+                <p><span className="text-black font-medium">Ignore Reaction:</span> <span className="text-black">{dog.ignore_reaction || 'Not specified'}</span></p>
               </div>
             </div>
           </div>
@@ -167,19 +167,19 @@ const DogDetailCard = ({ dog }: { dog: Dog }) => {
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium mb-2">Training Goals</h4>
-                <p>{goals.trainingGoals || 'Not specified'}</p>
+                <h4 className="font-medium mb-2 text-black">Training Goals</h4>
+                <p className="text-black">{dog.training_goals || 'Not specified'}</p>
               </div>
               <div>
-                <h4 className="font-medium mb-2">Ideal Dog Behavior</h4>
-                <p>{goals.idealDogBehavior || 'Not specified'}</p>
+                <h4 className="font-medium mb-2 text-black">Ideal Dog Behavior</h4>
+                <p className="text-black">{dog.ideal_dog_behavior || 'Not specified'}</p>
               </div>
               {behaviorChecklist && behaviorChecklist.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-2">Current Behavior Checklist</h4>
+                  <h4 className="font-medium mb-2 text-black">Current Behavior Checklist</h4>
                   <ul className="list-disc list-inside">
                     {behaviorChecklist.map((behavior: string, index: number) => (
-                      <li key={index} className="text-gray-700">{behavior}</li>
+                      <li key={index} className="text-black">{behavior}</li>
                     ))}
                   </ul>
                 </div>
@@ -204,17 +204,25 @@ export default function DogsPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const fetchedDogs = await odooClientService.getDogs();
-        console.log("Fetched dogs in DogsPage:", fetchedDogs);
-        setDogs(fetchedDogs);
-      } catch (err: any) {
-        console.error('Error fetching dogs:', err);
-        // Only show error for authentication issues, not for empty results
-        if (err.message?.includes('authentication') || err.message?.includes('Access Denied')) {
-          setError('Unable to access dog data. Please try logging in again.');
+        const currentUser = await odooClientService.getCurrentUser();
+        if (currentUser && currentUser.partner_id) {
+                    const partnerId = Array.isArray(currentUser.partner_id) ? currentUser.partner_id[0] : currentUser.partner_id;
+          const fetchedDogs = await odooClientService.getDogs(partnerId);
+          console.log("Fetched dogs in DogsPage:", fetchedDogs);
+          setDogs(fetchedDogs);
         } else {
-          setError('Unable to connect to server. Please check your connection and try again.');
+          console.warn("Could not fetch dogs: No current user or partner ID found.");
+          setDogs([]); // Ensure dog list is empty if no user is found
         }
+      } catch (err: unknown) {
+        console.error('Error fetching dogs:', err);
+        let errorMessage = 'Unable to connect to server. Please check your connection and try again.';
+        if (err instanceof Error) {
+          if (err.message?.includes('authentication') || err.message?.includes('Access Denied')) {
+            errorMessage = 'Unable to access dog data. Please try logging in again.';
+          }
+        }
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -291,7 +299,7 @@ export default function DogsPage() {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CustomK9!</h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              You haven't registered any dogs yet. Start your training journey by registering your first furry friend!
+              You haven&apos;t registered any dogs yet. Start your training journey by registering your first furry friend!
             </p>
             <Link 
               href="/client-area/dashboard/intake" 
@@ -311,7 +319,7 @@ export default function DogsPage() {
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No dogs found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              No dogs match "{searchTerm}". Try a different search term or clear the search.
+              No dogs match &quot;{searchTerm}&quot;. Try a different search term or clear the search.
             </p>
             <button 
               onClick={() => setSearchTerm('')}

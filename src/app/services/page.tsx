@@ -123,7 +123,7 @@ export default function ServicesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Services */}
       <div className="relative h-[60vh] overflow-hidden">
         <Navigation />
@@ -179,7 +179,7 @@ export default function ServicesPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-sky-200/30 via-transparent to-transparent"></div>
         <div className="container mx-auto px-6 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-sky-700">Our Training & Service Programs</h2>
-          <p className="text-xl text-center text-gray-700 mb-16 max-w-3xl mx-auto">
+          <p className="text-xl text-center text-black mb-16 max-w-3xl mx-auto">
             Browse our complete range of specialized dog training programs and services. Each program is tailored to meet specific needs and goals for you and your canine companion.
           </p>
           

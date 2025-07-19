@@ -13,7 +13,7 @@ export default function TrapNeuterReleasePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for TNR */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -68,7 +68,7 @@ export default function TrapNeuterReleasePage() {
               
               <div className="prose prose-lg max-w-none">
                 <p>
-                  Our Trap, Neuter, and Release (TNR) program is a humane and effective approach to managing community animal populations. By sterilizing community animals and returning them to their familiar environment, we help reduce overpopulation while respecting the animals' established territories and caretakers.
+                  Our Trap, Neuter, and Release (TNR) program is a humane and effective approach to managing community animal populations. By sterilizing community animals and returning them to their familiar environment, we help reduce overpopulation while respecting the animals&apos; established territories and caretakers.
                 </p>
                 
                 <h3>How TNR Works</h3>
@@ -112,7 +112,7 @@ export default function TrapNeuterReleasePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Services & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Services & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -138,7 +138,7 @@ export default function TrapNeuterReleasePage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">How to Request TNR Service</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">How to Request TNR Service</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">1.</span>
@@ -150,7 +150,7 @@ export default function TrapNeuterReleasePage() {
                     </li>
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">3.</span>
-                      <span>We'll develop a TNR plan specific to your community</span>
+                      <span>We&apos;ll develop a TNR plan specific to your community</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">4.</span>
@@ -165,9 +165,9 @@ export default function TrapNeuterReleasePage() {
               </div>
               
               <div className="mt-8">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Volunteer & Support Opportunities</h3>
+                <h3 className="text-xl font-semibold text-black mb-4">Volunteer & Support Opportunities</h3>
                 <p className="mb-6">
-                  Our TNR program relies on community support. Here's how you can help:
+                  Our TNR program relies on community support. Here&apos;s how you can help:
                 </p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start">

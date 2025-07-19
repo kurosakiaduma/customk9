@@ -24,105 +24,34 @@ export default function ClientAreaPage() {
   
   const router = useRouter();
   const authService = ServiceFactory.getInstance().getAuthService();
-  // Check if user is already authenticated
+  // Check user authentication status on component mount
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthStatus = async () => {
       setCheckingAuth(true);
-      try {
-        // Check URL parameters for logout
-        const urlParams = new URLSearchParams(window.location.search);
-        const loggedOut = urlParams.get('logout') === 'true';
-        if (loggedOut) {
-          // User just logged out, clear any existing session
-          console.log('User just logged out, clearing session');
-          await authService.logout();
-          setIsAuthenticated(false);
-          setCheckingAuth(false);
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-
-        console.log('Checking authentication status...');
-
-        // Helper function to get session value from cookie
-        const getSessionValue = (): string => {
-          try {
-            const cookies = document.cookie.split(';').map(c => c.trim());
-            const cookie = cookies.find(c => c.startsWith('odoo_session='));
-            return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
-          } catch (error) {
-            console.error('Error getting session from cookie:', error);
-            return '';
-          }
-        };
-
-        // Check for Odoo session and validate it
-        const odooSessionValue = getSessionValue();
-        console.log('Raw session value:', odooSessionValue);
-        if (odooSessionValue) {
-          try {
-            const sessionData = JSON.parse(odooSessionValue);
-            console.log('Parsed session data:', sessionData);
-            // Check if session exists and has required data
-            if (sessionData.sessionInfo && sessionData.sessionInfo.id) {
-              // Check if session is not expired
-              const now = Date.now();
-              const expiresAt = sessionData.sessionInfo.expires;
-              console.log('Session check:', { now, expiresAt, isValid: expiresAt && now < expiresAt });
-              if (expiresAt && now < expiresAt) {
-                console.log('Valid session found, user is authenticated');
-                setIsAuthenticated(true);
-                setCheckingAuth(false);
-                return;
-              } else {
-                console.log('Session expired');
-                // Clear expired cookie
-                const domain = window.location.hostname;
-                document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
-              }
-            } else {
-              console.log('Invalid session structure');
-            }
-          } catch (error) {
-            console.error('Error parsing session:', error);
-            // Clear invalid cookie
-            const domain = window.location.hostname;
-            document.cookie = `odoo_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; domain=${domain};`;
-          }
-        }
-
-        // Check OdooClientService session
-        const odooClientService = ServiceFactory.getInstance().getOdooClientService();
-        const hasValidSession = odooClientService.isAuthenticated;
-        console.log('Has valid session:', hasValidSession);
-        if (hasValidSession) {
-          console.log('Found valid session, user is authenticated');
-          setIsAuthenticated(true);
-          setCheckingAuth(false);
-          return;
-        }
-
-        // Check the old token-based auth (for backward compatibility)
-        const hasToken = authService.isAuthenticated();
-        console.log('Has token:', hasToken);
-        if (hasToken) {
-          console.log('Found token, user is authenticated');
-          setIsAuthenticated(true);
-          setCheckingAuth(false);
-          return;
-        }
-
-        console.log('No valid session, token, or custom user found');
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      if (urlParams.get('logout') === 'true') {
+        console.log('User explicitly logged out, clearing session.');
+        await authService.logout();
         setIsAuthenticated(false);
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setCheckingAuth(false);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        // Use the synchronous check against our custom cookie
+        const isAuthenticated = authService.isAuthenticated();
+        console.log('Session check, user is authenticated:', isAuthenticated);
+        setIsAuthenticated(isAuthenticated);
+        
+        // If not authenticated via cookie, try a full session restore as a fallback
+        if (!isAuthenticated) {
+          console.log('No cookie, attempting full session restore...');
+          const user = await authService.getCurrentUser();
+          setIsAuthenticated(!!user);
+        }
       }
+      setCheckingAuth(false);
     };
 
-    checkAuth();
+    checkAuthStatus();
 
     // Scroll to top on page load
     window.scrollTo(0, 0);
@@ -161,9 +90,6 @@ export default function ClientAreaPage() {
       console.log('Attempting login for:', email);
       const user = await authService.login(email, password);
       console.log('Login successful for user:', user.email);
-
-      // Remove any custom user session from localStorage
-      // ...existing code...
 
       // Store remember me preference
       if (rememberMe) {

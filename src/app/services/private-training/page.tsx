@@ -13,7 +13,7 @@ export default function PrivateTrainingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Private Training */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -39,7 +39,7 @@ export default function PrivateTrainingPage() {
               Private Training
             </h1>
             <p className="text-xl text-white mb-8 drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] max-w-xl">
-              Personalized one-on-one training sessions designed specifically for your dog's unique needs and learning style.
+              Personalized one-on-one training sessions designed specifically for your dog&apos;s unique needs and learning style.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link 
@@ -68,7 +68,7 @@ export default function PrivateTrainingPage() {
               
               <div className="prose prose-lg max-w-none">
                 <p>
-                  Our Private Training sessions offer personalized instruction tailored to your dog's specific needs and your lifestyle. Whether you're working with a new puppy, addressing specific behaviors, or advancing your dog's skills, these one-on-one sessions provide focused attention and customized training plans.
+                  Our Private Training sessions offer personalized instruction tailored to your dog&apos;s specific needs and your lifestyle. Whether you&apos;re working with a new puppy, addressing specific behaviors, or advancing your dog&apos;s skills, these one-on-one sessions provide focused attention and customized training plans.
                 </p>
                 
                 <h3>Benefits of Private Training</h3>
@@ -115,7 +115,7 @@ export default function PrivateTrainingPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Package Options & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Package Options & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -141,7 +141,7 @@ export default function PrivateTrainingPage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">What to Expect</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">What to Expect</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>

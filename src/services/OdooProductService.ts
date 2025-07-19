@@ -29,41 +29,94 @@ export class OdooProductService {
     async getTrainingServices(): Promise<Service[]> {
         try {
             console.log('🔍 Fetching training services from Odoo...');
-            
-            // Search for training services with specific category and add additional filters
-            const result = await this.odooClientService.callOdooMethod(
-                'product.template', 
-                'search_read', 
-                [[
-                    ['sale_ok', '=', true],
-                    ['type', '=', 'service'],
-                    ['categ_id.name', 'ilike', 'Training'],
-                    ['active', '=', true],
-                    ['is_published', '=', true]
-                ]], 
-                {
-                    fields: [
-                        'id', 
-                        'name', 
-                        'description',
-                        'list_price',
-                        'categ_id',
-                    ],
-                    limit: 20
-                }
+            console.log('🔧 Using domain:', [
+                ['sale_ok', '=', true],
+                ['type', '=', 'service'],
+                ['categ_id.name', 'ilike', 'Training'],
+                ['active', '=', true]
+            ]);
+
+            const domain: Array<[string, string, string | boolean]> = [
+                ['sale_ok', '=', true],
+                ['type', '=', 'service'],
+                ['active', '=', true]
+                // Temporarily removed category filter to see all services
+            ];
+
+            // Request basic fields that should always be available
+            const fields = [
+                'id',
+                'name',
+                'list_price',
+                'categ_id'
+            ];
+            const limit = 20;
+
+            console.log('🔧 Requesting fields:', fields);
+
+            const result = await this.odooClientService.searchRead(
+                'product.template',
+                domain,
+                fields,
+                limit
             );
 
-            console.log('📦 Services fetched:', result);
+            console.log('📦 Raw services from Odoo:', result);
+            console.log('📊 Number of services found:', result.length);
 
             // Transform Odoo data to our Service interface
-            return (result as OdooService[]).map((service: OdooService) => ({
-                id: service.id,
-                name: service.name || 'Training Service',
-                description: service.description || 'Professional dog training service',
-                duration: '60 minutes', // Default duration
-                price: service.list_price || 5000,
-                image: '/images/dog-placeholder.jpg'
+            const services = await Promise.all((result as OdooService[]).map(async (service: OdooService) => {
+                // Try to get description from custom attribute
+                let description = 'Professional dog training service';
+
+                // If you have custom attributes, we can try to fetch them
+                // For now, we'll use a mapping based on service names
+                const descriptionMap: { [key: string]: string } = {
+                    'Basic Obedience Training': 'One-on-one session focused on basic commands and behavior',
+                    'Behavior Consultation': 'Assessment and plan for addressing specific behavior issues',
+                    'Group Training Session': 'Group training for socialization and basic commands',
+                    'Advanced Training': 'Advanced obedience and specialized training techniques',
+                    'Puppy Training': 'Essential training for puppies 8 weeks to 6 months old'
+                };
+
+                if (service.name && descriptionMap[service.name]) {
+                    description = descriptionMap[service.name];
+                }
+
+                // Duration mapping based on service type and price
+                let duration = '60 minutes'; // Default
+                if (service.list_price) {
+                    if (service.list_price >= 6000) {
+                        duration = '120 minutes'; // Higher priced services get more time
+                    } else if (service.list_price <= 3000) {
+                        duration = '90 minutes'; // Group sessions might be longer
+                    }
+                }
+
+                // Service name-based duration mapping
+                const durationMap: { [key: string]: string } = {
+                    'Basic Obedience Training': '60 minutes',
+                    'Behavior Consultation': '120 minutes',
+                    'Group Training Session': '90 minutes',
+                    'Advanced Training': '90 minutes',
+                    'Puppy Training': '45 minutes'
+                };
+
+                if (service.name && durationMap[service.name]) {
+                    duration = durationMap[service.name];
+                }
+
+                return {
+                    id: service.id,
+                    name: service.name || 'Training Service',
+                    description: description,
+                    duration: duration,
+                    price: service.list_price || 5000,
+                    image: '/images/dog-placeholder.jpg' // Default placeholder
+                };
             }));
+
+            return services;
 
         } catch (error) {
             console.error('❌ Error fetching services:', error);

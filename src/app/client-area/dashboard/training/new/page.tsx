@@ -18,6 +18,7 @@ export default function NewTrainingPlanPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const odooClientService = ServiceFactory.getInstance().getOdooClientService();
+  const authService = ServiceFactory.getInstance().getAuthService();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -35,20 +36,33 @@ export default function NewTrainingPlanPage() {
   });
   
   useEffect(() => {
-    const fetchDogs = async () => {
+    const fetchPrerequisites = async () => {
       try {
-        const dogsData = await odooClientService.getDogs();
+        if (!authService.isAuthenticated()) {
+          setError("You must be logged in to create a training plan.");
+          setIsLoading(false);
+          return;
+        }
+
+        const currentUser = await authService.getCurrentUser();
+        if (!currentUser || !currentUser.partnerId) {
+          setError("Could not find a valid user profile. Cannot fetch dogs.");
+          setIsLoading(false);
+          return;
+        }
+
+        const dogsData = await odooClientService.getDogs(currentUser.partnerId);
         setDogs(dogsData.map(dog => ({ id: Number(dog.id), name: dog.name })));
-        setIsLoading(false);
-      } catch (err: any) {
+      } catch (err: Error) {
         console.error('Failed to fetch dogs:', err);
         setError('Failed to load dogs. Please try again later.');
+      } finally {
         setIsLoading(false);
       }
     };
     
-    fetchDogs();
-  }, [odooClientService]);
+    fetchPrerequisites();
+  }, [odooClientService, authService]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +77,7 @@ export default function NewTrainingPlanPage() {
     try {
       await odooClientService.createTrainingPlan({
         name: formData.name,
-        dogId: parseInt(formData.dogId),
+        x_dog_id: parseInt(formData.dogId),
         startDate: formData.startDate,
         endDate: formData.endDate,
         description: formData.description,
@@ -71,7 +85,7 @@ export default function NewTrainingPlanPage() {
       });
       
       router.push('/client-area/dashboard/training');
-    } catch (err: any) {
+    } catch (err: Error) {
       console.error('Failed to create training plan:', err);
       alert(`Failed to create training plan. Please try again: ${err.message || 'Unknown error'}`);
       setIsSubmitting(false);
@@ -126,14 +140,14 @@ export default function NewTrainingPlanPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 Plan Name *
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
                 required
                 placeholder="Enter plan name"
                 title="Plan Name"
@@ -141,13 +155,13 @@ export default function NewTrainingPlanPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 Select Dog *
               </label>
               <select
                 value={formData.dogId}
                 onChange={(e) => setFormData({ ...formData, dogId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
                 required
                 title="Select Dog"
               >
@@ -161,14 +175,14 @@ export default function NewTrainingPlanPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 Start Date *
               </label>
               <input
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
                 required
                 title="Start Date"
                 placeholder="Select start date"
@@ -176,14 +190,14 @@ export default function NewTrainingPlanPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 End Date *
               </label>
               <input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
                 required
                 title="End Date"
                 placeholder="Select end date"
@@ -192,14 +206,14 @@ export default function NewTrainingPlanPage() {
           </div>
           
           <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-black mb-2">
               Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
               title="Description"
               placeholder="Enter plan description"
             />
@@ -208,7 +222,7 @@ export default function NewTrainingPlanPage() {
         
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Training Tasks</h2>
+            <h2 className="text-lg font-semibold text-black">Training Tasks</h2>
             <button
               type="button"
               onClick={addTask}
@@ -223,28 +237,28 @@ export default function NewTrainingPlanPage() {
               <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Task Name *
                     </label>
                     <input
                       type="text"
                       value={task.name}
                       onChange={(e) => handleTaskChange(index, 'name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
                       required
                       title="Task Name"
                       placeholder="Enter task name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Description
                     </label>
                     <input
                       type="text"
                       value={task.description}
                       onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 text-black"
                       title="Task Description"
                       placeholder="Enter task description"
                     />

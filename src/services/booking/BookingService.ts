@@ -62,59 +62,40 @@ export class BookingService {
    */
   async getAvailableTimeSlots(date: Date, duration: number = 60): Promise<string[]> {
     try {
-      // Format the date to YYYY-MM-DD
       const dateStr = date.toISOString().split('T')[0];
-      
-      // Get all events for the day
-      const events = await this.odooClientService.callOdooMethod(
-        'calendar.event',
-        'search_read',
-        [[
-          ['start', '>=', `${dateStr} 00:00:00`],
-          ['start', '<=', `${dateStr} 23:59:59`]
-        ],
-        ['start', 'stop']
-        ],
-        {}
-      ) as { start: string; stop: string }[];
+      const domain = [
+        ['start', '>=', `${dateStr} 00:00:00`],
+        ['start', '<=', `${dateStr} 23:59:59`],
+      ];
+      const fields = ['start', 'stop'];
 
-      // Generate time slots for the day
-      const startHour = 8; // Start generating slots from 8:00 AM
-      const endHour = 20; // Stop generating slots at 8:00 PM
+      const events = await this.odooClientService.searchRead<{ start: string; stop: string }>(
+        'calendar.event',
+        domain,
+        fields
+      );
+
+      const startHour = 8; // 8:00 AM
+      const endHour = 20; // 8:00 PM
       const slots: string[] = [];
 
-      // Check each hour interval
       for (let hour = startHour; hour < endHour; hour++) {
         for (let minute = 0; minute < 60; minute += duration) {
-          // Check if this slot conflicts with any existing events
-          const isAvailable = !events.some((event: { start: string; stop: string }) => {
+          const slotStartTime = new Date(`${dateStr}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
+          const slotEndTime = new Date(slotStartTime.getTime() + duration * 60000);
+
+          const isOverlapping = events.some(event => {
             const eventStart = new Date(event.start);
             const eventEnd = new Date(event.stop);
-            
-            // Convert slot times to Date objects
-            const slotStartTime = new Date(dateStr);
-            slotStartTime.setHours(hour, minute, 0);
-            const slotEndTime = new Date(dateStr);
-            slotEndTime.setHours(hour, minute + duration, 0);
-
-            // Check for overlap
-            return (
-              (slotStartTime >= eventStart && slotStartTime < eventEnd) ||
-              (slotEndTime > eventStart && slotEndTime <= eventEnd) ||
-              (slotStartTime <= eventStart && slotEndTime >= eventEnd)
-            );
+            return slotStartTime < eventEnd && slotEndTime > eventStart;
           });
 
-          if (isAvailable) {
-            // Format time as HH:MM AM/PM
-            const formattedStart = new Date(dateStr);
-            formattedStart.setHours(hour, minute, 0);
-            const formattedTime = formattedStart.toLocaleTimeString('en-US', {
+          if (!isOverlapping) {
+            slots.push(slotStartTime.toLocaleTimeString('en-US', {
               hour: 'numeric',
               minute: '2-digit',
-              hour12: true
-            });
-            slots.push(formattedTime);
+              hour12: true,
+            }));
           }
         }
       }
@@ -134,21 +115,16 @@ export class BookingService {
    */
   async isTimeSlotAvailable(start: string, end: string): Promise<boolean> {
     try {
-      const events = await this.odooClientService.callOdooMethod(
-        'calendar.event',
-        'search_read',
-        [[
-          '|',
-          '&',
-          ['start', '<', end],
-          ['start', '>=', start],
-          '&',
-          ['stop', '>', start],
-          ['stop', '<=', end]
-        ]],
-        { fields: ['id', 'start', 'stop'] }
-      ) as Array<{ id: number; start: string; stop: string }>;
-
+      const domain = [
+        '|',
+        '&',
+        ['start', '<', end],
+        ['stop', '>', start],
+        '&',
+        ['start', '>=', start],
+        ['stop', '<=', end],
+      ];
+      const events = await this.odooClientService.searchRead('calendar.event', domain, ['id']);
       return events.length === 0;
     } catch (error) {
       console.error('Error checking time slot availability:', error);
@@ -178,21 +154,20 @@ export class BookingService {
       const isAvailable = await this.isTimeSlotAvailable(dateTime.start, dateTime.stop);
       
       if (!isAvailable) {
-        // Get conflicting events for the error message
-        const conflicts = await this.odooClientService.callOdooMethod(
+        const conflictDomain = [
+          '|',
+          '&',
+          ['start', '<', dateTime.stop],
+          ['stop', '>', dateTime.start],
+          '&',
+          ['start', '>=', dateTime.start],
+          ['stop', '<=', dateTime.stop],
+        ];
+        const conflicts = await this.odooClientService.searchRead<{ id: number; start: string; stop: string }>(
           'calendar.event',
-          'search_read',
-          [[
-            '|',
-            '&',
-            ['start', '<', dateTime.stop],
-            ['start', '>=', dateTime.start],
-            '&',
-            ['stop', '>', dateTime.start],
-            ['stop', '<=', dateTime.stop]
-          ]],
-          { fields: ['id', 'start', 'stop', 'name'] }
-        ) as Array<{ id: number; start: string; stop: string; name: string }>;
+          conflictDomain,
+          ['id', 'start', 'stop']
+        );
 
         const error = new Error('The selected time slot is no longer available') as BookingConflictError;
         error.name = 'BookingConflictError';
@@ -209,11 +184,9 @@ export class BookingService {
       const bookingId = await this.calendarService.createBooking(bookingData);
       
       // Verify the booking was created successfully
-      const createdEvent = await this.odooClientService.callOdooMethod(
-        'calendar.event',
-        'read',
-        [[bookingId], ['id', 'start', 'stop']]
-      ) as Array<{ id: number; start: string; stop: string }>;
+      const createdEvent = await this.odooClientService.callOdooMethod<
+        Array<{ id: number; start: string; stop: string }>
+      >('calendar.event', 'read', [[bookingId]], { fields: ['id', 'start', 'stop'] });
 
       if (!createdEvent || createdEvent.length === 0) {
         throw new Error('Failed to verify booking creation');

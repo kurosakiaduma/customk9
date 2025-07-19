@@ -13,7 +13,7 @@ export default function PuppyMannersPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Puppy Manners */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -68,10 +68,10 @@ export default function PuppyMannersPage() {
               
               <div className="prose prose-lg max-w-none">
                 <p>
-                  Our Puppy Manners and Socialization class is designed for puppies aged 8-16 weeks. This critical period in your puppy's development is the perfect time to introduce them to new experiences, other dogs, and basic commands in a controlled, positive environment.
+                  Our Puppy Manners and Socialization class is designed for puppies aged 8-16 weeks. This critical period in your puppy&apos;s development is the perfect time to introduce them to new experiences, other dogs, and basic commands in a controlled, positive environment.
                 </p>
                 
-                <h3>What You'll Learn</h3>
+                <h3>What You&apos;ll Learn</h3>
                 <ul>
                   <li>Basic puppy manners and commands (sit, stay, come)</li>
                   <li>Positive socialization with other puppies and people</li>
@@ -107,7 +107,7 @@ export default function PuppyMannersPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Schedule & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Schedule & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -133,7 +133,7 @@ export default function PuppyMannersPage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">What to Bring</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">What to Bring</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>

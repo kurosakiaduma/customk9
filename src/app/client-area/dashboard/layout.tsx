@@ -89,127 +89,94 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Default to closed on mobile
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Helper function to get session value from cookie
-  const getSessionValue = (): string => {
-    try {
-      const cookies = document.cookie.split(';').map(c => c.trim());
-      const cookie = cookies.find(c => c.startsWith('odoo_session='));
-      return cookie ? decodeURIComponent(cookie.substring('odoo_session='.length)) : '';
-    } catch (error) {
-      console.error('Error getting session from cookie:', error);
-      return '';
-    }
-  };
-
-  // Get current user on mount and check authentication
   useEffect(() => {
     const checkAuth = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setIsLoading(true);
-        setAuthError(null);
-        
         const authService = ServiceFactory.getInstance().getAuthService();
-        const sessionValue = getSessionValue();
-        
-        console.log('🔍 Checking authentication...');
-        console.log('Session value exists:', !!sessionValue);
-        
-        if (!sessionValue) {
-          console.log('❌ No valid session found, redirecting to login');
-          router.push('/login?session_expired=true');
-          return;
-        }
-        
-        // Get the current user
-        const user = authService.getCurrentUser();
-        console.log('Current user:', user);
-        
+        const user = await authService.getCurrentUser();
+
         if (!user) {
-          console.log('❌ No user data available, redirecting to login');
-          router.push('/login?session_expired=true');
-          return;
+          console.log('No authenticated user found. Redirecting to login.');
+          router.push('/client-area/login');
+          return; // Stop execution, will be redirected
         }
-        
-        // If we get here, authentication is valid
+
         console.log('✅ Authentication successful for user:', user.name);
         setCurrentUser(user);
-        setIsLoading(false);
-        
-      } catch (error) {
-        console.error('❌ Error checking authentication:', error);
+      } catch (err) {
+        console.error('❌ Error during authentication check:', err);
+        setError('Your session may have expired. Please log in again.');
+        // Clear any potentially invalid state from the auth service
+        ServiceFactory.getInstance().getAuthService().logout();
+      } finally {
+        setLoading(false);
       }
     };
 
     checkAuth();
-  }, [pathname, router]);
+  }, [router]); // Dependency array with router ensures this runs once on mount
 
-  // Get user initials for avatar
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  // Show loading state
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center">
+      <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-sky-600 border-r-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-sky-600 border-t-transparent mb-4"></div>
+          <p className="text-lg font-semibold">Loading your dashboard...</p>
+          <p className="text-gray-500">Please wait a moment.</p>
         </div>
       </div>
     );
   }
 
-  // Show error state
-  if (authError) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{authError}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700"
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md max-w-sm mx-auto">
+          <h2 className="text-xl font-bold text-red-600 mb-2">Authentication Error</h2>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <button 
+            onClick={() => router.push('/client-area/login')}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Retry
+            Go to Login
           </button>
         </div>
       </div>
     );
   }
 
-  // Don't render the dashboard if not authenticated
   if (!currentUser) {
-    return null;
+    // This state is briefly visible during redirection and serves as a fallback.
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <p className="text-gray-600">Redirecting to login...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
-      {/* Dashboard Content with Sidebar */}
-      <div className="container mx-auto px-4 pt-6 pb-12">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-4">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar - Desktop */}
+          {/* Desktop Sidebar */}
           <aside className={`hidden md:block w-64 bg-white rounded-xl shadow-md overflow-hidden sticky top-6 h-fit`}>
-            {/* Logo and Brand */}
             <div className="p-6 bg-sky-600 text-white">
-              <div className="flex items-center space-x-2 mb-4">
-                <Icon name="logo" />
-                <span className="font-bold text-lg">CustomK9</span>
-              </div>
-              
-              {/* User Profile Summary */}
               <div className="flex items-center space-x-4">
-                <div className="w-14 h-14 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-xl border-2 border-white">
+                <div className="w-12 h-12 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-lg border-2 border-white">
                   {getInitials(currentUser.name || 'User')}
                 </div>
                 <div>
@@ -218,8 +185,6 @@ export default function DashboardLayout({
                 </div>
               </div>
             </div>
-            
-            {/* Navigation Links */}
             <nav className="p-4">
               <ul className="space-y-2">
                 {dashboardNavLinks.map((link) => (
@@ -240,68 +205,57 @@ export default function DashboardLayout({
               </ul>
             </nav>
           </aside>
-          
-          {/* Mobile Sidebar Toggle */}
-          <div className="md:hidden flex justify-between items-center mb-4 bg-white p-4 rounded-xl shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Icon name="logo" />
-              <span className="font-bold text-lg text-sky-700">CustomK9</span>
-            </div>
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg bg-sky-100 text-sky-700"
-              aria-label="Toggle sidebar"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
-          </div>
-          
-          {/* Mobile Sidebar */}
-          {isSidebarOpen && (
-            <div className="md:hidden bg-white rounded-xl shadow-md overflow-hidden mb-4">
-              {/* User Profile Summary */}
-              <div className="p-4 bg-sky-600 text-white">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-sky-200 flex items-center justify-center text-sky-600 font-bold text-sm border-2 border-white">
-                    {getInitials(currentUser.name || 'User')}
-                  </div>
-                  <div>
-                    <h2 className="font-semibold">{currentUser.name || 'User'}</h2>
-                    <p className="text-sky-200 text-xs">Premium Member</p>
-                  </div>
-                </div>
+
+          {/* Main Content Wrapper */}
+          <div className="flex-1 flex flex-col gap-4">
+            {/* Mobile Header */}
+            <div className="md:hidden flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+              <div className="flex items-center space-x-2">
+                <Icon name="logo" />
+                <span className="font-bold text-lg text-sky-700">CustomK9</span>
               </div>
-              
-              {/* Navigation Links */}
-              <nav className="p-2">
-                <ul className="grid grid-cols-2 gap-2">
-                  {dashboardNavLinks.map((link) => (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm w-full transition-colors ${
-                          pathname === link.href
-                            ? "bg-sky-100 text-sky-700"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                        onClick={() => setIsSidebarOpen(false)}
-                      >
-                        <Icon name={link.icon} />
-                        <span>{link.label}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-2 rounded-lg bg-sky-100 text-sky-700"
+                aria-label="Toggle sidebar"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
             </div>
-          )}
-          
-          {/* Main Content Area */}
-          <main className="flex-1 bg-white rounded-xl shadow-md p-6">
-            {children}
-          </main>
+
+            {/* Mobile Sidebar (Collapsible) */}
+            {isSidebarOpen && (
+              <div className="md:hidden bg-white rounded-xl shadow-md overflow-hidden">
+                <nav className="p-2">
+                  <ul className="grid grid-cols-2 gap-2">
+                    {dashboardNavLinks.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm w-full transition-colors ${
+                            pathname === link.href
+                              ? "bg-sky-100 text-sky-700"
+                              : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                          onClick={() => setIsSidebarOpen(false)}
+                        >
+                          <Icon name={link.icon} />
+                          <span>{link.label}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </div>
+            )}
+
+            {/* Main Content Area */}
+            <main className="flex-1 bg-white rounded-xl shadow-md p-6">
+              {children}
+            </main>
+          </div>
         </div>
       </div>
     </div>

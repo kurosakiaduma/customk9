@@ -359,12 +359,26 @@ export default function BookAppointmentPage() {
       try {
         setIsLoading(true);
         
-        // Load dogs
+        // Get current user first to get partner ID for dogs
+        const currentUser = await odooClientService.getCurrentUser();
+        if (!currentUser || !currentUser.partner_id) {
+          console.warn('No current user or partner ID found for loading dogs');
+          setDogs([]);
+          setServices(await odooProductService.getTrainingServices());
+          setPublicEvents([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const partnerId = Array.isArray(currentUser.partner_id) ? currentUser.partner_id[0] : currentUser.partner_id;
+        
+        // Load dogs and services
         const [fetchedDogs, fetchedServices] = await Promise.all([
-          odooClientService.getDogs(),
+          odooClientService.getDogs(partnerId),
           odooProductService.getTrainingServices()
         ]);
         
+        console.log('Fetched dogs for booking:', fetchedDogs);
         setDogs(fetchedDogs);
         setServices(fetchedServices);
         setPublicEvents([]); // For now, use empty array for public events
@@ -559,36 +573,36 @@ if (isBookingComplete) {
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
           <CheckCircleIcon className="w-12 h-12 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Booking Confirmed!</h1>
-        <p className="text-lg text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold text-black mb-4">Booking Confirmed!</h1>
+        <p className="text-lg text-black mb-8">
           Your appointment has been successfully scheduled. You will receive a confirmation email shortly.
         </p>
         <div className="bg-white p-8 rounded-xl shadow-md mb-8 text-left">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Appointment Details</h2>
+          <h2 className="text-xl font-semibold mb-4 text-black">Appointment Details</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-sm text-gray-500">Service</p>
-              <p className="font-medium">{bookingData.selectedService?.name}</p>
+              <p className="text-sm text-black font-medium">Service</p>
+              <p className="font-medium text-black">{bookingData.selectedService?.name}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Date & Time</p>
-              <p className="font-medium">{bookingData.selectedDate} at {bookingData.selectedTime}</p>
+              <p className="text-sm text-black font-medium">Date & Time</p>
+              <p className="font-medium text-black">{bookingData.selectedDate} at {bookingData.selectedTime}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Duration</p>
-              <p className="font-medium">{bookingData.selectedService?.duration}</p>
+              <p className="text-sm text-black font-medium">Duration</p>
+              <p className="font-medium text-black">{bookingData.selectedService?.duration}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Location</p>
-              <p className="font-medium">CustomK9 Training Center</p>
+              <p className="text-sm text-black font-medium">Location</p>
+              <p className="font-medium text-black">CustomK9 Training Center</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Dogs</p>
-              <p className="font-medium">{bookingData.selectedDogs.map(dog => dog.name).join(', ')}</p>
+              <p className="text-sm text-black font-medium">Dogs</p>
+              <p className="font-medium text-black">{bookingData.selectedDogs.map(dog => dog.name).join(', ')}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Price</p>
-              <p className="font-medium">KSh {bookingData.selectedService?.price.toLocaleString()}</p>
+              <p className="text-sm text-black font-medium">Total Price</p>
+              <p className="font-medium text-black">KSh {bookingData.selectedService?.price.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -634,10 +648,27 @@ return (
   <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Book an Appointment</h1>
-        <p className="mt-2 text-lg text-gray-600">Schedule your dog&apos;s training session</p>
+        <h1 className="text-3xl font-bold text-black">Book an Appointment</h1>
+        <p className="mt-2 text-lg text-black">Schedule your dog&apos;s training session</p>
       </div>
       {renderStatusMessage()}
+      
+      
+{error && (
+  <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200">
+    <div className="flex">
+      <ExclamationTriangleIcon className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+      <div className="ml-3">
+        <p className="text-sm font-medium text-red-800">{error}</p>
+        {conflictDetails && (
+          <div className="mt-2">
+            <p className="text-xs text-red-600">Please select a different time slot.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
       
       {/* Progress indicator */}
       <div className="mb-6">
@@ -646,7 +677,7 @@ return (
             {bookingData.bookingType === 'personal' ? (
               // Personal booking flow (7 steps including confirmation)
               <>
-                <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 1 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 1 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -656,7 +687,7 @@ return (
                   <span className="ml-2 text-sm">Booking Type</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 2 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 2 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -666,7 +697,7 @@ return (
                   <span className="hidden sm:inline ml-2 text-sm">Service</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 3 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 3 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -676,7 +707,7 @@ return (
                   <span className="hidden sm:inline ml-2 text-sm">Date & Time</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 4 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 4 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 4 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 4 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -686,7 +717,7 @@ return (
                   <span className="hidden sm:inline ml-2 text-sm">Dogs</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 5 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 5 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 5 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 5 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -696,7 +727,7 @@ return (
                   <span className="hidden sm:inline ml-2 text-sm">Terms</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 6 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 6 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 6 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 6 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -709,7 +740,7 @@ return (
             ) : (
               // Public event flow (fewer steps)
               <>
-                <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 1 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 1 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 1 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -719,7 +750,7 @@ return (
                   <span className="ml-2 text-sm">Event</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 2 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 2 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 2 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -729,7 +760,7 @@ return (
                   <span className="hidden sm:inline ml-2 text-sm">Dogs</span>
                   <span className="mx-2 sm:mx-4"><ChevronRightIcon className="w-4 h-4" /></span>
                 </li>
-                <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-gray-500'}`}>
+                <li className={`flex items-center ${currentStep > 3 ? 'text-sky-600' : 'text-black'}`}>
                   <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                     currentStep === 3 ? 'bg-sky-100 text-sky-800' : 
                     currentStep > 3 ? 'bg-sky-600 text-white' : 'bg-gray-200'
@@ -747,7 +778,7 @@ return (
       {/* Step 1: Select Booking Type */}
       {currentStep === 1 && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Booking Type</h2>
+          <h2 className="text-xl font-semibold mb-6 text-sky-700">Select a Booking Type</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div 
@@ -761,11 +792,11 @@ return (
               <div className="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center mb-4">
                 <UserIcon className="h-8 w-8 text-sky-600" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Personal Training</h3>
-              <p className="text-center text-gray-500 text-sm">
+              <h3 className="text-lg text-black font-medium mb-2">Personal Training</h3>
+              <p className="text-center text-black text-sm">
                 Schedule a one-on-one session with our trainers tailored to your dogs&apos; needs.
               </p>
-              <ul className="mt-4 text-sm text-gray-600 space-y-2">
+              <ul className="mt-4 text-sm text-black space-y-2">
                 <li className="flex items-center">
                   <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
                   <span>Personalized attention</span>
@@ -792,11 +823,11 @@ return (
               <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
                 <UserGroupIcon className="h-8 w-8 text-indigo-600" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Class/Events</h3>
-              <p className="text-center text-gray-500 text-sm">
+              <h3 className="text-lg text-black font-medium mb-2">Class/Events</h3>
+              <p className="text-center text-black text-sm">
                 Join one of our group classes or specialized training events with other dogs.
               </p>
-              <ul className="mt-4 text-sm text-gray-600 space-y-2">
+              <ul className="mt-4 text-sm text-black space-y-2">
                 <li className="flex items-center">
                   <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
                   <span>Socialization opportunities</span>
@@ -832,7 +863,7 @@ return (
         <div className="bg-white p-6 rounded-xl shadow-md">
           {bookingData.bookingType === 'personal' ? (
             <>
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Service</h2>
+              <h2 className="text-xl font-semibold mb-6 text-sky-700">Select a Service</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {services.map((service) => (
                   <div 
@@ -858,11 +889,11 @@ return (
                         />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{service.name}</h3>
-                        <p className="text-gray-600 text-sm">{service.description}</p>
-                        <div className="mt-2 flex justify-between items-center">
-                          <span className="text-gray-600 text-sm">{service.duration}</span>
-                          <span className="font-medium">KSh {service.price.toLocaleString()}</span>
+                        <h3 className="text-black font-semibold text-lg">{service.name}</h3>
+                        <p className="text-black text-sm">{service.description}</p>
+                        <div className="text-black mt-2 flex justify-between items-center">
+                          <span className="text-black text-sm">{service.duration}</span>
+                          <span className="text-black font-medium">KSh {service.price.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -872,26 +903,26 @@ return (
             </>
           ) : (
             <>
-              <h2 className="text-xl font-semibold mb-6 text-gray-800">Select a Class/Event</h2>
+              <h2 className="text-xl font-semibold mb-6 text-sky-700">Select a Class/Event</h2>
               
               {/* Calendar View for Public Events */}
               <div className="mb-8">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-4 text-black">
                   <button
                     onClick={() => {
                       const newDate = new Date(selectedDate);
                       newDate.setMonth(newDate.getMonth() - 1);
                       setSelectedDate(newDate);
                     }}
-                    className="p-2 rounded-full hover:bg-gray-100"
+                    className="p-2 rounded-full hover:bg-gray-100 text-black"
                     aria-label="Previous month"
                   >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"></path>
                     </svg>
                   </button>
                   
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-lg font-semibold text-black">
                     {monthsOfYear[selectedDate.getMonth()]} {selectedDate.getFullYear()}
                   </h2>
                   
@@ -904,7 +935,7 @@ return (
                     className="p-2 rounded-full hover:bg-gray-100"
                     aria-label="Next month"
                   >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
                     </svg>
                   </button>
@@ -913,7 +944,7 @@ return (
                 <div className="grid grid-cols-7 gap-1">
                   {/* Days of the week */}
                   {daysOfWeek.map(day => (
-                    <div key={day} className="text-center font-medium text-gray-600 py-2">
+                    <div key={day} className="text-center font-medium text-black py-2">
                       {day}
                     </div>
                   ))}
@@ -999,13 +1030,13 @@ return (
                         }}
                       />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-xl mb-2">{bookingData.selectedEvent.title}</h3>
-                      <p className="text-gray-700 mb-3">{bookingData.selectedEvent.description}</p>
+                    <div className="flex-1 text-black">
+                      <h3 className="font-semibold text-xl mb-2 text-black">{bookingData.selectedEvent.title}</h3>
+                      <p className="text-black mb-3">{bookingData.selectedEvent.description}</p>
                       
                       <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                         <div>
-                          <span className="font-medium text-gray-600">Date:</span>
+                          <span className="font-medium text-black">Date:</span>
                           <p>{new Date(bookingData.selectedEvent.date).toLocaleDateString('en-US', { 
                             weekday: 'long', 
                             month: 'long', 
@@ -1013,23 +1044,23 @@ return (
                           })}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Time:</span>
+                          <span className="font-medium text-black">Time:</span>
                           <p>{bookingData.selectedEvent.time}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Duration:</span>
+                          <span className="font-medium text-black">Duration:</span>
                           <p>{bookingData.selectedEvent?.duration}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Location:</span>
+                          <span className="font-medium text-black">Location:</span>
                           <p>{bookingData.selectedEvent?.location}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Trainer:</span>
+                          <span className="font-medium text-black">Trainer:</span>
                           <p>{bookingData.selectedEvent?.trainer}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Price:</span>
+                          <span className="font-medium text-black">Price:</span>
                           <p className="font-semibold">KSh {bookingData.selectedEvent?.price.toLocaleString()}</p>
                         </div>
                       </div>
@@ -1043,7 +1074,7 @@ return (
                       </div>
                       
                       <div className="mt-3 text-sm">
-                        <span className="font-medium text-gray-600">Enrollment:</span>
+                        <span className="font-medium text-black">Enrollment:</span>
                         <p>{bookingData.selectedEvent.enrolled} of {bookingData.selectedEvent.capacity} spots filled</p>
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div 
@@ -1059,7 +1090,7 @@ return (
             </>
           )}
           
-          <div className="mt-8 flex justify-between">
+          <div className="mt-8 flex text-black justify-between">
             <button
               onClick={goToPrevStep}
               className="px-6 py-2 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
@@ -1084,9 +1115,9 @@ return (
       {/* Step 3: Select Date and Time */}
       {currentStep === 3 && bookingData.bookingType === 'personal' && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Choose Date &amp; Time</h2>
+          <h2 className="text-xl font-semibold mb-6 text-sky-700">Choose Date &amp; Time</h2>
           <div className="mb-8">
-            <h3 className="font-medium text-gray-800 mb-3">Available Dates</h3>
+            <h3 className="font-medium text-sky-700 mb-3">Available Dates</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {getAvailableDates().map((date) => (
                 <button
@@ -1097,7 +1128,7 @@ return (
                   className={`p-3 rounded-md text-center transition-colors ${
                     bookingData.selectedDate === date.dateString
                       ? 'bg-sky-600 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                      : 'bg-gray-100 hover:bg-gray-200 text-sky-700'
                   }`}
                 >
                   {date.formattedDate}
@@ -1107,7 +1138,7 @@ return (
           </div>
           {bookingData.selectedDate && (
             <div>
-              <h3 className="font-medium text-gray-800 mb-3">Available Times</h3>
+              <h3 className="font-medium text-sky-700 mb-3">Available Times</h3>
               <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
                 {timeSlots.map((time) => {
                   const isAvailable = availableSlots.includes(time);
@@ -1123,7 +1154,7 @@ return (
                           ? 'bg-sky-600 text-white'
                           : !isAvailable
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed line-through'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                            : 'bg-gray-100 hover:bg-gray-200 text-sky-700'
                       }`}
                     >
                       {time}
@@ -1139,7 +1170,7 @@ return (
           <div className="mt-8 flex justify-between">
             <button
               onClick={goToPrevStep}
-              className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 rounded-md text-black font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
               aria-label="Go back to previous step"
             >
               Back
@@ -1162,7 +1193,7 @@ return (
       {((currentStep === 4 && bookingData.bookingType === 'personal') || 
         (currentStep === 3 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Select Your Dogs</h2>
+          <h2 className="text-xl font-semibold mb-6 text-sky-700">Select Your Dogs</h2>
           
           {isLoading ? (
             <div className="text-center py-8">
@@ -1170,7 +1201,7 @@ return (
             </div>
           ) : dogs.length > 0 ? (
             <div>
-              <p className="mb-4 text-gray-600">Select one or more dogs for this appointment by clicking on them:</p>
+              <p className="mb-4 text-black">Select one or more dogs for this appointment by clicking on them:</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {dogs.map((dog) => (
                   <div 
@@ -1197,14 +1228,14 @@ return (
                         />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{dog.name}</h3>
-                        <p className="text-sm text-gray-500">{dog.breed}, {dog.age} years old</p>
+                        <h3 className="font-medium text-black">{dog.name}</h3>
+                        <p className="text-sm text-black">{dog.breed}, {dog.age} years old</p>
                       </div>
                       <div className="ml-2">
                         <span className={`flex items-center justify-center w-6 h-6 rounded-full ${
                           bookingData.selectedDogs.some(d => d.id === dog.id) 
                             ? 'bg-sky-500 text-white' 
-                            : 'bg-gray-200 text-gray-500'
+                            : 'bg-gray-200 text-black'
                         }`}>
                           {bookingData.selectedDogs.some(d => d.id === dog.id) ? (
                             <CheckIcon className="w-4 h-4" />
@@ -1218,7 +1249,7 @@ return (
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-600 mb-4">You don&apos;t have any dogs registered yet.</p>
+              <p className="text-black mb-4">You don&apos;t have any dogs registered yet.</p>
               <Link
                 href="/client-area/dashboard/dogs/add"
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-sm font-medium transition-colors"
@@ -1231,7 +1262,7 @@ return (
           <div className="mt-8 flex justify-between">
             <button
               onClick={goToPrevStep}
-              className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 rounded-md text-black font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
               aria-label="Go back to previous step"
             >
               Back
@@ -1254,14 +1285,14 @@ return (
       {((currentStep === 5 && bookingData.bookingType === 'personal') || 
         (currentStep === 4 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Terms & Conditions</h2>
+          <h2 className="text-xl font-semibold mb-6 text-sky-700">Terms & Conditions</h2>
           
           <div className="bg-gray-50 p-4 rounded-md mb-6 h-64 overflow-y-auto">
-            <h3 className="font-medium mb-2">CustomK9 Service Agreement</h3>
-            <p className="text-sm text-gray-600 mb-3">
+            <h3 className="font-medium text-black mb-2">CustomK9 Service Agreement</h3>
+            <p className="text-sm text-black mb-3">
               Please read and agree to the following terms before proceeding with your booking:
             </p>
-            <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-2">
+            <ol className="list-decimal pl-5 text-sm text-black space-y-2">
               <li>All dogs must be up-to-date on vaccinations and in good health to participate in training sessions.</li>
               <li>Clients are responsible for their dogs&apos; behavior during sessions. CustomK9 reserves the right to refuse service to dogs exhibiting dangerous behavior.</li>
               <li>Cancellations must be made at least 24 hours in advance to receive a full refund. Late cancellations may be subject to a cancellation fee.</li>
@@ -1281,7 +1312,7 @@ return (
                 onChange={toggleTermsAgreement}
                 className="mt-1 h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
               />
-              <span className="ml-2 text-gray-700">
+              <span className="ml-2 text-black">
                 I have read and agree to the terms and conditions outlined above. I understand that my booking is subject to these terms.
               </span>
             </label>
@@ -1290,7 +1321,7 @@ return (
           <div className="mt-8 flex justify-between">
             <button
               onClick={goToPrevStep}
-              className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 rounded-md text-black font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
               aria-label="Go back to previous step"
             >
               Back
@@ -1313,35 +1344,35 @@ return (
       {((currentStep === 6 && bookingData.bookingType === 'personal') || 
         (currentStep === 5 && bookingData.bookingType === 'public')) && (
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Payment Details</h2>
+          <h2 className="text-xl font-semibold mb-6 text-sky-700">Payment Details</h2>
           
           <div className="mb-6">
-            <h3 className="font-medium text-gray-800 mb-3">Order Summary</h3>
+            <h3 className="font-medium text-sky-700 mb-3">Order Summary</h3>
             <div className="bg-gray-50 p-4 rounded-md">
               <div className="flex justify-between mb-4 pb-4 border-b border-gray-200">
                 <div>
                   {bookingData.bookingType === 'personal' ? (
                     <>
-                      <p className="font-medium">{bookingData.selectedService?.name}</p>
-                      <p className="text-sm text-gray-500">{bookingData.selectedService?.duration}</p>
+                      <p className="font-medium text-black">{bookingData.selectedService?.name}</p>
+                      <p className="text-sm text-black">{bookingData.selectedService?.duration}</p>
                     </>
                   ) : (
                     <>
-                      <p className="font-medium">{bookingData.selectedEvent?.title}</p>
-                      <p className="text-sm text-gray-500">{bookingData.selectedEvent?.duration}</p>
+                      <p className="font-medium text-black">{bookingData.selectedEvent?.title}</p>
+                      <p className="text-sm text-black">{bookingData.selectedEvent?.duration}</p>
                     </>
                   )}
                 </div>
-                <p className="font-medium">
+                <p className="font-medium text-black">
                   KSh {(bookingData.bookingType === 'personal' 
                         ? bookingData.selectedService?.price 
                         : bookingData.selectedEvent?.price)?.toLocaleString()}
                 </p>
               </div>
               
-              <div className="flex justify-between font-bold text-lg">
-                <p>Total</p>
-                <p>KSh {(bookingData.bookingType === 'personal' 
+              <div className="flex justify-between font-bold text-black text-lg">
+                <p className="text-black">Total</p>
+                <p className="text-black">KSh {(bookingData.bookingType === 'personal' 
                       ? bookingData.selectedService?.price 
                       : bookingData.selectedEvent?.price)?.toLocaleString()}</p>
               </div>
@@ -1349,10 +1380,10 @@ return (
           </div>
           
           <div className="mb-6">
-            <h3 className="font-medium text-gray-800 mb-3">Select Payment Method</h3>
+            <h3 className="font-medium text-sky-700 mb-3">Select Payment Method</h3>
             <div className="space-y-3">
               {['M-PESA', 'Credit Card', 'PayPal'].map((method) => (
-                <label key={method} className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                <label key={method} className="flex text-black items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -1361,7 +1392,7 @@ return (
                     onChange={() => selectPaymentMethod(method)}
                     className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300"
                   />
-                  <span className="ml-2">{method}</span>
+                  <span className="ml-2 text-black">{method}</span>
                 </label>
               ))}
             </div>
@@ -1370,7 +1401,7 @@ return (
           <div className="mt-8 flex justify-between">
             <button
               onClick={goToPrevStep}
-              className="px-6 py-2 rounded-md text-gray-600 font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 rounded-md text-black font-medium border border-gray-300 hover:bg-gray-50 transition-colors"
               aria-label="Go back to previous step"
             >
               Back
@@ -1383,8 +1414,18 @@ return (
                 isStepComplete(6) ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Complete Booking
-            </button>
+  {isSubmitting ? (
+    <span className="flex items-center">
+      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Processing...
+    </span>
+  ) : (
+    'Complete Booking'
+  )}
+</button>
           </div>
         </div>
       )}
@@ -1396,9 +1437,9 @@ return (
             <CheckCircleIcon className="h-12 w-12 text-green-600" />
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Booking Confirmed!</h2>
+          <h2 className="text-2xl font-bold text-sky-700 mb-4">Booking Confirmed!</h2>
           
-          <p className="text-gray-600 mb-8 max-w-lg mx-auto">
+          <p className="text-black mb-8 max-w-lg mx-auto">
             {bookingData.bookingType === 'personal' 
               ? `Your ${bookingData.selectedService?.name} appointment has been scheduled for ${new Date(bookingData.selectedDate).toLocaleDateString('en-US', { 
                 weekday: 'long', 
@@ -1415,7 +1456,7 @@ return (
           
           <div className="bg-sky-50 border border-sky-100 rounded-lg p-6 mb-8 max-w-lg mx-auto">
             <div className="mb-4">
-              <h3 className="font-medium text-gray-900 mb-2">Selected Dogs:</h3>
+              <h3 className="font-medium text-black mb-2">Selected Dogs:</h3>
               <div className="flex flex-wrap items-center gap-3">
                 {bookingData.selectedDogs.map(dog => (
                   <div key={dog.id} className="flex items-center bg-white p-2 rounded-lg shadow-sm">
@@ -1433,8 +1474,8 @@ return (
                       />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{dog.name}</p>
-                      <p className="text-xs text-gray-500">{dog.breed}</p>
+                      <p className="font-medium text-black">{dog.name}</p>
+                      <p className="text-xs text-black">{dog.breed}</p>
                     </div>
                   </div>
                 ))}
@@ -1443,8 +1484,8 @@ return (
             
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500">Date:</span>
-                <p className="font-medium text-gray-800">
+                <span className="text-black">Date:</span>
+                <p className="font-medium text-sky-700">
                   {new Date(bookingData.bookingType === 'personal' ? bookingData.selectedDate : (bookingData.selectedEvent?.date || '')).toLocaleDateString('en-US', { 
                     weekday: 'short', 
                     month: 'short', 
@@ -1455,13 +1496,13 @@ return (
               </div>
               
               <div>
-                <span className="text-gray-500">Time:</span>
-                <p className="font-medium text-gray-800">{bookingData.bookingType === 'personal' ? bookingData.selectedTime : bookingData.selectedEvent?.time}</p>
+                <span className="text-black">Time:</span>
+                <p className="font-medium text-sky-700">{bookingData.bookingType === 'personal' ? bookingData.selectedTime : bookingData.selectedEvent?.time}</p>
               </div>
               
               <div>
-                <span className="text-gray-500">Duration:</span>
-                <p className="font-medium text-gray-800">
+                <span className="text-black">Duration:</span>
+                <p className="font-medium text-sky-700">
                   {bookingData.bookingType === 'personal' 
                     ? bookingData.selectedService?.duration 
                     : bookingData.selectedEvent?.duration}
@@ -1469,8 +1510,8 @@ return (
               </div>
               
               <div>
-                <span className="text-gray-500">Location:</span>
-                <p className="font-medium text-gray-800">
+                <span className="text-black">Location:</span>
+                <p className="font-medium text-sky-700">
                   {bookingData.bookingType === 'personal' 
                     ? 'CustomK9 Training Center' 
                     : bookingData.selectedEvent?.location}
@@ -1478,12 +1519,12 @@ return (
               </div>
               
               <div className="col-span-2 mt-2">
-                <span className="text-gray-500">Payment Method:</span>
-                <p className="font-medium text-gray-800">{bookingData.paymentMethod}</p>
+                <span className="text-black">Payment Method:</span>
+                <p className="font-medium text-sky-700">{bookingData.paymentMethod}</p>
               </div>
               
               <div className="col-span-2 mt-2">
-                <span className="text-gray-500">Amount Paid:</span>
+                <span className="text-black">Amount Paid:</span>
                 <p className="font-semibold text-sky-700">
                   KSh {(bookingData.bookingType === 'personal' 
                         ? bookingData.selectedService?.price 

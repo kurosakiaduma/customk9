@@ -13,7 +13,7 @@ export default function ShowHandlingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-black">
       {/* Custom Hero Section for Show Handling / Ring Craft */}
       <div className="relative h-[50vh] overflow-hidden">
         <Navigation />
@@ -68,14 +68,14 @@ export default function ShowHandlingPage() {
               
               <div className="prose prose-lg max-w-none">
                 <p>
-                  Our Show Handling and Ring Craft class is designed for owners who wish to present their dogs in conformation shows, helping both handler and dog develop the skills needed to excel in the competition ring. Whether you're new to showing or looking to refine your technique, our expert trainers provide personalized guidance.
+                  Our Show Handling and Ring Craft class is designed for owners who wish to present their dogs in conformation shows, helping both handler and dog develop the skills needed to excel in the competition ring. Whether you&apos;re new to showing or looking to refine your technique, our expert trainers provide personalized guidance.
                 </p>
                 
-                <h3>What You'll Learn</h3>
+                <h3>What You&apos;ll Learn</h3>
                 <ul>
                   <li>Proper stacking and presentation techniques for your breed</li>
                   <li>Effective gaiting patterns and speeds</li>
-                  <li>Handling techniques that showcase your dog's best qualities</li>
+                  <li>Handling techniques that showcase your dog&apos;s best qualities</li>
                   <li>Ring etiquette and show protocols</li>
                   <li>Grooming basics for the show ring</li>
                   <li>Strategies for handling distractions and maintaining focus</li>
@@ -112,7 +112,7 @@ export default function ShowHandlingPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Schedule & Pricing</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">Schedule & Pricing</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>
@@ -138,7 +138,7 @@ export default function ShowHandlingPage() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">What to Bring</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">What to Bring</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="text-sky-600 mr-2">•</span>

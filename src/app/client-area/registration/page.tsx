@@ -1,3 +1,5 @@
+//TODO: Refactor issue authentication logic on successful signup to use AuthService
+
 "use client";
 
 import { useState, FormEvent } from "react";
