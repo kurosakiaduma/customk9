@@ -3,10 +3,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+interface RouteParams {
+  params: Promise<{
+    slug: string[];
+  }>;
+}
+
 async function handleRequest(
   req: NextRequest,
-  { params }: { params: { slug: string[] } }
+  { params }: RouteParams
 ) {
+  // In recent Next.js versions, params is a Promise that needs to be awaited
+  const resolvedParams = await params;
+
   // In recent Next.js versions, we need to ensure the request stream is consumed
   // before accessing dynamic route parameters to avoid race conditions.
   let body: any = null;
@@ -29,9 +38,9 @@ async function handleRequest(
     );
   }
 
-  const slug = params.slug;
+  const slug = resolvedParams.slug;
   const odooApiPath = slug.join('/');
-  
+
   // Ensure no double slashes in the final URL
   const cleanedBaseUrl = ODOO_BASE_URL.endsWith('/') ? ODOO_BASE_URL.slice(0, -1) : ODOO_BASE_URL;
   const odooApiUrl = `${cleanedBaseUrl}/${odooApiPath}`;
@@ -41,7 +50,7 @@ async function handleRequest(
   headers.set('host', new URL(ODOO_BASE_URL).host);
 
   console.log(`[API Proxy] Forwarding request to: ${req.method} ${odooApiUrl}`);
-  
+
   try {
     // Conditionally set the body only for relevant methods
     const bodyToSend = body ? JSON.stringify(body) : undefined;
@@ -71,22 +80,22 @@ async function handleRequest(
 }
 
 // Explicitly export async handlers for each method
-export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   return handleRequest(req, { params });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   return handleRequest(req, { params });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   return handleRequest(req, { params });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   return handleRequest(req, { params });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   return handleRequest(req, { params });
 }
